@@ -16,7 +16,7 @@ export default function CartPage() {
 
   if (lines.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-16">
+      <div className="dx-full py-16">
         <EmptyState
           title="Your bag is empty"
           body="Beautiful drops are waiting. Start with trending picks or the Drop of the Month."
@@ -27,7 +27,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="dx-full py-8">
       <h1 className="font-display text-3xl font-black">Your bag ({count})</h1>
 
       <div className="mt-4 rounded-2xl bg-white p-4 shadow-card ring-1 ring-ink/5">

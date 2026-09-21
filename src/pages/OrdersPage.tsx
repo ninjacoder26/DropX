@@ -34,7 +34,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
       <h1 className="font-display text-3xl font-black">Order history</h1>
       <ul className="mt-6 space-y-3">
         {orders.map((o) => (

@@ -101,7 +101,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="dx-full py-8">
       <nav className="text-xs text-ink/50" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-ember">Home</Link> /{' '}
         <Link to="/shop" className="hover:text-ember">Shop</Link> /{' '}

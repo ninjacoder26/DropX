@@ -40,7 +40,11 @@ body {
   box-shadow: 4px 4px 0 #101010;
 }
 
-/* Film grain for ink sections — kills the flat-template look. */
+/* Film grain for ink sections — kills the flat-template look.
+ * The grain lives on a NEGATIVE z-index layer between the section background
+ * and its content, so it can never disturb positioning of children.
+ * (An earlier version raised all children and broke `absolute` elements —
+ * same specificity, source order wins. Never again.) */
 .texture-ink {
   position: relative;
   isolation: isolate;
@@ -49,15 +53,29 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: -1;
   pointer-events: none;
   opacity: 0.5;
-  mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.34'/%3E%3C/svg%3E");
 }
-.texture-ink > * {
-  position: relative;
-  z-index: 2;
+
+/* Full-bleed page gutter: corner to corner, consistent on every screen. */
+.dx-full {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 640px) {
+  .dx-full {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .dx-full {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
 }
 
 /* Warm cinematic grade for promotional artwork (drops, banners).

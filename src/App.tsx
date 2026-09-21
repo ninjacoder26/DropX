@@ -30,7 +30,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading, configured } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60 sm:px-6 lg:px-8">Loading…</div>;
+  if (loading) return <div className="dx-full py-16 text-sm text-ink/60">Loading…</div>;
   if (!configured || !user) {
     // Preserve intent: after login the customer lands back here with their
     // guest bag intact (it merges into the server cart on sign-in).

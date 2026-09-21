@@ -79,7 +79,7 @@ export function ProductCard({ product }: { product: Product }) {
           <img
             src={primaryImage(product)}
             srcSet={srcSetFor(raw, [320, 640, 960], 'eco')}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 20vw, 16vw"
               alt={product.name}
               loading="lazy"
               decoding="async"
@@ -153,7 +153,7 @@ export function ProductCard({ product }: { product: Product }) {
 
 export function ProductGrid({ products }: { products: Product[] }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}

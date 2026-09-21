@@ -29,7 +29,7 @@ export function Navbar() {
           {announcement}
         </p>
       </div>
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="dx-full flex items-center gap-3 py-3">
         <button className="rounded-lg p-2 hover:bg-ink/5 lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -148,7 +148,7 @@ export function Footer() {
   const { supportEmail } = useStoreSettings();
   return (
     <footer className="texture-ink mt-16 bg-ink text-paper">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.3fr_1fr_1fr_1fr] lg:px-8">
+      <div className="dx-full grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
         <div>
           <p className="font-display text-2xl font-black">
             Drop<span className="text-ember">X</span>
@@ -194,7 +194,7 @@ export function Footer() {
         </nav>
       </div>
       <div className="border-t border-paper/10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-4 text-xs text-paper/50 sm:px-6 lg:px-8">
+        <div className="dx-full flex flex-wrap items-center gap-2 py-4 text-xs text-paper/50">
           <p>© 2026 DropX. All rights reserved.</p>
           <p className="ml-auto">Prices include taxes where applicable.</p>
         </div>

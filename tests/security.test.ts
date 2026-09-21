@@ -100,8 +100,7 @@ describe('security invariants', () => {
     expect(sanitizeSearch('"><script>')).not.toContain('<');
   });
 
-  it('ships hardened response headers including a CSP', () => {
-    const vercel = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')) as {
+  it('ships hardened response headers including a CSP', () => {    const vercel = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')) as {
       headers: { headers: { key: string; value: string }[] }[];
     };
     const all = vercel.headers.flatMap((h) => h.headers);

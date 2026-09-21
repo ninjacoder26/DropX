@@ -90,7 +90,7 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="dx-full py-8">
       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Catalog</p>
       <h1 className="mt-1 font-display text-3xl font-black tracking-tight sm:text-4xl">
         {title}
