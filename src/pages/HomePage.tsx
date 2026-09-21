@@ -10,6 +10,7 @@ import { dropState } from '../types';
 import { useRecentlyViewed } from '../hooks/useShop';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { ProductGrid } from '../components/product';
+import { CategoryArt } from '../components/CategoryArt';
 import { Badge, Skeleton } from '../components/ui';
 import { SetupNotice } from '../components/layout';
 
@@ -29,7 +30,7 @@ function CategoryTile({ category }: { category: Category }) {
           className="aspect-[4/3] w-full object-cover opacity-80 transition duration-500 group-hover:scale-105 group-hover:opacity-60"
         />
       ) : (
-        <div className="aspect-[4/3] w-full bg-ink-soft transition group-hover:bg-ink-mute" />
+        <CategoryArt slug={category.slug} className="aspect-[4/3] w-full transition duration-500 group-hover:scale-105" />
       )}
       <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-ink via-ink/20 to-transparent p-5">
         <p className="font-display text-xl font-extrabold leading-tight">{category.name}</p>
@@ -46,7 +47,7 @@ function DropSpotlight({ drop, mega }: { drop: Drop; mega?: boolean }) {
   return (
     <section className={`overflow-hidden rounded-3xl ring-1 ${mega ? 'bg-ink text-paper ring-paper/10' : 'bg-white ring-ink/10'}`}>
       <div className="grid md:grid-cols-2">
-        <div className="relative min-h-56 overflow-hidden md:min-h-72">
+        <div className="grade-duo relative min-h-56 overflow-hidden md:min-h-72">
           {drop.artwork_url ? (
             <img src={cloudinaryThumb(drop.artwork_url, 1000)} alt={`${drop.title} artwork`} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
           ) : (
@@ -184,38 +185,61 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Hero drop panel — only live drops, never placeholders */}
-          <div className="reveal reveal-1 relative min-h-80 overflow-hidden rounded-3xl ring-1 ring-paper/10 md:min-h-full">
+          {/* Hero drop panel — slim strip on phones, full artwork on desktop */}
+          <div className="reveal reveal-1 overflow-hidden rounded-3xl ring-1 ring-paper/10">
             {(() => {
               const hero = monthly ?? mega;
               const art = hero?.artwork_url;
-              if (!hero) {
-                return (
-                  <div className="flex h-full min-h-80 flex-col justify-between bg-ink-soft p-7">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">DropX basics</p>
-                    <div>
-                      <p className="font-display text-3xl font-black leading-tight">Everyday heavyweights, made to last.</p>
-                      <Link to="/shop" className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-ember underline underline-offset-4">
-                        Browse the shop <ArrowRight size={14} />
-                      </Link>
-                    </div>
-                  </div>
-                );
-              }
+              const title = hero?.title ?? 'Everyday heavyweights, made to last.';
+              const href = hero ? `/drops/${hero.slug}` : '/shop';
               return (
                 <>
-                  {art ? (
-                    <img src={cloudinaryThumb(art, 1000)} alt={`${hero.title} artwork`} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 bg-ember" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-7">
-                    <Badge>{hero.hero_label || 'Drop of the month'}</Badge>
-                    <p className="mt-2 font-display text-2xl font-black leading-tight md:text-3xl">{hero.title}</p>
-                    <Link to={`/drops/${hero.slug}`} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-paper px-5 py-2.5 text-xs font-bold text-ink transition hover:bg-white">
-                      Shop the drop <ArrowRight size={14} />
-                    </Link>
+                  {/* Mobile strip: thumbnail + title + arrow, one row tall */}
+                  <Link to={href} className="flex items-center gap-3 bg-ink-soft p-3 md:hidden" aria-label={title}>
+                    {art ? (
+                      <img src={cloudinaryThumb(art, 200, 'eco')} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
+                    ) : (
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-ember font-display text-sm font-black text-white">DX</span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-ember">
+                        {hero ? hero.hero_label || 'Drop of the month' : 'DropX basics'}
+                      </span>
+                      <span className="block truncate font-display text-base font-extrabold leading-tight">{title}</span>
+                    </span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ember text-white">
+                      <ArrowRight size={16} />
+                    </span>
+                  </Link>
+                  {/* Desktop panel */}
+                  <div className="relative hidden min-h-[26rem] md:block">
+                    {!hero ? (
+                      <div className="flex h-full min-h-[26rem] flex-col justify-between bg-ink-soft p-7">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">DropX basics</p>
+                        <div>
+                          <p className="font-display text-3xl font-black leading-tight">{title}</p>
+                          <Link to="/shop" className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-ember underline underline-offset-4">
+                            Browse the shop <ArrowRight size={14} />
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {art ? (
+                          <img src={cloudinaryThumb(art, 1000)} alt={`${hero.title} artwork`} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                        ) : (
+                          <div className="absolute inset-0 bg-ember" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-7">
+                          <Badge>{hero.hero_label || 'Drop of the month'}</Badge>
+                          <p className="mt-2 font-display text-3xl font-black leading-tight">{hero.title}</p>
+                          <Link to={`/drops/${hero.slug}`} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-paper px-5 py-2.5 text-xs font-bold text-ink transition hover:bg-white">
+                            Shop the drop <ArrowRight size={14} />
+                          </Link>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </>
               );

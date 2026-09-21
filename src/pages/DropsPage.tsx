@@ -15,7 +15,7 @@ function DropHero({ drop, mega }: { drop: Drop; mega?: boolean }) {
   return (
     <section className={`overflow-hidden rounded-3xl ring-1 ${mega ? 'bg-ink text-paper ring-paper/10' : 'bg-white ring-ink/10'}`}>
       <div className="grid md:grid-cols-2">
-        <div className="relative min-h-52 overflow-hidden">
+        <div className="grade-duo relative min-h-52 overflow-hidden">
           {drop.artwork_url ? (
             <img src={cloudinaryThumb(drop.artwork_url, 1000)} alt={`${drop.title} artwork`} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
           ) : (

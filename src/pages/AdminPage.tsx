@@ -619,6 +619,17 @@ function Products() {
                       <span className="min-w-0">
                         <p className="truncate font-bold">{p.name}</p>
                         <p className="truncate text-xs text-ink/50">{p.slug} · {p.category?.name ?? '—'}</p>
+                        <p className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] font-semibold">
+                          <span className={(p.images?.length ?? 0) > 0 ? 'text-green-700' : 'text-red-600'}>
+                            {p.images?.length ?? 0} imgs
+                          </span>
+                          <span className={(p.variants?.length ?? 0) > 0 ? 'text-green-700' : 'text-red-600'}>
+                            {p.variants?.length ?? 0} variants
+                          </span>
+                          <span className={(p.tags?.length ?? 0) > 0 ? 'text-ink/50' : 'text-red-600'}>
+                            {p.tags?.length ?? 0}/3 tags
+                          </span>
+                        </p>
                         {(p.tags?.length ?? 0) > 0 && (
                           <p className="mt-0.5 truncate text-[11px] font-semibold text-ember">
                             {p.tags!.map((t) => `#${t}`).join(' ')}

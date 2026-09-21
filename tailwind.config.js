@@ -18,8 +18,8 @@ export default {
           faint: '#555555',
         },
         paper: {
-          DEFAULT: '#F7F5F0',
-          dark: '#ECE8DE',
+          DEFAULT: '#F6F3EC',
+          dark: '#E9E3D4',
           card: '#FFFFFF',
         },
       },

@@ -273,8 +273,48 @@ export default function ProductPage() {
           <div className="mt-6">
             <h2 className="font-display text-lg font-extrabold">About this product</h2>
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink/70">{product.description || 'No description yet.'}</p>
-            {variant && <p className="mt-3 text-xs text-ink/50">SKU: {variant.sku}</p>}
           </div>
+
+          {/* Specifications — built from this product's own variants */}
+          {(product.variants?.length ?? 0) > 0 && (
+            <div className="mt-6 overflow-hidden rounded-2xl bg-white ring-1 ring-ink/5">
+              <h2 className="border-b border-ink/10 px-5 py-3.5 font-display text-base font-extrabold">
+                Specifications <span className="ml-1 text-xs font-semibold text-ink/40">{product.variants!.length} option{product.variants!.length === 1 ? '' : 's'}</span>
+              </h2>
+              <ul className="divide-y divide-ink/5">
+                {product.variants!.filter((v) => v.is_active).map((v) => {
+                  const price = Number(product.base_price) + Number(v.price_adjustment);
+                  const state = v.stock <= 0 ? 'Sold out' : v.stock <= v.low_stock_threshold ? `Only ${v.stock} left` : 'In stock';
+                  return (
+                    <li key={v.id} className="flex items-center gap-3 px-5 py-3 text-sm">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-bold">{v.name}</span>
+                        <span className="block truncate font-mono text-[11px] text-ink/40">{v.sku}</span>
+                      </span>
+                      {v.size && <span className="hidden shrink-0 rounded-lg bg-ink/5 px-2 py-1 text-xs font-bold sm:block">Size {v.size}</span>}
+                      {v.color && <span className="hidden shrink-0 rounded-lg bg-ink/5 px-2 py-1 text-xs font-bold sm:block">{v.color}</span>}
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${v.stock <= 0 ? 'bg-red-100 text-red-700' : v.stock <= v.low_stock_threshold ? 'bg-ember/10 text-ember' : 'bg-green-100 text-green-800'}`}>
+                        {state}
+                      </span>
+                      <span className="shrink-0 font-display font-extrabold">{formatNPR(price)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <dl className="grid grid-cols-1 gap-px border-t border-ink/10 bg-ink/10 text-xs sm:grid-cols-3">
+                {[
+                  ['Delivery', '1–3 days, Kathmandu Valley'],
+                  ['Payment', 'Cash on Delivery · Bank transfer'],
+                  ['Exchanges', '7 days, unworn with tags'],
+                ].map(([k, v]) => (
+                  <div key={k} className="bg-white px-5 py-3">
+                    <dt className="font-bold uppercase tracking-wider text-ink/40">{k}</dt>
+                    <dd className="mt-0.5 font-semibold">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
         </div>
       </div>
 
