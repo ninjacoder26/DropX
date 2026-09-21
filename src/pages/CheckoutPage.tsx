@@ -126,6 +126,13 @@ export default function CheckoutPage() {
     isGuidedComplete({ district: addr.district, area: addr.area, street: addr.street, postal_code: addr.postal_code }) &&
     agreed;
 
+  const missing: string[] = [];
+  if (addr.full_name.trim().length < 2) missing.push('name');
+  if (addr.phone.trim().length < 7) missing.push('phone');
+  if (addr.area.trim().length < 2) missing.push('area');
+  if (addr.street.trim().length < 3) missing.push('street address');
+  if (!agreed) missing.push('terms acceptance');
+
   async function placeOrder() {
     setError(null);
     if (!agreed) {
@@ -150,7 +157,20 @@ export default function CheckoutPage() {
       // Totals, stock and the payment method are all enforced server-side
       // inside place_order(). The order stays `unpaid` until the courier
       // collects cash on delivery.
-      const { data, error: rpcError } = await supabase.rpc('place_order', {
+      //
+      // The request carries a 45s client timeout: supabase-js sets no timeout
+      // of its own, so a stalled connection would otherwise spin forever with
+      // no way out (and a blind retry could create a DUPLICATE order).
+      const TIMEOUT_MS = 45_000;
+      const timed = <T,>(p: Promise<T>): Promise<T> =>
+        Promise.race([
+          p,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('__timeout__')), TIMEOUT_MS)
+          ),
+        ]);
+      const { data, error: rpcError } = await timed(
+        supabase.rpc('place_order', {
         p_items: items,
         p_address: {
           full_name: addr.full_name,
@@ -163,7 +183,8 @@ export default function CheckoutPage() {
         p_shipping_method: method,
         p_notes: notes,
         p_payment_provider: 'cod',
-      });
+        })
+      );
       if (rpcError) throw new Error(rpcError.message);
       const orderId = data as string;
       placedRef.current = true;
@@ -202,7 +223,12 @@ export default function CheckoutPage() {
       await clear();
       nav(`/order-success/${orderId}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Order failed. Please try again.');
+      const msg = e instanceof Error ? e.message : 'Order failed. Please try again.';
+      setError(
+        msg === '__timeout__'
+          ? 'Still processing after 45 seconds — check Order History before retrying. Your order may have gone through; retrying blindly can create a duplicate.'
+          : msg
+      );
     } finally {
       setPlacing(false);
     }
@@ -348,9 +374,14 @@ export default function CheckoutPage() {
             <div className="flex justify-between"><dt className="text-paper/60">Shipping</dt><dd>{shippingFee === 0 ? 'FREE' : formatNPR(shippingFee)}</dd></div>
             <div className="flex justify-between font-display text-lg font-black"><dt>Total</dt><dd>{formatNPR(total)}</dd></div>
           </dl>
-          <Button onClick={placeOrder} disabled={placing || !valid} className="mt-5 w-full">
+          <Button onClick={placeOrder} disabled={placing} className="mt-5 w-full">
             {placing ? 'Placing order…' : `Place order · ${formatNPR(total)}`}
           </Button>
+          {!valid && !placing && missing.length > 0 && (
+            <p className="mt-2 text-center text-[11px] font-semibold text-ember">
+              Almost there — complete: {missing.join(', ')}.
+            </p>
+          )}
           <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-paper/60">
             <input
               type="checkbox"
