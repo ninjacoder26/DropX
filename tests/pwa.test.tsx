@@ -34,10 +34,15 @@ describe('InstallBanner — gentle, once-ever, 30s max', () => {
     expect(screen.queryByRole('region', { name: /install dropx/i })).toBeNull();
   });
 
-  it('appears on beforeinstallprompt and auto-dismisses after 30s', () => {
+  it('appears ~2.5s after the signal and auto-dismisses 30s later', () => {
     render(<InstallBanner />);
     act(() => {
       window.dispatchEvent(new Event('beforeinstallprompt'));
+    });
+    // Delayed reveal: not instant, not fighting first paint.
+    expect(screen.queryByRole('region', { name: /install dropx/i })).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(2_500);
     });
     expect(screen.getByRole('region', { name: /install dropx/i })).toBeInTheDocument();
     act(() => {
@@ -52,7 +57,7 @@ describe('InstallBanner — gentle, once-ever, 30s max', () => {
     render(<InstallBanner />);
     act(() => {
       window.dispatchEvent(new Event('beforeinstallprompt'));
-      vi.advanceTimersByTime(31_000);
+      vi.advanceTimersByTime(35_000);
     });
     expect(screen.queryByRole('region', { name: /install dropx/i })).toBeNull();
   });
@@ -61,6 +66,9 @@ describe('InstallBanner — gentle, once-ever, 30s max', () => {
     render(<InstallBanner />);
     act(() => {
       window.dispatchEvent(new Event('beforeinstallprompt'));
+    });
+    act(() => {
+      vi.advanceTimersByTime(2_500);
     });
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
     expect(screen.queryByRole('region', { name: /install dropx/i })).toBeNull();

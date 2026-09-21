@@ -215,7 +215,7 @@ export default function ShopPage() {
               action={<button onClick={() => { setParams({}); setMaxPrice(10000); setInStockOnly(false); }} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper">Clear filters</button>}
             />
           ) : (
-            <ProductGrid products={filtered} />
+            <ProductGrid products={filtered} density="comfortable" />
           )}
         </div>
       </div>

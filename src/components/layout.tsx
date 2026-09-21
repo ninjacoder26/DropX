@@ -154,8 +154,8 @@ export function Footer() {
             Drop<span className="text-ember">X</span>
           </p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-paper/60">
-            Nepal-focused premium streetwear & lifestyle. Designed in Kathmandu,
-            delivered across the country — cash on delivery, no fuss.
+            Nepal-focused stationery, tech, fashion & lifestyle. Designed in Kathmandu,
+            delivered inside the Valley — cash on delivery, no fuss.
           </p>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-paper/5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-paper/60 ring-1 ring-paper/10">
             <span className="h-1.5 w-1.5 rounded-full bg-ember" /> All prices in NPR

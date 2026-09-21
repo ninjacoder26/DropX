@@ -433,7 +433,7 @@ function Products() {
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
         <div className="ml-auto flex flex-wrap gap-2">
           <button
-            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Himalayan Hoodie', 'himalayan-hoodie', 'Heavyweight fleece', 'fashion-accessories', 3499, 4299, true, true, true, true, 'apparel|winter|accessories']]))}
+            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Sample Hoodie', 'sample-hoodie', 'Heavyweight fleece sample', 'fashion-accessories', 1620, 1999, true, true, true, true, 'apparel|winter|accessories']]))}
             className="rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30"
           >
             Template

@@ -11,10 +11,11 @@ import { useRecentlyViewed } from '../hooks/useShop';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { ProductGrid } from '../components/product';
 import { CategoryArt } from '../components/CategoryArt';
+import { HeroArt } from '../components/HeroArt';
 import { Badge, Skeleton } from '../components/ui';
 import { SetupNotice } from '../components/layout';
 
-const MARQUEE = ['DESIGNED IN KATHMANDU', 'HEAVYWEIGHT FLEECE', 'CASH ON DELIVERY', 'NEW DROPS MONTHLY', 'MEGA DROP EVERY YEAR', '7-DAY EXCHANGES'];
+const MARQUEE = ['DESIGNED IN KATHMANDU', 'STATIONERY · TECH · FASHION · LIFESTYLE', 'CASH ON DELIVERY', 'NEW DROPS MONTHLY', 'MEGA DROP EVERY YEAR', '7-DAY EXCHANGES'];
 
 function CategoryTile({ category }: { category: Category }) {
   return (
@@ -167,7 +168,7 @@ export default function HomePage() {
               <span className="font-accent font-normal tracking-normal text-ember">Drop.</span>
             </h1>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-paper/70">
-              Heavyweight streetwear designed in Kathmandu. A fresh drop every month,
+              Stationery, tech, fashion and lifestyle — designed in Kathmandu. A fresh drop every month,
               one Mega Drop a year — delivered to your doorstep inside Kathmandu Valley.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
@@ -190,7 +191,7 @@ export default function HomePage() {
             {(() => {
               const hero = monthly ?? mega;
               const art = hero?.artwork_url;
-              const title = hero?.title ?? 'Everyday heavyweights, made to last.';
+              const title = hero?.title ?? 'Everyday essentials, made to last.';
               const href = hero ? `/drops/${hero.slug}` : '/shop';
               return (
                 <>
@@ -214,15 +215,17 @@ export default function HomePage() {
                   {/* Desktop panel */}
                   <div className="relative hidden min-h-[26rem] md:block">
                     {!hero ? (
-                      <div className="flex h-full min-h-[26rem] flex-col justify-between bg-ink-soft p-7">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">DropX basics</p>
-                        <div>
-                          <p className="font-display text-3xl font-black leading-tight">{title}</p>
-                          <Link to="/shop" className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-ember underline underline-offset-4">
+                      <>
+                        <HeroArt className="absolute inset-0 h-full w-full" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-7">
+                          <Badge>DropX basics</Badge>
+                          <p className="mt-2 font-display text-3xl font-black leading-tight">{title}</p>
+                          <Link to="/shop" className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-paper px-5 py-2.5 text-xs font-bold text-ink transition hover:bg-white">
                             Browse the shop <ArrowRight size={14} />
                           </Link>
                         </div>
-                      </div>
+                      </>
                     ) : (
                       <>
                         {art ? (

@@ -151,9 +151,15 @@ export function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export function ProductGrid({ products }: { products: Product[] }) {
+export function ProductGrid({ products, density = 'compact' }: { products: Product[]; density?: 'compact' | 'comfortable' }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+    <div
+      className={
+        density === 'comfortable'
+          ? 'grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4'
+          : 'grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+      }
+    >
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
