@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 import { useCart } from '../store/CartContext';
-import { FREE_SHIPPING_THRESHOLD, NEPAL_PROVINCES, SHIPPING_FEES, formatNPR } from '../lib/shop';
+import { NEPAL_PROVINCES, formatNPR } from '../lib/shop';
+import { shippingFeeFor, useStoreSettings } from '../lib/settings';
 import { PAYMENT_METHODS, type PaymentMethod } from '../lib/payments';
 import { Button, Field, Input } from '../components/ui';
 import { primaryImage } from '../components/product';
@@ -61,8 +62,8 @@ export default function CheckoutPage() {
       });
   }, [user]);
 
-  const shippingFee =
-    method === 'standard' && subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEES[method];
+  const settings = useStoreSettings();
+  const shippingFee = shippingFeeFor(method, subtotal, settings);
   const total = subtotal + shippingFee;
 
   const valid =
@@ -106,6 +107,28 @@ export default function CheckoutPage() {
       if (rpcError) throw new Error(rpcError.message);
       const orderId = data as string;
       placedRef.current = true;
+      // Best-effort: remember this address for next time (never blocks success).
+      if (user && isSupabaseConfigured) {
+        supabase
+          .from('addresses')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .then(({ count }) => {
+            if (count === 0) {
+              void supabase.from('addresses').insert({
+                user_id: user.id,
+                label: 'Home',
+                full_name: addr.full_name,
+                phone: addr.phone,
+                province: addr.province,
+                city: addr.city,
+                street: addr.street,
+                postal_code: addr.postal_code || null,
+                is_default: true,
+              });
+            }
+          });
+      }
       await clear();
       nav(`/order-success/${orderId}`);
     } catch (e) {
@@ -160,7 +183,7 @@ export default function CheckoutPage() {
                 >
                   <p className="font-bold capitalize">{m} <span className="text-ink/50">· 2–5 days</span></p>
                   <p className="mt-1 text-sm font-bold text-ember">
-                    {m === 'standard' && subtotal >= FREE_SHIPPING_THRESHOLD ? 'FREE' : formatNPR(SHIPPING_FEES[m])}
+                    {shippingFeeFor(m, subtotal, settings) === 0 ? 'FREE' : formatNPR(shippingFeeFor(m, subtotal, settings))}
                   </p>
                 </button>
               ))}

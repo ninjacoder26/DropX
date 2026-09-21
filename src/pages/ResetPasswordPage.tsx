@@ -8,7 +8,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
   // The recovery email links here with a session in the URL hash.
@@ -27,7 +27,11 @@ export default function ResetPasswordPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-14">
       <h1 className="font-display text-3xl font-black">Set a new password</h1>
-      {!ready ? (
+      {ready === null ? (
+        <p className="mt-4 rounded-2xl bg-white p-6 text-sm text-ink/60 shadow-card ring-1 ring-ink/5">
+          Checking your recovery link…
+        </p>
+      ) : !ready ? (
         <p className="mt-4 rounded-2xl bg-white p-6 text-sm text-ink/60 shadow-card ring-1 ring-ink/5">
           This link is invalid or has expired. Request a fresh one from the{' '}
           <Link to="/forgot-password" className="font-bold text-ember">forgot-password page</Link>.

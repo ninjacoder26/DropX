@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Heart, Menu, Search, ShoppingBag, User, X, Zap } from 'lucide-react';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
+import { useStoreSettings } from '../lib/settings';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -14,6 +15,7 @@ const links = [
 export function Navbar() {
   const { count } = useCart();
   const { user, isAdmin, profile } = useAuth();
+  const { announcement } = useStoreSettings();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const nav = useNavigate();
@@ -24,7 +26,7 @@ export function Navbar() {
       <div className="bg-ink text-paper">
         <p className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]">
           <Zap size={12} className="text-ember" />
-          Free standard shipping over NPR 2,999
+          {announcement}
         </p>
       </div>
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
@@ -143,6 +145,7 @@ export function Navbar() {
 }
 
 export function Footer() {
+  const { supportEmail } = useStoreSettings();
   return (
     <footer className="mt-16 bg-ink text-paper">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
@@ -182,7 +185,7 @@ export function Footer() {
             <li className="text-paper/80">Delivery across Nepal (2–5 days)</li>
             <li className="text-paper/80">COD · Bank transfer</li>
             <li className="text-paper/80">7-day size exchanges</li>
-            <li className="text-paper/80">support@dropx.com.np</li>
+            <li className="text-paper/80">{supportEmail}</li>
             <li className="flex gap-4 pt-1 font-bold">
               <Link className="text-paper/80 transition hover:text-ember" to="/terms">Terms</Link>
               <Link className="text-paper/80 transition hover:text-ember" to="/privacy">Privacy</Link>

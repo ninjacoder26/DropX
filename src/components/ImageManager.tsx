@@ -84,11 +84,16 @@ export function ImageManager({ productId }: { productId: string }) {
 
   async function remove(im: ProductImage) {
     if (!confirm(`Delete this image?\n\nIt will be removed from the product. Cloudinary asset cleanup runs server-side where configured.`)) return;
-    // Best-effort server-side asset deletion (requires CLOUDINARY_API_SECRET on server)
+    // Best-effort server-side asset deletion with the admin's session token
+    // (the endpoint verifies the admin role; failures never block the DB row).
     try {
+      const { data: session } = await supabase.auth.getSession();
       await fetch('/api/cloudinary-delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session.session ? { Authorization: `Bearer ${session.session.access_token}` } : {}),
+        },
         body: JSON.stringify({ public_id: im.cloudinary_public_id }),
       });
     } catch {

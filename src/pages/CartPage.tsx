@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { useCart } from '../store/CartContext';
-import { FREE_SHIPPING_THRESHOLD, formatNPR } from '../lib/shop';
+import { formatNPR } from '../lib/shop';
+import { useStoreSettings } from '../lib/settings';
 import { Button } from '../components/ui';
 import { EmptyState } from '../components/ui';
 import { primaryImage } from '../components/product';
 
 export default function CartPage() {
   const { lines, subtotal, setQty, remove, count } = useCart();
-  const progress = Math.min(1, subtotal / FREE_SHIPPING_THRESHOLD);
+  const { freeShippingThreshold } = useStoreSettings();
+  const progress = Math.min(1, subtotal / freeShippingThreshold);
 
   if (lines.length === 0) {
     return (
@@ -28,9 +30,9 @@ export default function CartPage() {
 
       <div className="mt-4 rounded-2xl bg-white p-4 shadow-card ring-1 ring-ink/5">
         <p className="text-xs font-semibold text-ink/70">
-          {subtotal >= FREE_SHIPPING_THRESHOLD
+          {subtotal >= freeShippingThreshold
             ? 'You unlocked FREE standard shipping.'
-            : `${formatNPR(FREE_SHIPPING_THRESHOLD - subtotal)} away from free standard shipping`}
+            : `${formatNPR(freeShippingThreshold - subtotal)} away from free standard shipping`}
         </p>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full rounded-full bg-ember transition-all" style={{ width: `${progress * 100}%` }} />

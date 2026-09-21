@@ -13,5 +13,15 @@ export default defineConfig({
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 900,
+    // Split heavy vendors so repeat visits only re-download what changed.
+    // Route pages already lazy-load via React.lazy in App.tsx.
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
   },
 })

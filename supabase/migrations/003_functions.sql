@@ -57,6 +57,9 @@ declare
   v_subtotal numeric(12,2) := 0;
   v_shipping numeric(12,2) := 0;
   v_total numeric(12,2);
+  v_std numeric(12,2);
+  v_exp numeric(12,2);
+  v_threshold numeric(12,2);
   item jsonb;
   v_pid uuid; v_vid uuid; v_qty int;
   v_pname text; v_vname text; v_sku text; v_img text;
@@ -75,11 +78,20 @@ begin
 
   v_order_no := public.next_order_number();
 
-  if p_shipping_method = 'express' then v_shipping := 199;
-  elsif p_shipping_method = 'standard' then v_shipping := 99;
-  else v_shipping := 99; end if;
-  -- Free standard shipping over NPR 2,999
-  -- (recomputed server-side; client hint is ignored)
+  -- Commerce rules come from Admin → Settings (store_settings), with safe
+  -- fallbacks so checkout never breaks on a missing row. Client hints about
+  -- shipping costs are ignored — this is the authoritative computation.
+  select
+    coalesce(max(case when key = 'shipping_standard' then value::numeric end), 99),
+    coalesce(max(case when key = 'shipping_express' then value::numeric end), 199),
+    coalesce(max(case when key = 'free_shipping_threshold' then value::numeric end), 2999)
+    into v_std, v_exp, v_threshold
+  from public.store_settings;
+
+  if p_shipping_method = 'express' then v_shipping := v_exp;
+  elsif p_shipping_method = 'standard' then v_shipping := v_std;
+  else v_shipping := v_std; end if;
+  -- Free standard shipping over the configured threshold
 
   for item in select * from jsonb_array_elements(p_items) loop
     v_pid := (item->>'product_id')::uuid;
@@ -118,7 +130,7 @@ begin
       (v_order_id, v_pid, v_vid, v_pname, v_vname, v_sku, v_unit, v_qty, v_unit * v_qty, v_img);
   end loop;
 
-  if v_subtotal >= 2999 and p_shipping_method = 'standard' then
+  if v_subtotal >= v_threshold and p_shipping_method = 'standard' then
     v_shipping := 0;
   end if;
   v_total := v_subtotal + v_shipping;

@@ -197,7 +197,7 @@ export default function HomePage() {
               return (
                 <>
                   {art ? (
-                    <img src={cloudinaryThumb(art, 1000)} alt={`${hero.title} artwork`} className="absolute inset-0 h-full w-full object-cover" />
+                    <img src={cloudinaryThumb(art, 1000)} alt={`${hero.title} artwork`} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
                     <div className="absolute inset-0 bg-ember" />
                   )}

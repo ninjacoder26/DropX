@@ -62,13 +62,19 @@ export async function uploadToCloudinary(file: File): Promise<UploadResult> {
 }
 
 /** Ask the server to sign params for a signed upload (preferred for production). */
-export async function getSignedParams(folder = 'dropx/products'): Promise<{
+export async function getSignedParams(
+  folder = 'dropx/products',
+  accessToken?: string
+): Promise<{
   signature: string; timestamp: number; apiKey: string; cloudName: string; folder: string;
 } | null> {
   try {
     const res = await fetch('/api/cloudinary-sign', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify({ folder }),
     });
     if (!res.ok) return null;

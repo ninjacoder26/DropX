@@ -13,12 +13,10 @@ export function CloudinaryUpload({
   value,
   onChange,
   label = 'Artwork',
-  folder,
 }: {
   value: string;
   onChange: (url: string) => void;
   label?: string;
-  folder?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +28,6 @@ export function CloudinaryUpload({
     setBusy(true);
     try {
       const up = await uploadToCloudinary(file);
-      void folder;
       onChange(up.secure_url);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed.');

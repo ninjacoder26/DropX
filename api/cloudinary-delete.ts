@@ -1,11 +1,13 @@
 /**
  * POST /api/cloudinary-delete
- * Server-side Cloudinary asset deletion (admin only in production — verify the
- * Supabase JWT + admin role here before destroying assets).
+ * Server-side Cloudinary asset deletion. The caller must be an admin
+ * (verified Supabase JWT + profiles role check, same as cloudinary-sign).
  *
- * Env: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+ * Env: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET,
+ *      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 import { createHash } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -14,8 +16,29 @@ function json(status: number, body: unknown) {
   });
 }
 
+async function isAdminRequest(req: Request): Promise<boolean> {
+  const url = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const header = req.headers.get('authorization') ?? '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!url || !serviceKey || !token) return false;
+  const admin = createClient(url, serviceKey);
+  const { data, error } = await admin.auth.getUser(token);
+  if (error || !data.user) return false;
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .single();
+  const role = (profile as { role?: string } | null)?.role;
+  return role === 'admin' || role === 'superadmin';
+}
+
 export async function POST(req: Request) {
   try {
+    if (!(await isAdminRequest(req))) {
+      return json(401, { error: 'Admin sign-in required.' });
+    }
     const { public_id } = (await req.json()) as { public_id?: string };
     if (!public_id) return json(400, { error: 'public_id is required.' });
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;

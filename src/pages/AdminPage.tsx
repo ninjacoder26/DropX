@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import {
   BarChart3, ClipboardList, LayoutDashboard, Menu, Package,
-  ScrollText, Star, Tags, Users, X, Zap,
+  ScrollText, Settings as SettingsIcon, Star, Tags, Users, X, Zap,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { supabase } from '../lib/supabase';
@@ -24,6 +24,7 @@ const TABS = [
   { to: '/admin/drops', label: 'Drops', icon: Zap },
   { to: '/admin/reviews', label: 'Reviews', icon: Star },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
   { to: '/admin/logs', label: 'Activity', icon: ScrollText },
 ];
 
@@ -113,9 +114,10 @@ export default function AdminPage() {
             <Route path="orders" element={<Orders />} />
             <Route path="customers" element={<Customers />} />
             <Route path="drops" element={<Drops />} />
-            <Route path="reviews" element={<ReviewsMod />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="logs" element={<Logs />} />
+          <Route path="reviews" element={<ReviewsMod />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="logs" element={<Logs />} />
           </Routes>
         </div>
       </div>
@@ -1178,6 +1180,107 @@ function Analytics() {
             </li>
           ))}
           {top.length === 0 && <li className="text-ink/60">No data yet.</li>}
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
+/* ─── Store settings (the whole shop, customizable without code) ─── */
+function Settings() {
+  const [form, setForm] = useState({
+    announcement: '',
+    support_email: '',
+    free_shipping_threshold: '',
+    shipping_standard: '',
+    shipping_express: '',
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.from('store_settings').select('key,value').then(({ data }) => {
+      const get = (k: string) => (data ?? []).find((r: { key: string }) => r.key === k)?.value ?? '';
+      setForm({
+        announcement: get('announcement'),
+        support_email: get('support_email'),
+        free_shipping_threshold: get('free_shipping_threshold'),
+        shipping_standard: get('shipping_standard'),
+        shipping_express: get('shipping_express'),
+      });
+      setLoading(false);
+    });
+  }, []);
+
+  const save = async () => {
+    setMsg(null);
+    const nums: Record<string, string> = {
+      free_shipping_threshold: form.free_shipping_threshold,
+      shipping_standard: form.shipping_standard,
+      shipping_express: form.shipping_express,
+    };
+    for (const [k, v] of Object.entries(nums)) {
+      if (v.trim() !== '' && (Number.isNaN(Number(v)) || Number(v) < 0)) {
+        setMsg(`“${k}” must be a number ≥ 0.`);
+        return;
+      }
+    }
+    if (!form.support_email.includes('@')) {
+      setMsg('Support email looks invalid.');
+      return;
+    }
+    setSaving(true);
+    const entries = Object.entries(form).filter(([, v]) => v.trim() !== '');
+    const { error } = await supabase
+      .from('store_settings')
+      .upsert(entries.map(([key, value]) => ({ key, value: value.trim() })), { onConflict: 'key' });
+    if (error) setMsg(error.message);
+    else {
+      log('settings.update', 'store_settings', undefined, Object.fromEntries(entries));
+      setMsg('Settings saved — the storefront and checkout pricing update immediately.');
+    }
+    setSaving(false);
+  };
+
+  if (loading) return <Skeleton className="h-64" />;
+  return (
+    <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+      <Card className="h-fit p-6">
+        <h2 className="font-display text-lg font-extrabold">Store settings</h2>
+        <p className="mt-1 text-xs text-ink/60">
+          Announcement bar, support contact and shipping rules. Checkout totals are enforced
+          server-side from these same rows — no code changes needed.
+        </p>
+        <div className="mt-4 space-y-4">
+          <Field label="Announcement bar text">
+            <Input value={form.announcement} onChange={(e) => setForm({ ...form, announcement: e.target.value })} placeholder="Free standard shipping over NPR 2,999" />
+          </Field>
+          <Field label="Support email">
+            <Input type="email" value={form.support_email} onChange={(e) => setForm({ ...form, support_email: e.target.value })} placeholder="support@dropx.com.np" />
+          </Field>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field label="Free shipping over (NPR)">
+              <Input type="number" min={0} value={form.free_shipping_threshold} onChange={(e) => setForm({ ...form, free_shipping_threshold: e.target.value })} />
+            </Field>
+            <Field label="Standard fee (NPR)">
+              <Input type="number" min={0} value={form.shipping_standard} onChange={(e) => setForm({ ...form, shipping_standard: e.target.value })} />
+            </Field>
+            <Field label="Express fee (NPR)">
+              <Input type="number" min={0} value={form.shipping_express} onChange={(e) => setForm({ ...form, shipping_express: e.target.value })} />
+            </Field>
+          </div>
+          {msg && <p className="rounded-xl bg-paper px-3 py-2 text-xs">{msg}</p>}
+          <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
+        </div>
+      </Card>
+      <Card className="h-fit p-6">
+        <h3 className="font-display font-extrabold">How it works</h3>
+        <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-ink/60">
+          <li>The announcement bar and footer email update across the whole site.</li>
+          <li>Shipping fees apply to new orders instantly — the database function reads these rows at checkout.</li>
+          <li>Completed orders keep their original totals as snapshots; changing fees never rewrites history.</li>
+          <li>Every save is recorded in the activity log.</li>
         </ul>
       </Card>
     </div>

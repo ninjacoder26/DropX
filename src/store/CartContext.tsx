@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { safeGet, safeRemove, safeSet } from '../lib/storage';
 import { useAuth } from './AuthContext';
@@ -36,8 +36,15 @@ function loadLocal(): LocalItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [items, setItems] = useState<LocalItem[]>(() => loadLocal());
+  const [items, setItemsState] = useState<LocalItem[]>(() => loadLocal());
   const [loading, setLoading] = useState(false);
+  // Ref mirror so rapid consecutive updates (double-click quick-add) never
+  // act on a stale closure — every mutation reads the latest lines.
+  const itemsRef = useRef(items);
+  const setItems = useCallback((next: LocalItem[]) => {
+    itemsRef.current = next;
+    setItemsState(next);
+  }, []);
 
   // Persist guest cart
   useEffect(() => {
@@ -66,18 +73,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
             product: r.products,
             variant: r.variants,
           }));
-        // Merge guest lines in
-        setItems((prev) => {
-          const merged = [...mapped];
-          for (const g of prev) {
-            const f = merged.find(
-              (m) => m.product_id === g.product_id && (m.variant_id ?? null) === (g.variant_id ?? null)
-            );
-            if (f) f.quantity = Math.min(99, f.quantity + g.quantity);
-            else merged.push(g);
-          }
-          return merged;
-        });
+        // Merge guest lines in (reads the live ref, not a stale closure)
+        const merged = [...mapped];
+        for (const g of itemsRef.current) {
+          const f = merged.find(
+            (m) => m.product_id === g.product_id && (m.variant_id ?? null) === (g.variant_id ?? null)
+          );
+          if (f) f.quantity = Math.min(99, f.quantity + g.quantity);
+          else merged.push(g);
+        }
+        setItems(merged);
         safeRemove(LS_KEY);
       }
       setLoading(false);
@@ -103,12 +108,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const add = useCallback(
     async (product: Product, variant: ProductVariant | null, qty = 1) => {
+      const prev = itemsRef.current;
       const key = (p: string, v: string | null) => `${p}::${v ?? ''}`;
-      const found = items.find((i) => key(i.product_id, i.variant_id) === key(product.id, variant?.id ?? null));
+      const found = prev.find((i) => key(i.product_id, i.variant_id) === key(product.id, variant?.id ?? null));
       const next: LocalItem[] = found
-        ? items.map((i) => (i === found ? { ...i, quantity: Math.min(99, i.quantity + qty) } : i))
+        ? prev.map((i) => (i === found ? { ...i, quantity: Math.min(99, i.quantity + qty) } : i))
         : [
-            ...items,
+            ...prev,
             {
               product_id: product.id,
               variant_id: variant?.id ?? null,
@@ -120,15 +126,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems(next);
       await syncServer(next);
     },
-    [items, syncServer]
+    [syncServer, setItems]
   );
 
   const setQty = useCallback(
     async (productId: string, variantId: string | null, qty: number) => {
+      const prev = itemsRef.current;
       const next =
         qty <= 0
-          ? items.filter((i) => !(i.product_id === productId && (i.variant_id ?? null) === (variantId ?? null)))
-          : items.map((i) =>
+          ? prev.filter((i) => !(i.product_id === productId && (i.variant_id ?? null) === (variantId ?? null)))
+          : prev.map((i) =>
               i.product_id === productId && (i.variant_id ?? null) === (variantId ?? null)
                 ? { ...i, quantity: qty }
                 : i
@@ -136,7 +143,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems(next);
       await syncServer(next);
     },
-    [items, syncServer]
+    [syncServer, setItems]
   );
 
   const remove = useCallback(
@@ -152,7 +159,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       await supabase.from('cart_items').delete().eq('user_id', user.id);
     }
     safeRemove(LS_KEY);
-  }, [user]);
+  }, [user, setItems]);
 
   const value = useMemo<CartState>(() => {
     const lines: CartLine[] = items.map((i) => ({

@@ -53,4 +53,13 @@ describe('security invariants', () => {
     expect(sql).toContain('dropx-assets');
     expect(sql).toContain('auth.uid()');
   });
+
+  it('settings are public-read/admin-write and checkout reads shipping rules from them', () => {
+    const settings = readFileSync(join(root, 'supabase/migrations/006_settings.sql'), 'utf8');
+    expect(settings).toContain('store_settings');
+    expect(settings).toContain('public.is_admin()');
+    const fn = readFileSync(join(root, 'supabase/migrations/003_functions.sql'), 'utf8');
+    expect(fn).toContain('store_settings');
+    expect(fn).toContain('free_shipping_threshold');
+  });
 });
