@@ -264,7 +264,7 @@ function Products() {
   const load = async () => {
     setLoading(true);
     const [{ data: p }, { data: c }] = await Promise.all([
-      supabase.from('products').select('*, category:categories(*), variants:product_variants(*)').order('created_at', { ascending: false }).limit(200),
+      supabase.from('products').select('*, category:categories(*), images:product_images(*), variants:product_variants(*)').order('created_at', { ascending: false }).limit(200),
       supabase.from('categories').select('*').order('sort_order'),
     ]);
     setItems((p ?? []) as unknown as Product[]);
@@ -376,6 +376,7 @@ function Products() {
       rows.push([
         p.name, p.slug, p.description, catById.get(p.category_id ?? '') ?? '',
         p.base_price, p.compare_at_price, p.is_active, p.is_featured, p.is_trending, p.is_new,
+        (p.tags ?? []).join('|'),
       ]);
     }
     download('dropx-products.csv', toCSV(rows));
@@ -616,6 +617,11 @@ function Products() {
                       <span className="min-w-0">
                         <p className="truncate font-bold">{p.name}</p>
                         <p className="truncate text-xs text-ink/50">{p.slug} · {p.category?.name ?? '—'}</p>
+                        {(p.tags?.length ?? 0) > 0 && (
+                          <p className="mt-0.5 truncate text-[11px] font-semibold text-ember">
+                            {p.tags!.map((t) => `#${t}`).join(' ')}
+                          </p>
+                        )}
                       </span>
                     </span>
                   </td>

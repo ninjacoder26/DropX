@@ -46,6 +46,16 @@ export default function OrderDetailPage() {
       <Link to="/orders" className="text-xs font-bold text-ember hover:underline">← All orders</Link>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <h1 className="font-display text-3xl font-black">{order.order_number}</h1>
+        <button
+          onClick={() => {
+            navigator.clipboard?.writeText(order.order_number).catch(() => undefined);
+          }}
+          aria-label="Copy order number"
+          title="Copy order number"
+          className="rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-bold text-ink/60 transition hover:border-ink/40 hover:text-ink"
+        >
+          Copy №
+        </button>
         <Badge>{order.status}</Badge>
         <Badge tone="paper">{order.payment_status.replace('_', ' ')}</Badge>
       </div>
