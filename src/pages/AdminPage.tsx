@@ -466,7 +466,19 @@ function Products() {
         <Card className="mt-4 p-6">
           <h2 className="font-display text-lg font-extrabold">{editing === 'new' ? 'New product' : 'Edit product'}</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Field label="Name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+            <Field label="Name">
+              <Input
+                value={form.name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    name,
+                    slug: editing === 'new' && (f.slug === '' || f.slug === slugify(f.name)) ? slugify(name) : f.slug,
+                  }));
+                }}
+              />
+            </Field>
             <Field label="Slug"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
             <div className="md:col-span-2">
               <Field label="Description">

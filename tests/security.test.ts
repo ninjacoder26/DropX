@@ -69,4 +69,11 @@ describe('security invariants', () => {
     const seed = readFileSync(join(root, 'supabase/migrations/008_catalog_seed.sql'), 'utf8');
     expect(seed).toContain('200 products');
   });
+
+  it('sold counters stay in sync via order-item trigger', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/009_sold_counters.sql'), 'utf8');
+    expect(fix).toContain('bump_total_sold');
+    expect(fix).toContain('total_sold = total_sold + new.quantity');
+    expect(fix).toContain('trg_items_sold');
+  });
 });

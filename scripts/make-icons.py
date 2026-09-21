@@ -21,7 +21,7 @@ def font_for(size: int):
     return ImageFont.load_default()
 
 
-def make(size: int, path: str) -> None:
+def make(size: int, path: str) -> Image.Image:
     img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     r = int(size * 0.24)
@@ -34,6 +34,7 @@ def make(size: int, path: str) -> None:
            text, font=f, fill=PAPER)
     img.convert('RGB').save(path, 'PNG')
     print('wrote', path)
+    return img
 
 
 if __name__ == '__main__':
@@ -41,3 +42,7 @@ if __name__ == '__main__':
     make(512, 'public/icons/icon-512.png')
     make(512, 'public/icons/icon-maskable-512.png')
     make(180, 'public/icons/apple-touch-icon.png')
+    # Multi-size .ico kills the /favicon.ico console 404 on all browsers.
+    fav = make(64, 'public/favicon-64.png')
+    fav.save('public/favicon.ico', sizes=[(16, 16), (32, 32), (48, 48)])
+    print('wrote public/favicon.ico')

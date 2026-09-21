@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import type { Category, Drop, DropState, Product } from '../types';
 import { dropState } from '../types';
+import { TAG_VOCABULARY } from './tags';
 
 const PRODUCT_SELECT = `
   *,
@@ -19,11 +20,18 @@ export async function fetchProducts(opts?: {
   limit?: number;
 }): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
+  // A search term that exactly matches a tag (e.g. "audio") also matches
+  // tagged products — PostgREST can't ilike inside arrays, so we fetch
+  // broadly once and filter client-side in that case.
+  const tagHit =
+    opts?.search && (TAG_VOCABULARY as readonly string[]).includes(opts.search.trim().toLowerCase())
+      ? opts.search.trim().toLowerCase()
+      : null;
   let q = supabase.from('products').select(PRODUCT_SELECT).eq('is_active', true);
   if (opts?.trending) q = q.eq('is_trending', true);
   if (opts?.isNew) q = q.eq('is_new', true);
   if (opts?.featured) q = q.eq('is_featured', true);
-  if (opts?.search) {
+  if (opts?.search && !tagHit) {
     const term = opts.search.replace(/[%(),]/g, '').slice(0, 60);
     q = q.or(`name.ilike.%${term}%,description.ilike.%${term}%`);
   }
@@ -37,6 +45,15 @@ export async function fetchProducts(opts?: {
   if (error) throw new Error(error.message);
   let rows = (data ?? []) as unknown as Product[];
   if (opts?.categorySlug) rows = rows.filter((p) => p.category?.slug === opts.categorySlug);
+  if (tagHit) {
+    const term = (opts?.search ?? '').trim().toLowerCase();
+    rows = rows.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        p.description.toLowerCase().includes(term) ||
+        (p.tags ?? []).map((t) => t.toLowerCase()).includes(tagHit)
+    );
+  }
   return rows;
 }
 

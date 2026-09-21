@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Heart, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
+import { Check, Heart, Minus, Plus, Share2, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
 import { clsx } from 'clsx';
 import { fetchProductBySlug } from '../lib/catalog';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -24,6 +24,7 @@ export default function ProductPage() {
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
   const [added, setAdded] = useState(false);
+  const [shared, setShared] = useState(false);
   const { add } = useCart();
   const { user } = useAuth();
   const { has, toggle } = useWishlist();
@@ -241,6 +242,24 @@ export default function ProductPage() {
               className={clsx('rounded-full border p-3', wished ? 'border-ember bg-ember text-white' : 'border-ink/15 bg-white')}
             >
               <Heart size={17} fill={wished ? 'currentColor' : 'none'} />
+            </button>
+            <button
+              onClick={() => {
+                const url = window.location.href;
+                const done = () => {
+                  setShared(true);
+                  setTimeout(() => setShared(false), 2000);
+                };
+                if (navigator.share) {
+                  navigator.share({ title: product.name, url }).then(done).catch(() => undefined);
+                } else if (navigator.clipboard) {
+                  navigator.clipboard.writeText(url).then(done).catch(() => undefined);
+                }
+              }}
+              aria-label="Share this product"
+              className="rounded-full border border-ink/15 bg-white p-3 transition hover:border-ink/40"
+            >
+              {shared ? <Check size={17} className="text-ember" /> : <Share2 size={17} />}
             </button>
           </div>
 

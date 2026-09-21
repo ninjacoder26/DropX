@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera } from 'lucide-react';
+import { Camera, Trash2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { uploadAvatar } from '../lib/avatar';
 import { useAuth } from '../store/AuthContext';
 import type { Address } from '../types';
-import { NEPAL_PROVINCES } from '../lib/shop';
+import { districtOfArea, isGuidedComplete } from '../lib/address';
+import { AddressForm } from '../components/AddressForm';
 import { Button, Field, Input } from '../components/ui';
+
+const EMPTY_DRAFT = { label: 'Home', full_name: '', phone: '', district: 'Kathmandu', area: '', street: '', postal_code: '' };
 
 export default function AccountPage() {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -19,7 +22,7 @@ export default function AccountPage() {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
-  const [draft, setDraft] = useState({ label: 'Home', full_name: '', phone: '', province: 'Bagmati', city: '', street: '', postal_code: '' });
+  const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
 
   useEffect(() => {
     setName(profile?.full_name ?? '');
@@ -125,30 +128,40 @@ export default function AccountPage() {
           </div>
           {showAddr && (
             <form
-              className="mt-3 space-y-2 rounded-xl bg-paper p-4"
+              className="mt-3 space-y-3 rounded-xl bg-paper p-4"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!user) return;
-                supabase.from('addresses').insert({ ...draft, user_id: user.id, is_default: addrs.length === 0 })
+                if (!user || !isGuidedComplete(draft)) return;
+                supabase.from('addresses').insert({
+                  user_id: user.id,
+                  label: draft.label || 'Home',
+                  full_name: draft.full_name,
+                  phone: draft.phone,
+                  province: 'Bagmati',
+                  city: draft.area,
+                  street: draft.street,
+                  postal_code: draft.postal_code || null,
+                  is_default: addrs.length === 0,
+                })
                   .select().single()
                   .then(({ data, error }) => {
                     if (!error && data) {
                       setAddrs([...addrs, data as Address]);
+                      setDraft({ ...EMPTY_DRAFT, label: 'Home' });
                       setShowAddr(false);
                     }
                   });
               }}
             >
               <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Label (Home)" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} required />
+                <Input placeholder="Label (Home)" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} aria-label="Address label" />
                 <Input placeholder="Full name" value={draft.full_name} onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} required />
-                <Input placeholder="Phone" value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} required />
-                <select value={draft.province} onChange={(e) => setDraft({ ...draft, province: e.target.value })} className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm">
-                  {NEPAL_PROVINCES.map((p) => <option key={p}>{p}</option>)}
-                </select>
-                <Input placeholder="City" value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value })} required />
-                <Input placeholder="Street" value={draft.street} onChange={(e) => setDraft({ ...draft, street: e.target.value })} required />
+                <Input placeholder="Phone" value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} required className="col-span-2 sm:col-span-1" />
               </div>
+              <AddressForm
+                value={{ district: draft.district, area: draft.area, street: draft.street, postal_code: draft.postal_code }}
+                onChange={(v) => setDraft({ ...draft, district: v.district, area: v.area, street: v.street, postal_code: v.postal_code })}
+              />
               <Button className="w-full" variant="dark">Save address</Button>
             </form>
           )}
@@ -156,9 +169,23 @@ export default function AccountPage() {
             {addrs.length === 0 && <li className="text-sm text-ink/50">No addresses yet.</li>}
             {addrs.map((a) => (
               <li key={a.id} className="rounded-xl border border-ink/10 p-3 text-sm">
-                <p className="font-bold">{a.label} {a.is_default && <span className="ml-1 rounded-full bg-ember/10 px-2 py-0.5 text-[10px] text-ember">DEFAULT</span>}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-bold">{a.label} {a.is_default && <span className="ml-1 rounded-full bg-ember/10 px-2 py-0.5 text-[10px] text-ember">DEFAULT</span>}</p>
+                  <button
+                    onClick={() => {
+                      if (!confirm(`Delete the “${a.label}” address?`)) return;
+                      supabase.from('addresses').delete().eq('id', a.id).then(({ error }) => {
+                        if (!error) setAddrs(addrs.filter((x) => x.id !== a.id));
+                      });
+                    }}
+                    aria-label={`Delete ${a.label} address`}
+                    className="shrink-0 rounded-full p-1 text-ink/40 transition hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
                 <p className="text-ink/60">{a.full_name} · {a.phone}</p>
-                <p className="text-ink/60">{a.street}, {a.city}, {a.province}</p>
+                <p className="text-ink/60">{a.street}, {a.city}{districtOfArea(a.city) ? `, ${districtOfArea(a.city)}` : ''}</p>
               </li>
             ))}
           </ul>

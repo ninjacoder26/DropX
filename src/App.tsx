@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Navbar, Footer, MobileNav } from './components/layout';
 import { InstallBanner } from './components/InstallBanner';
+import { ScrollToTop } from './components/ScrollToTop';
 import { useAuth } from './store/AuthContext';
 import type { ReactNode } from 'react';
 
@@ -51,6 +52,7 @@ function RequireAdmin({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col pb-16 lg:pb-0">
+      <ScrollToTop />
       <InstallBanner />
       <Navbar />
       <main className="flex-1">

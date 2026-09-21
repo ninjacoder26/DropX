@@ -3,7 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 import { useCart } from '../store/CartContext';
-import { NEPAL_PROVINCES, formatNPR } from '../lib/shop';
+import { formatNPR } from '../lib/shop';
+import { districtOfArea, isGuidedComplete } from '../lib/address';
+import { AddressForm } from '../components/AddressForm';
+import type { Address } from '../types';
 import { shippingFeeFor, useStoreSettings } from '../lib/settings';
 import { PAYMENT_METHODS, type PaymentMethod } from '../lib/payments';
 import { Button, Field, Input } from '../components/ui';
@@ -12,19 +15,21 @@ import { primaryImage } from '../components/product';
 interface Addr {
   full_name: string;
   phone: string;
-  province: string;
-  city: string;
+  district: string;
+  area: string;
   street: string;
   postal_code: string;
 }
 
-const EMPTY: Addr = { full_name: '', phone: '', province: 'Bagmati', city: '', street: '', postal_code: '' };
+const EMPTY: Addr = { full_name: '', phone: '', district: 'Kathmandu', area: '', street: '', postal_code: '' };
 
 export default function CheckoutPage() {
   const { user } = useAuth();
   const { lines, subtotal, clear } = useCart();
   const nav = useNavigate();
   const [addr, setAddr] = useState<Addr>(EMPTY);
+  const [saved, setSaved] = useState<Address[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('new');
   const [method, setMethod] = useState<'standard' | 'express'>('standard');
   const [payMethod, setPayMethod] = useState<PaymentMethod>('cod');
   const [notes, setNotes] = useState('');
@@ -46,21 +51,42 @@ export default function CheckoutPage() {
       .select('*')
       .eq('user_id', user.id)
       .order('is_default', { ascending: false })
-      .limit(1)
-      .single()
       .then(({ data }) => {
-        if (data) {
+        const list = (data ?? []) as Address[];
+        setSaved(list);
+        const first = list[0];
+        if (first) {
+          setSelectedId(first.id);
           setAddr({
-            full_name: data.full_name,
-            phone: data.phone,
-            province: data.province,
-            city: data.city,
-            street: data.street,
-            postal_code: data.postal_code ?? '',
+            full_name: first.full_name,
+            phone: first.phone,
+            district: districtOfArea(first.city) ?? 'Kathmandu',
+            area: first.city,
+            street: first.street,
+            postal_code: first.postal_code ?? '',
           });
         }
       });
   }, [user]);
+
+  const pickSaved = (id: string) => {
+    setSelectedId(id);
+    if (id === 'new') {
+      setAddr(EMPTY);
+      return;
+    }
+    const a = saved.find((x) => x.id === id);
+    if (a) {
+      setAddr({
+        full_name: a.full_name,
+        phone: a.phone,
+        district: districtOfArea(a.city) ?? 'Kathmandu',
+        area: a.city,
+        street: a.street,
+        postal_code: a.postal_code ?? '',
+      });
+    }
+  };
 
   const settings = useStoreSettings();
   const shippingFee = shippingFeeFor(method, subtotal, settings);
@@ -69,8 +95,7 @@ export default function CheckoutPage() {
   const valid =
     addr.full_name.trim().length >= 2 &&
     addr.phone.trim().length >= 7 &&
-    addr.city.trim().length >= 2 &&
-    addr.street.trim().length >= 3 &&
+    isGuidedComplete({ district: addr.district, area: addr.area, street: addr.street, postal_code: addr.postal_code }) &&
     agreed;
 
   async function placeOrder() {
@@ -80,7 +105,7 @@ export default function CheckoutPage() {
       return;
     }
     if (!valid) {
-      setError('Please complete name, phone, city and street address.');
+      setError('Please complete name, phone, area and street address.');
       return;
     }
     if (!isSupabaseConfigured || !user) {
@@ -99,7 +124,14 @@ export default function CheckoutPage() {
       // confirms cash collection / verifies the bank receipt.
       const { data, error: rpcError } = await supabase.rpc('place_order', {
         p_items: items,
-        p_address: addr,
+        p_address: {
+          full_name: addr.full_name,
+          phone: addr.phone,
+          province: 'Bagmati',
+          city: addr.area,
+          street: `${addr.street} (${addr.district})`,
+          postal_code: addr.postal_code || null,
+        },
         p_shipping_method: method,
         p_notes: notes,
         p_payment_provider: payMethod,
@@ -120,8 +152,8 @@ export default function CheckoutPage() {
                 label: 'Home',
                 full_name: addr.full_name,
                 phone: addr.phone,
-                province: addr.province,
-                city: addr.city,
+                province: 'Bagmati',
+                city: addr.area,
                 street: addr.street,
                 postal_code: addr.postal_code || null,
                 is_default: true,
@@ -148,6 +180,38 @@ export default function CheckoutPage() {
             <p className="mt-1 rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold text-ink/70">
               We currently deliver inside Kathmandu Valley only (Kathmandu, Lalitpur, Bhaktapur).
             </p>
+            {saved.length > 0 && (
+              <div className="mt-4 grid gap-2" role="radiogroup" aria-label="Choose delivery address">
+                {saved.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selectedId === a.id}
+                    onClick={() => pickSaved(a.id)}
+                    className={`rounded-2xl border p-3.5 text-left text-sm transition ${
+                      selectedId === a.id ? 'border-ember bg-ember/5' : 'border-ink/15 hover:border-ink/40'
+                    }`}
+                  >
+                    <span className="font-bold">{a.label} — {a.full_name}</span>
+                    <span className="mt-0.5 block text-xs text-ink/60">
+                      {a.street}, {a.city}{districtOfArea(a.city) ? `, ${districtOfArea(a.city)}` : ''} · {a.phone}
+                    </span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedId === 'new'}
+                  onClick={() => pickSaved('new')}
+                  className={`rounded-2xl border border-dashed p-3.5 text-left text-sm font-bold transition ${
+                    selectedId === 'new' ? 'border-ember bg-ember/5 text-ember' : 'border-ink/20 text-ink/60 hover:border-ink/40'
+                  }`}
+                >
+                  + Use a new address
+                </button>
+              </div>
+            )}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label="Full name">
                 <Input value={addr.full_name} onChange={(e) => setAddr({ ...addr, full_name: e.target.value })} placeholder="Aashish Sharma" autoComplete="name" />
@@ -155,22 +219,12 @@ export default function CheckoutPage() {
               <Field label="Phone">
                 <Input value={addr.phone} onChange={(e) => setAddr({ ...addr, phone: e.target.value })} placeholder="98XXXXXXXX" autoComplete="tel" />
               </Field>
-              <Field label="Province">
-                <select value={addr.province} onChange={(e) => setAddr({ ...addr, province: e.target.value })} className="w-full rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-sm">
-                  {NEPAL_PROVINCES.map((p) => <option key={p}>{p}</option>)}
-                </select>
-              </Field>
-              <Field label="City">
-                <Input value={addr.city} onChange={(e) => setAddr({ ...addr, city: e.target.value })} placeholder="Kathmandu" autoComplete="address-level2" />
-              </Field>
-              <div className="sm:col-span-2">
-                <Field label="Street / area">
-                  <Input value={addr.street} onChange={(e) => setAddr({ ...addr, street: e.target.value })} placeholder="Lazimpat, House 12, Ward 2" autoComplete="street-address" />
-                </Field>
-              </div>
-              <Field label="Postal code (optional)">
-                <Input value={addr.postal_code} onChange={(e) => setAddr({ ...addr, postal_code: e.target.value })} placeholder="44600" inputMode="numeric" />
-              </Field>
+            </div>
+            <div className="mt-4">
+              <AddressForm
+                value={{ district: addr.district, area: addr.area, street: addr.street, postal_code: addr.postal_code }}
+                onChange={(v) => setAddr({ ...addr, district: v.district, area: v.area, street: v.street, postal_code: v.postal_code })}
+              />
             </div>
           </section>
 
