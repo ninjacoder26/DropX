@@ -162,9 +162,9 @@ export default function CheckoutPage() {
       // of its own, so a stalled connection would otherwise spin forever with
       // no way out (and a blind retry could create a DUPLICATE order).
       const TIMEOUT_MS = 45_000;
-      const timed = <T,>(p: Promise<T>): Promise<T> =>
+      const timed = <T,>(p: PromiseLike<T>): Promise<T> =>
         Promise.race([
-          p,
+          Promise.resolve(p),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('__timeout__')), TIMEOUT_MS)
           ),
