@@ -74,7 +74,8 @@ export default function CheckoutPage() {
   const pickSaved = (id: string) => {
     setSelectedId(id);
     if (id === 'new') {
-      setAddr(EMPTY);
+      // Keep the typed name/phone — only the address itself resets.
+      setAddr((prev) => ({ ...EMPTY, full_name: prev.full_name, phone: prev.phone }));
       return;
     }
     const a = saved.find((x) => x.id === id);
