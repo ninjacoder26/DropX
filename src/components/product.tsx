@@ -13,11 +13,22 @@ export function primaryImage(p: Product): string {
     (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
   );
   if (imgs[0]) return cloudinaryThumb(imgs[0].secure_url, 700);
-  // Branded placeholder (SVG data URI in brand colors — not a fake product photo)
-  const label = encodeURIComponent(p.name.slice(0, 18));
-  return `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="800" height="800" fill="#101010"/><text x="50%" y="46%" fill="#F06427" font-family="Arial" font-size="44" font-weight="900" text-anchor="middle">DropX</text><text x="50%" y="56%" fill="#F7F5F0" font-family="Arial" font-size="22" text-anchor="middle">${label}</text></svg>`
-  )}`;
+  // Studio-light placeholder (soft daylight sweep, 1:1 — not a fake product photo).
+  // Real shots uploaded in admin replace this automatically.
+  const xmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const initial = xmlEsc((p.name.trim()[0] ?? 'D').toUpperCase());
+  const label = xmlEsc(p.name.slice(0, 22));
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800">` +
+    `<defs><radialGradient id="g" cx="50%" cy="32%" r="80%">` +
+    `<stop offset="0%" stop-color="#FFFFFF"/><stop offset="58%" stop-color="#F4F2EC"/>` +
+    `<stop offset="100%" stop-color="#DFDCD2"/></radialGradient></defs>` +
+    `<rect width="800" height="800" fill="url(#g)"/>` +
+    `<ellipse cx="400" cy="648" rx="190" ry="30" fill="#101010" opacity="0.08"/>` +
+    `<text x="400" y="470" fill="#101010" opacity="0.10" font-family="Arial" font-size="340" font-weight="900" text-anchor="middle">${initial}</text>` +
+    `<text x="400" y="600" fill="#101010" opacity="0.55" font-family="Arial" font-size="34" font-weight="700" text-anchor="middle">${label}</text>` +
+    `<text x="400" y="648" fill="#F06427" font-family="Arial" font-size="24" font-weight="900" text-anchor="middle">DROPX STUDIO</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 /** Raw (untransformed) primary URL — used to build responsive srcsets. */
@@ -67,40 +78,22 @@ export function ProductCard({ product }: { product: Product }) {
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               alt={product.name}
               loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.06]"
             />
+            {/* At most one badge keeps the tile calm: Sold out wins, else discount, else New. */}
             <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-              {pct && <Badge>-{pct}%</Badge>}
-              {product.is_new && <Badge tone="ink">New</Badge>}
-              {out && <Badge tone="red">Sold out</Badge>}
+              {out ? (
+                <Badge tone="red">Sold out</Badge>
+              ) : (
+                <>
+                  {pct && <Badge>-{pct}%</Badge>}
+                  {!pct && product.is_new && <Badge tone="ink">New</Badge>}
+                </>
+              )}
             </div>
           </div>
         </Link>
-        {/* Quick add — only when there is exactly one buyable variant */}
-        {!out && (
-          <div className="absolute inset-x-3 bottom-3 transition md:translate-y-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
-            {quickVariant ? (
-              <button
-                onClick={() => {
-                  void add(product, quickVariant, 1).then(() => {
-                    setAdded(true);
-                    setTimeout(() => setAdded(false), 1600);
-                  });
-                }}
-                className="flex w-full items-center justify-center gap-1.5 rounded-full bg-ink/90 py-2.5 text-xs font-bold text-paper backdrop-blur transition hover:bg-ember"
-              >
-                {added ? <><Check size={14} /> Added to bag</> : <><Plus size={14} /> Quick add · {formatNPR(minPrice(product))}</>}
-              </button>
-            ) : (
-              <Link
-                to={`/product/${product.slug}`}
-                className="flex w-full items-center justify-center rounded-full bg-ink/90 py-2.5 text-xs font-bold text-paper backdrop-blur transition hover:bg-ember"
-              >
-                Choose options
-              </Link>
-            )}
-          </div>
-        )}
       </div>
       <button
         onClick={() => void toggle(product.id)}
@@ -113,25 +106,40 @@ export function ProductCard({ product }: { product: Product }) {
       >
         <Heart size={16} fill={wished ? 'currentColor' : 'none'} />
       </button>
-      <div className="flex flex-1 flex-col p-4">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-ink/40">
-          {product.category?.name ?? 'DropX'}
-        </p>
-        <Link to={`/product/${product.slug}`} className="mt-0.5 block font-display font-bold leading-snug hover:text-ember">
+      <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+        <Link to={`/product/${product.slug}`} className="block font-display text-[15px] font-bold leading-snug hover:text-ember">
           <span className="clamp-2">{product.name}</span>
         </Link>
-        <div className="mt-1.5 flex items-center gap-1 text-xs text-ink/60">
+        <div className="mt-1 flex items-center gap-1 text-xs text-ink/60">
           <Star size={13} className="fill-ember text-ember" />
           <span className="font-semibold text-ink">{Number(product.rating_avg).toFixed(1)}</span>
           <span>({product.rating_count})</span>
           {stockOf(product) > 0 && stockOf(product) <= 5 && (
-            <span className="ml-auto font-bold text-ember">Only {stockOf(product)} left</span>
+            <span className="ml-auto shrink-0 font-bold text-ember">Only {stockOf(product)} left</span>
           )}
         </div>
-        <div className="mt-auto flex items-baseline gap-2 pt-2">
-          <span className="font-display text-lg font-extrabold">{formatNPR(minPrice(product))}</span>
-          {product.compare_at_price && Number(product.compare_at_price) > minPrice(product) && (
-            <span className="text-sm text-ink/40 line-through">{formatNPR(product.compare_at_price)}</span>
+        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+          <p className="min-w-0">
+            <span className="font-display text-[17px] font-extrabold">{formatNPR(minPrice(product))}</span>
+            {product.compare_at_price && Number(product.compare_at_price) > minPrice(product) && (
+              <span className="ml-1.5 text-[13px] text-ink/40 line-through">{formatNPR(product.compare_at_price)}</span>
+            )}
+          </p>
+          {quickVariant && !out && (
+            <button
+              onClick={() => {
+                void add(product, quickVariant, 1).then(() => {
+                  setAdded(true);
+                  setTimeout(() => setAdded(false), 1600);
+                });
+              }}
+              aria-label={added ? 'Added to bag' : `Quick add ${product.name}`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${
+                added ? 'bg-ember text-white' : 'bg-ink text-paper hover:bg-ember'
+              }`}
+            >
+              {added ? <Check size={16} /> : <Plus size={16} />}
+            </button>
           )}
         </div>
       </div>

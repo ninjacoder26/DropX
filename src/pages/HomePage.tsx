@@ -162,18 +162,11 @@ export default function HomePage() {
                 Explore drops
               </Link>
             </div>
-            <dl className="mt-9 grid max-w-md grid-cols-3 gap-4 border-t border-paper/10 pt-6">
-              {[
-                ['120+', 'Products live'],
-                ['7', 'Provinces served'],
-                ['4.8★', 'Buyer rating'],
-              ].map(([v, l]) => (
-                <div key={l}>
-                  <dt className="font-display text-xl font-black text-ember">{v}</dt>
-                  <dd className="mt-0.5 text-[11px] uppercase tracking-wider text-paper/50">{l}</dd>
-                </div>
-              ))}
-            </dl>
+            <p className="mt-7 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-paper/60">
+              <span className="flex items-center gap-1.5"><Truck size={14} className="text-ember" /> Nationwide delivery</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-ember" /> Cash on Delivery</span>
+              <span className="flex items-center gap-1.5"><RefreshCcw size={14} className="text-ember" /> 7-day exchanges</span>
+            </p>
           </div>
 
           {/* Hero drop panel — only live drops, never placeholders */}
