@@ -82,3 +82,12 @@ insert into public.drop_products (drop_id, product_id, sort_order, badge) values
   ((select id from public.drops where slug='dashain-mega-drop-2026'), '11111111-1111-1111-1111-111111111111', 2, ''),
   ((select id from public.drops where slug='dashain-mega-drop-2026'), '44444444-4444-4444-4444-444444444444', 3, 'Gift pick')
 on conflict do nothing;
+
+-- ─── Superseded demo categories (from the previous seed) ────────────
+-- No-op on fresh databases. If the old seed ran before, this moves its
+-- products onto the new categories and removes the old ones.
+update public.products set category_id = (select id from public.categories where slug='fashion-accessories')
+where category_id in (select id from public.categories where slug in ('streetwear','sneakers','accessories'));
+update public.products set category_id = (select id from public.categories where slug='lifestyle-fun')
+where slug = 'pokhara-canvas-tote';
+delete from public.categories where slug in ('streetwear','sneakers','accessories','new-arrivals');

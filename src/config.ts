@@ -20,14 +20,14 @@ export const APP_CONFIG = {
   // ── Supabase (required) ──────────────────────────────────
   // Create a project at https://supabase.com/dashboard, run the SQL in
   // supabase/migrations, then paste the values from Project Settings → API.
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://scfplulppzfjjxggtnch.supabase.co',
+  supabaseAnonKey: 'sb_publishable_Q52XAYJFdbY7Ns7byBNL9w_26wRgWgV',
 
   // ── Cloudinary (required for admin image uploads) ────────
   // Cloud name from your Cloudinary dashboard + an UNSIGNED upload preset
   // (Settings → Upload → Upload presets) scoped to `dropx/products`.
-  cloudinaryCloudName: '',
-  cloudinaryUploadPreset: '',
+  cloudinaryCloudName: 'vis22j9d',
+  cloudinaryUploadPreset: 'dropx',
 } as const;
 
 /** False until the two Supabase values above are filled in. */
