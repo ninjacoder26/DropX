@@ -9,6 +9,8 @@ export interface StoreSettings {
   freeShippingThreshold: number;
   shippingStandard: number;
   shippingExpress: number;
+  /** Profit margin %, applied as cost × (1 + margin/100). Default 20. */
+  profitMargin: number;
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
@@ -17,12 +19,25 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
   shippingStandard: SHIPPING_FEES.standard,
   shippingExpress: SHIPPING_FEES.express,
+  profitMargin: 20,
 };
 
 const num = (v: string | undefined, fallback: number): number => {
   const n = Number(v);
   return v !== undefined && !Number.isNaN(n) && n >= 0 ? n : fallback;
 };
+
+const clampMargin = (m: number): number => Math.min(100, Math.max(0, m));
+
+/** Storefront selling price from a real cost + margin %. Whole rupees. */
+export function sellingFromCost(cost: number, marginPct: number): number {
+  return Math.round(Number(cost) * (1 + clampMargin(marginPct) / 100));
+}
+
+/** Back out the real cost from a selling price + margin %. */
+export function costFromSelling(base: number, marginPct: number): number {
+  return Math.round((Number(base) / (1 + clampMargin(marginPct) / 100)) * 100) / 100;
+}
 
 /** Pure mapper — rows from store_settings into a complete StoreSettings. */
 export function mapSettings(rows: { key: string; value: string }[]): StoreSettings {
@@ -33,6 +48,7 @@ export function mapSettings(rows: { key: string; value: string }[]): StoreSettin
     freeShippingThreshold: num(get('free_shipping_threshold'), DEFAULT_SETTINGS.freeShippingThreshold),
     shippingStandard: num(get('shipping_standard'), DEFAULT_SETTINGS.shippingStandard),
     shippingExpress: num(get('shipping_express'), DEFAULT_SETTINGS.shippingExpress),
+    profitMargin: clampMargin(num(get('profit_margin'), DEFAULT_SETTINGS.profitMargin)),
   };
 }
 

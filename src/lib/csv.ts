@@ -66,6 +66,7 @@ export const PRODUCT_CSV_HEADERS = [
   'is_trending',
   'is_new',
   'tags',
+  'cost_price',
 ] as const;
 
 export interface ProductCSVRow {
@@ -81,6 +82,8 @@ export interface ProductCSVRow {
   is_trending: boolean;
   is_new: boolean;
   tags: string[];
+  /** Real cost; when present the selling price is recomputed with the live margin. */
+  cost_price: number | null;
 }
 
 const truthy = (v: string) => ['1', 'true', 'yes', 'y'].includes(v.trim().toLowerCase());
@@ -138,6 +141,12 @@ export function validateProductRows(raw: string[][]): { valid: ProductCSVRow[]; 
       errors.push(`Line ${line} (“${name}”): at most ${MAX_TAGS_PER_PRODUCT} tags allowed.`);
       continue;
     }
+    const costRaw = idx('cost_price') >= 0 ? cell('cost_price') : '';
+    const cost = costRaw ? Number(costRaw) : null;
+    if (costRaw && (Number.isNaN(cost!) || cost! < 0)) {
+      errors.push(`Line ${line} (“${name}”): cost_price must be a number ≥ 0.`);
+      continue;
+    }
     valid.push({
       line,
       name,
@@ -151,6 +160,7 @@ export function validateProductRows(raw: string[][]): { valid: ProductCSVRow[]; 
       is_trending: truthy(cell('is_trending')),
       is_new: idx('is_new') < 0 ? true : truthy(cell('is_new') || 'true'),
       tags: normalizeTags(tagList),
+      cost_price: cost,
     });
   }
   return { valid, errors };

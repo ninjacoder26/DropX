@@ -6,7 +6,7 @@ import { fetchCategories, fetchProducts } from '../lib/catalog';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { SetupNotice } from '../components/layout';
 import type { Category, Product } from '../types';
-import { ProductGrid } from '../components/product';
+import { ProductGrid, GRID_COMFORTABLE } from '../components/product';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { EmptyState, ErrorState, Input, Skeleton } from '../components/ui';
 
@@ -203,7 +203,7 @@ export default function ShopPage() {
         {/* Grid */}
         <div>
           {loading ? (
-            <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+            <div className={GRID_COMFORTABLE}>
               {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
           ) : error ? (

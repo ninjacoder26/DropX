@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, mapSettings, shippingFeeFor } from '../src/lib/settings';
+import { DEFAULT_SETTINGS, costFromSelling, mapSettings, sellingFromCost, shippingFeeFor } from '../src/lib/settings';
 
 describe('store settings', () => {
   it('falls back to defaults on empty rows', () => {
@@ -24,5 +24,19 @@ describe('store settings', () => {
     expect(shippingFeeFor('standard', 5000, s)).toBe(0);
     expect(shippingFeeFor('standard', 4999, s)).toBe(120);
     expect(shippingFeeFor('express', 99999, s)).toBe(250);
+  });
+
+  it('defaults the profit margin to 20% and clamps 0–100', () => {
+    expect(mapSettings([]).profitMargin).toBe(20);
+    expect(mapSettings([{ key: 'profit_margin', value: '35' }]).profitMargin).toBe(35);
+    expect(mapSettings([{ key: 'profit_margin', value: '250' }]).profitMargin).toBe(100);
+    expect(mapSettings([{ key: 'profit_margin', value: 'junk' }]).profitMargin).toBe(20);
+  });
+
+  it('prices as cost + margin, whole rupees', () => {
+    expect(sellingFromCost(1000, 20)).toBe(1200);
+    expect(sellingFromCost(1350, 20)).toBe(1620);
+    expect(sellingFromCost(999, 0)).toBe(999);
+    expect(costFromSelling(1200, 20)).toBe(1000);
   });
 });

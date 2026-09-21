@@ -24,7 +24,7 @@ export default function TermsPage() {
           </p>
         </Section>
         <Section title="2. Products & pricing">
-          <p>All prices are in Nepalese Rupees (NPR) and include applicable taxes. Product colours may vary slightly from photos due to screens and lighting. Limited “drop” items are sold while stock lasts; we may cancel an order and refund you if an item becomes unavailable after checkout.</p>
+          <p>All prices are final prices in Nepalese Rupees (NPR) — what you see is what you pay, plus the delivery fee shown at checkout. Product colours may vary slightly from photos due to screens and lighting. Limited “drop” items are sold while stock lasts; we may cancel an order and refund you if an item becomes unavailable after checkout.</p>
         </Section>
         <Section title="3. Orders & checkout">
           <p>An order is confirmed when you see an order number and receive confirmation. Prices and stock are re-verified by our system at order time — if a price was displayed incorrectly, we will contact you before dispatch and you may cancel for a full refund of any amount paid.</p>
@@ -44,8 +44,8 @@ export default function TermsPage() {
         <Section title="8. Acceptable use">
           <p>You agree not to misuse the store (fake orders, payment fraud, scraping, or interfering with other customers). We may cancel orders that breach these terms.</p>
         </Section>
-        <Section title="9. Liability">
-          <p>To the maximum extent permitted by the laws of Nepal, our liability for any order is limited to the amount you paid for that order. Nothing here limits rights you hold under Nepalese consumer law.</p>
+        <Section title="9. If something goes wrong">
+          <p>DropX is an independent, unregistered neighborhood store — not a government body, and these terms are a straightforward good-faith agreement between us. If an order goes wrong, contact us and we will make it right with a replacement, exchange or refund. Our responsibility for any order is limited to what you paid for it.</p>
         </Section>
         <Section title="10. Changes & contact">
           <p>We may update these terms; the version at order time applies to your purchase. Questions: dropx.nepal@gmail.com.</p>

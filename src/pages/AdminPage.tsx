@@ -14,6 +14,7 @@ import { ImageManager } from '../components/ImageManager';
 import { CloudinaryUpload } from '../components/CloudinaryUpload';
 import { PRODUCT_CSV_HEADERS, parseCSV, slugify, toCSV, validateProductRows } from '../lib/csv';
 import { MAX_TAGS_PER_PRODUCT, TAG_VOCABULARY } from '../lib/tags';
+import { fetchSettings, costFromSelling, sellingFromCost } from '../lib/settings';
 import { primaryImage } from '../components/product';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -246,7 +247,7 @@ function Overview() {
 }
 
 /* ─── Products ─── */
-const EMPTY_PRODUCT = { name: '', slug: '', description: '', category_id: '', base_price: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
+const EMPTY_PRODUCT = { name: '', slug: '', description: '', category_id: '', cost_price: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
 function Products() {
   const [items, setItems] = useState<Product[]>([]);
@@ -262,6 +263,7 @@ function Products() {
   const [vForm, setVForm] = useState({ name: '', sku: '', size: '', color: '', price_adjustment: '0', stock: '10' });
   const [csvMsg, setCsvMsg] = useState<string | null>(null);
   const [csvBusy, setCsvBusy] = useState(false);
+  const [margin, setMargin] = useState(20);
 
   const load = async () => {
     setLoading(true);
@@ -272,6 +274,7 @@ function Products() {
     setItems((p ?? []) as unknown as Product[]);
     setCats((c ?? []) as Category[]);
     setLoading(false);
+    fetchSettings().then((s) => setMargin(s.profitMargin)).catch(() => undefined);
   };
   useEffect(() => {
     void load();
@@ -292,7 +295,8 @@ function Products() {
     setEditing(p.id);
     setForm({
       name: p.name, slug: p.slug, description: p.description,
-      category_id: p.category_id ?? '', base_price: String(p.base_price),
+      category_id: p.category_id ?? '',
+      cost_price: p.cost_price != null ? String(p.cost_price) : '',
       compare_at_price: p.compare_at_price ? String(p.compare_at_price) : '',
       tags: (p.tags ?? []).slice(0, MAX_TAGS_PER_PRODUCT),
       is_active: p.is_active, is_featured: p.is_featured, is_trending: p.is_trending, is_new: p.is_new,
@@ -302,8 +306,9 @@ function Products() {
   };
 
   const save = async () => {
-    if (!form.name.trim() || !form.slug.trim() || Number(form.base_price) < 0) {
-      setMsg('Name, slug and a valid price are required.');
+    const cost = Number(form.cost_price);
+    if (!form.name.trim() || !form.slug.trim() || form.cost_price.trim() === '' || Number.isNaN(cost) || cost < 0) {
+      setMsg('Name, slug and a valid cost price (≥ 0) are required.');
       return;
     }
     setSaving(true);
@@ -313,7 +318,8 @@ function Products() {
       slug: form.slug.trim().toLowerCase().replace(/\s+/g, '-'),
       description: form.description,
       category_id: form.category_id || null,
-      base_price: Number(form.base_price),
+      cost_price: cost,
+      base_price: sellingFromCost(cost, margin),
       compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
       tags: form.tags.slice(0, MAX_TAGS_PER_PRODUCT),
       is_active: form.is_active, is_featured: form.is_featured,
@@ -378,7 +384,7 @@ function Products() {
       rows.push([
         p.name, p.slug, p.description, catById.get(p.category_id ?? '') ?? '',
         p.base_price, p.compare_at_price, p.is_active, p.is_featured, p.is_trending, p.is_new,
-        (p.tags ?? []).join('|'),
+        (p.tags ?? []).join('|'), p.cost_price ?? '',
       ]);
     }
     download('dropx-products.csv', toCSV(rows));
@@ -391,6 +397,7 @@ function Products() {
       const text = await file.text();
       const { valid, errors } = validateProductRows(parseCSV(text));
       const catBySlug = new Map(cats.map((c) => [c.slug, c.id]));
+      const margin = (await fetchSettings()).profitMargin;
       let inserted = 0;
       const problems = [...errors];
       for (const r of valid) {
@@ -398,12 +405,16 @@ function Products() {
           problems.push(`Line ${r.line} (“${r.name}”): unknown category_slug “${r.category_slug}”.`);
           continue;
         }
+        // Cost is the source of truth: selling recomputed with the live margin.
+        const cost = r.cost_price ?? costFromSelling(r.base_price, margin);
+        const selling = r.cost_price != null ? sellingFromCost(r.cost_price, margin) : r.base_price;
         const { error } = await supabase.from('products').insert({
           name: r.name,
           slug: r.slug || `${slugify(r.name)}-${Date.now().toString(36)}`,
           description: r.description,
           category_id: (r.category_slug && catBySlug.get(r.category_slug)) || null,
-          base_price: r.base_price,
+          base_price: selling,
+          cost_price: cost,
           compare_at_price: r.compare_at_price,
           is_active: r.is_active,
           is_featured: r.is_featured,
@@ -433,7 +444,7 @@ function Products() {
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
         <div className="ml-auto flex flex-wrap gap-2">
           <button
-            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Sample Hoodie', 'sample-hoodie', 'Heavyweight fleece sample', 'fashion-accessories', 1620, 1999, true, true, true, true, 'apparel|winter|accessories']]))}
+            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Sample Hoodie', 'sample-hoodie', 'Heavyweight fleece sample', 'fashion-accessories', 1620, 1999, true, true, true, true, 'apparel|winter|accessories', 1350]]))}
             className="rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30"
           >
             Template
@@ -495,9 +506,17 @@ function Products() {
               </select>
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Base price (NPR)"><Input type="number" min={0} value={form.base_price} onChange={(e) => setForm({ ...form, base_price: e.target.value })} /></Field>
-              <Field label="Compare-at (optional)"><Input type="number" min={0} value={form.compare_at_price} onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })} /></Field>
+              <Field label="Cost price — real (NPR)">
+                <Input type="number" min={0} value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} />
+              </Field>
+              <Field label="Compare-at (optional)">
+                <Input type="number" min={0} value={form.compare_at_price} onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })} />
+              </Field>
             </div>
+            <p className="rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold md:col-span-2">
+              Sells at {formatNPR(sellingFromCost(Number(form.cost_price) || 0, margin))} — real cost +
+              {' '}{margin}% store margin. Saved automatically with the product.
+            </p>
             <div className="md:col-span-2">
               <p className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink/60">
                 Tags · {form.tags.length}/{MAX_TAGS_PER_PRODUCT} (fixed list — powers filters & recommendations)
@@ -1259,10 +1278,12 @@ function Settings() {
     free_shipping_threshold: '',
     shipping_standard: '',
     shipping_express: '',
+    profit_margin: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     supabase.from('store_settings').select('key,value').then(({ data }) => {
@@ -1273,10 +1294,16 @@ function Settings() {
         free_shipping_threshold: get('free_shipping_threshold'),
         shipping_standard: get('shipping_standard'),
         shipping_express: get('shipping_express'),
+        profit_margin: get('profit_margin'),
       });
       setLoading(false);
     });
   }, []);
+
+  const marginNum = () => {
+    const n = Number(form.profit_margin);
+    return form.profit_margin.trim() === '' || Number.isNaN(n) ? 20 : Math.min(100, Math.max(0, n));
+  };
 
   const save = async () => {
     setMsg(null);
@@ -1288,6 +1315,13 @@ function Settings() {
     for (const [k, v] of Object.entries(nums)) {
       if (v.trim() !== '' && (Number.isNaN(Number(v)) || Number(v) < 0)) {
         setMsg(`“${k}” must be a number ≥ 0.`);
+        return;
+      }
+    }
+    if (form.profit_margin.trim() !== '') {
+      const m = Number(form.profit_margin);
+      if (Number.isNaN(m) || m < 0 || m > 100) {
+        setMsg('Profit margin must be between 0 and 100.');
         return;
       }
     }
@@ -1309,6 +1343,47 @@ function Settings() {
   };
 
   if (loading) return <Skeleton className="h-64" />;
+
+  const applyMargin = async () => {
+    const m = marginNum();
+    if (!confirm(`Reprice EVERY product to cost + ${m}%?\n\nSelling prices are rewritten from each product's real cost. This cannot be undone — but every change is logged.`)) return;
+    setApplying(true);
+    setMsg(null);
+    // supabase-js can't express computed updates, so this is two honest
+    // steps: 1) read every cost, 2) write each computed selling price.
+    const { data: rows, error: readErr } = await supabase
+      .from('products')
+      .select('id,cost_price');
+    if (readErr) {
+      setMsg(readErr.message);
+      setApplying(false);
+      return;
+    }
+    let updated = 0;
+    const problems: string[] = [];
+    const list = (rows ?? []) as { id: string; cost_price: number }[];
+    for (let i = 0; i < list.length; i += 25) {
+      const chunk = list.slice(i, i + 25);
+      const results = await Promise.all(
+        chunk.map((r) => {
+          const selling = Math.round(Number(r.cost_price) * (1 + m / 100));
+          return supabase.from('products').update({ base_price: selling }).eq('id', r.id);
+        })
+      );
+      for (const res of results) {
+        if (res.error) problems.push(res.error.message);
+        else updated++;
+      }
+    }
+    log('products.reprice', 'products', undefined, { margin: m, updated });
+    setMsg(
+      problems.length > 0
+        ? `Repriced ${updated} products at +${m}%. ${problems.length} failed: ${problems[0]}`
+        : `Repriced ${updated} products at +${m}% over real cost. Storefront prices update immediately.`
+    );
+    setApplying(false);
+  };
+
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
       <Card className="h-fit p-6">
@@ -1335,8 +1410,27 @@ function Settings() {
               <Input type="number" min={0} value={form.shipping_express} onChange={(e) => setForm({ ...form, shipping_express: e.target.value })} />
             </Field>
           </div>
-          {msg && <p className="rounded-xl bg-paper px-3 py-2 text-xs">{msg}</p>}
-          <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
+          {msg && <p className="whitespace-pre-line rounded-xl bg-paper px-3 py-2 text-xs">{msg}</p>}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
+          </div>
+
+          <div className="rounded-2xl border border-ember/30 bg-ember/5 p-4">
+            <h3 className="font-display font-extrabold">Profit margin — {marginNum()}% over real cost</h3>
+            <p className="mt-1 text-xs text-ink/60">
+              Every product carries its real cost price. This margin is added on top to make the
+              storefront price — e.g. Rs 1,000 cost → Rs {sellingFromCost(1000, marginNum())} selling.
+              Changing the number only stages it; prices change when you apply.
+            </p>
+            <div className="mt-3 grid max-w-xs grid-cols-1 gap-2">
+              <Field label="Margin % (0–100, default 20)">
+                <Input type="number" min={0} max={100} value={form.profit_margin} onChange={(e) => setForm({ ...form, profit_margin: e.target.value })} placeholder="20" />
+              </Field>
+            </div>
+            <Button onClick={applyMargin} disabled={applying || saving} variant="dark" className="mt-3">
+              {applying ? 'Repricing…' : `Apply +${marginNum()}% to all products`}
+            </Button>
+          </div>
         </div>
       </Card>
       <Card className="h-fit p-6">

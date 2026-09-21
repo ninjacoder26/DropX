@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { Product } from '../types';
 import { useWishlist } from '../hooks/useShop';
-import { ProductGrid } from '../components/product';
+import { ProductGrid, GRID_COMPACT } from '../components/product';
 import { EmptyState, Skeleton } from '../components/ui';
 
 export default function WishlistPage() {
@@ -32,7 +32,7 @@ export default function WishlistPage() {
     <div className="dx-full py-8">
       <h1 className="font-display text-3xl font-black">Wishlist ({ids.length})</h1>
       {loading ? (
-        <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className={`mt-6 ${GRID_COMPACT}`}>
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
         </div>
       ) : products.length === 0 ? (

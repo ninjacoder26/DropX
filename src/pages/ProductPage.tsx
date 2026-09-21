@@ -12,6 +12,7 @@ import { useAuth } from '../store/AuthContext';
 import { useRecentlyViewed, useWishlist } from '../hooks/useShop';
 import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
 import { Badge, Button, EmptyState, Skeleton } from '../components/ui';
+import { useStoreSettings } from '../lib/settings';
 import { ProductGrid, primaryImage, srcSetFor } from '../components/product';
 
 export default function ProductPage() {
@@ -31,6 +32,7 @@ export default function ProductPage() {
   const { user } = useAuth();
   const { has, toggle } = useWishlist();
   const { push } = useRecentlyViewed();
+  const { profitMargin } = useStoreSettings();
 
   useEffect(() => {
     (async () => {
@@ -178,6 +180,11 @@ export default function ProductPage() {
               <span className="text-lg text-ink/40 line-through">{formatNPR(product.compare_at_price)}</span>
             )}
           </div>
+          {(product.cost_price ?? 0) > 0 && (
+            <p className="mt-1 text-xs text-ink/50">
+              Real price {formatNPR(product.cost_price)} + {profitMargin}% store margin included.
+            </p>
+          )}
 
           {/* Variants */}
           {(product.variants?.length ?? 0) > 0 && (

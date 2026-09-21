@@ -19,6 +19,7 @@ export interface Product {
   category_id: string | null;
   base_price: number;
   compare_at_price: number | null;
+  cost_price: number;
   currency: string;
   is_active: boolean;
   is_featured: boolean;

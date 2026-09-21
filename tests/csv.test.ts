@@ -68,4 +68,16 @@ describe('CSV import/export', () => {
     expect(errors).toEqual([]);
     expect(valid[0].tags).toEqual([]);
   });
+
+  it('parses an optional cost_price column', () => {
+    const { valid, errors } = validateProductRows([
+      ['name', 'base_price', 'cost_price'],
+      ['Hoodie', '1620', '1350'],
+      ['Bad', '100', '-5'],
+    ]);
+    expect(errors).toHaveLength(1);
+    expect(valid[0].cost_price).toBe(1350);
+    const nocost = validateProductRows([['name', 'base_price'], ['Plain', '500']]);
+    expect(nocost.valid[0].cost_price).toBeNull();
+  });
 });

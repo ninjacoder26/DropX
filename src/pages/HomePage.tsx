@@ -9,7 +9,7 @@ import type { Category, Drop, Product } from '../types';
 import { dropState } from '../types';
 import { useRecentlyViewed } from '../hooks/useShop';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { ProductGrid } from '../components/product';
+import { ProductGrid, GRID_COMPACT } from '../components/product';
 import { CategoryArt } from '../components/CategoryArt';
 import { HeroArt } from '../components/HeroArt';
 import { Badge, Skeleton } from '../components/ui';
@@ -322,7 +322,7 @@ export default function HomePage() {
             <Link to="/shop?sort=popular" className="shrink-0 text-sm font-bold text-ember hover:underline">View all</Link>
           </div>
           {loading ? (
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            <div className={`mt-5 ${GRID_COMPACT}`}>
               {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
           ) : (
@@ -367,7 +367,7 @@ export default function HomePage() {
             <Link to="/shop?sort=new" className="shrink-0 text-sm font-bold text-ember hover:underline">View all</Link>
           </div>
           {loading ? (
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            <div className={`mt-5 ${GRID_COMPACT}`}>
               {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
           ) : (

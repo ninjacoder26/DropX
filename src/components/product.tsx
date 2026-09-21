@@ -151,15 +151,16 @@ export function ProductCard({ product }: { product: Product }) {
   );
 }
 
+export const GRID_COMPACT =
+  'grid grid-cols-2 gap-3 sm:gap-5 sm:grid-cols-[repeat(auto-fit,minmax(180px,1fr))] lg:grid-cols-[repeat(auto-fit,minmax(210px,1fr))]';
+export const GRID_COMFORTABLE =
+  'grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] lg:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]';
+
 export function ProductGrid({ products, density = 'compact' }: { products: Product[]; density?: 'compact' | 'comfortable' }) {
+  // Phones: strict 2 columns. Beyond that auto-fit: rows always stretch
+  // edge to edge, however many items remain.
   return (
-    <div
-      className={
-        density === 'comfortable'
-          ? 'grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4'
-          : 'grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
-      }
-    >
+    <div className={density === 'comfortable' ? GRID_COMFORTABLE : GRID_COMPACT}>
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}

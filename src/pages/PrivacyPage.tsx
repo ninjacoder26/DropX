@@ -35,14 +35,14 @@ export default function PrivacyPage() {
           <ul className="list-disc space-y-1 pl-5">
             <li><strong>Our delivery team</strong> — name, phone and address for your parcel.</li>
             <li><strong>Service providers</strong> — Supabase (database/auth hosting) and Cloudinary (product image delivery) process data on our behalf under their own security standards.</li>
-            <li><strong>Authorities</strong> — only when required by the laws of Nepal.</li>
+            <li><strong>Nobody else</strong> — we do not sell data, rent lists, or share your details for marketing. Ever.</li>
           </ul>
         </Section>
         <Section title="4. How it is protected">
           <p>Access is gated by database-level permissions (Row Level Security): customers can only see their own orders and addresses; only authorised admins can see store data, and every admin action is logged. Traffic is encrypted in transit (HTTPS).</p>
         </Section>
         <Section title="5. How long we keep it">
-          <p>Order records are kept as required for accounting and warranty support. You may ask us to delete your account and marketing-free profile data at any time (completed-order invoices may be retained for legal records).</p>
+          <p>We keep basic order records so we can support your purchases (exchanges, reorders, receipts). You may ask us to delete your account and profile data at any time.</p>
         </Section>
         <Section title="6. Your rights">
           <p>You can view and edit your profile and addresses in <Link to="/account" className="font-bold text-ember">My account</Link>, and request a copy, correction or deletion of your data at dropx.nepal@gmail.com. We respond within 15 days.</p>

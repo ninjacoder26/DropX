@@ -85,6 +85,12 @@ describe('security invariants', () => {
     expect(fix).toContain('dashain-mega-drop-2026');
   });
 
+  it('margin system stores real costs with a sane default', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/013_margin.sql'), 'utf8');
+    expect(fix).toContain('cost_price');
+    expect(fix).toContain("('profit_margin', '20')");
+  });
+
   it('no dynamic SQL anywhere — injection has nowhere to land', () => {
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
