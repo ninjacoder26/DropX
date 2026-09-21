@@ -311,7 +311,7 @@ export default function ProductPage() {
               <dl className="grid grid-cols-1 gap-px border-t border-ink/10 bg-ink/10 text-xs sm:grid-cols-3">
                 {[
                   ['Delivery', '1–3 days, Kathmandu Valley'],
-                  ['Payment', 'Cash on Delivery · Bank transfer'],
+                  ['Payment', 'Cash on Delivery only'],
                   ['Exchanges', '7 days, unworn with tags'],
                 ].map(([k, v]) => (
                   <div key={k} className="bg-white px-5 py-3">
@@ -358,7 +358,7 @@ export default function ProductPage() {
       )}
 
       {/* Sticky add-to-bag bar — phones only, sits above the bottom tab bar */}
-      <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] z-30 border-t border-ink/10 bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+      <div className="glass fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] z-30 border-t border-ink/10 px-4 py-2.5 lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-bold">{product.name}</p>

@@ -21,7 +21,7 @@ export function Navbar() {
   const nav = useNavigate();
 
   return (
-    <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper/70 backdrop-blur-xl backdrop-saturate-150">
       {/* announcement */}
       <div className="bg-ember text-white">
         <p className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">
@@ -107,7 +107,7 @@ export function Navbar() {
         </div>
       </div>
       {open && (
-        <nav className="border-t border-ink/10 bg-paper px-4 py-3 lg:hidden" aria-label="Mobile">
+        <nav className="glass border-t border-ink/10 px-4 py-3 lg:hidden" aria-label="Mobile">
           <div className="flex flex-col gap-1">
             {links.map((l) => (
               <NavLink
@@ -183,7 +183,7 @@ export function Footer() {
           <p className="text-xs font-bold uppercase tracking-widest text-paper/50">Support</p>
           <ul className="mt-3 space-y-2.5 text-sm">
             <li className="text-paper/80">Kathmandu Valley delivery (1–3 days)</li>
-            <li className="text-paper/80">COD · Bank transfer</li>
+            <li className="text-paper/80">Cash on Delivery</li>
             <li className="text-paper/80">7-day size exchanges</li>
             <li className="text-paper/80">{supportEmail}</li>
             <li className="flex gap-4 pt-1 font-bold">
@@ -222,7 +222,7 @@ export function MobileNav() {
   ];
 
   return (
-    <nav aria-label="Mobile" className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-white/95 backdrop-blur lg:hidden">
+    <nav aria-label="Mobile" className="glass fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 lg:hidden">
       <div className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((t) => {
           const active = t.match(pathname);

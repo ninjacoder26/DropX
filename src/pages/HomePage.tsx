@@ -9,7 +9,7 @@ import type { Category, Drop, Product } from '../types';
 import { dropState } from '../types';
 import { useRecentlyViewed } from '../hooks/useShop';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { ProductGrid, GRID_COMPACT } from '../components/product';
+import { ProductGrid, GRID_COMPACT, GRID_RAIL } from '../components/product';
 import { CategoryArt } from '../components/CategoryArt';
 import { HeroArt } from '../components/HeroArt';
 import { Badge, Skeleton } from '../components/ui';
@@ -21,7 +21,7 @@ function CategoryTile({ category }: { category: Category }) {
   return (
     <Link
       to={`/shop?category=${category.slug}`}
-      className="group relative overflow-hidden rounded-2xl bg-ink text-paper transition duration-300 hover:-translate-y-1 hover:shadow-pop"
+      className="group relative w-[68%] shrink-0 snap-start overflow-hidden rounded-2xl bg-ink text-paper transition duration-300 hover:-translate-y-1 hover:shadow-pop sm:w-auto"
     >
       {category.image_url ? (
         <img
@@ -289,11 +289,11 @@ export default function HomePage() {
             <Link to="/shop" className="shrink-0 text-sm font-bold text-ember hover:underline">View all</Link>
           </div>
           {loading ? (
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[4/3]" />)}
+            <div className={`mt-5 ${GRID_RAIL}`}>
+              {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[4/3] w-[68%] shrink-0 snap-start sm:w-auto" />)}
             </div>
           ) : (
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className={`mt-5 ${GRID_RAIL}`}>
               {cats.slice(0, 4).map((c) => (
                 <CategoryTile key={c.id} category={c} />
               ))}
@@ -408,7 +408,7 @@ export default function HomePage() {
         <section className="texture-ink grid gap-3 rounded-3xl bg-ink p-6 text-paper sm:grid-cols-3 md:p-8">
           {[
             { icon: Truck, title: 'Valley delivery', body: '1–3 days inside Kathmandu Valley. Free standard shipping over NPR 2,999.' },
-            { icon: ShieldCheck, title: 'Pay your way', body: 'Cash on Delivery or bank transfer — confirmed by our team.' },
+            { icon: ShieldCheck, title: 'Pay your way', body: 'Cash on Delivery — pay in cash at your door.' },
             { icon: RefreshCcw, title: '7-day exchanges', body: 'Wrong size? Exchange within 7 days, no interrogation.' },
           ].map((p) => (
             <div key={p.title} className="rounded-2xl bg-paper/5 p-5 ring-1 ring-paper/10">

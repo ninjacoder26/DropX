@@ -29,7 +29,7 @@ export default function PrivacyPage() {
           <p>We do <strong>not</strong> collect card numbers, wallet credentials, location tracking, or advertising profiles. There is no online payment on this site, so payment details never touch our servers.</p>
         </Section>
         <Section title="2. How we use it">
-          <p>Your data is used to process orders, deliver parcels, confirm payments (cash/bank), prevent fraud, and improve the store. We do not sell your personal data, and we do not share it with advertisers.</p>
+          <p>Your data is used to process orders, deliver parcels, confirm cash payments, prevent fraud, and improve the store. We do not sell your personal data, and we do not share it with advertisers.</p>
         </Section>
         <Section title="3. Who sees it">
           <ul className="list-disc space-y-1 pl-5">

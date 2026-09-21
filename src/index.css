@@ -134,6 +134,25 @@ body {
   animation: dropx-banner-in 0.35s ease both;
 }
 
+/* ── Liquid glass ─────────────────────────────────────────────── */
+/* Frosted, saturated, edge-lit surfaces. Reserved for floating chrome
+ * (bars, dialogs, summaries) — content cards stay solid for readability. */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 8px 24px rgba(16, 16, 16, 0.08);
+}
+/* Pair with Tailwind border utilities for edges (unlayered CSS would
+ * otherwise override them): e.g. `glass border border-ink/10`. */
+.glass-dark {
+  background: rgba(16, 16, 16, 0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 32px rgba(16, 16, 16, 0.25);
+}
+
 /* ── Smartphone comfort ─────────────────────────────────────── */
 /* 16px+ fields stop iOS auto-zoom on focus; keep desktop sizes intact. */
 @media (max-width: 640px) {

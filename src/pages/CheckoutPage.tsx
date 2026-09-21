@@ -8,7 +8,6 @@ import { districtOfArea, isGuidedComplete } from '../lib/address';
 import { AddressForm } from '../components/AddressForm';
 import type { Address } from '../types';
 import { shippingFeeFor, useStoreSettings } from '../lib/settings';
-import { PAYMENT_METHODS, type PaymentMethod } from '../lib/payments';
 import { Button, Field, Input } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { primaryImage } from '../components/product';
@@ -32,7 +31,6 @@ export default function CheckoutPage() {
   const [saved, setSaved] = useState<Address[]>([]);
   const [selectedId, setSelectedId] = useState<string>('new');
   const [method, setMethod] = useState<'standard' | 'express'>('standard');
-  const [payMethod, setPayMethod] = useState<PaymentMethod>('cod');
   const [notes, setNotes] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
@@ -123,8 +121,8 @@ export default function CheckoutPage() {
         quantity: l.quantity,
       }));
       // Totals, stock and the payment method are all enforced server-side
-      // inside place_order(). The order stays `unpaid` until an admin
-      // confirms cash collection / verifies the bank receipt.
+      // inside place_order(). The order stays `unpaid` until the courier
+      // collects cash on delivery.
       const { data, error: rpcError } = await supabase.rpc('place_order', {
         p_items: items,
         p_address: {
@@ -137,7 +135,7 @@ export default function CheckoutPage() {
         },
         p_shipping_method: method,
         p_notes: notes,
-        p_payment_provider: payMethod,
+        p_payment_provider: 'cod',
       });
       if (rpcError) throw new Error(rpcError.message);
       const orderId = data as string;
@@ -252,28 +250,17 @@ export default function CheckoutPage() {
 
           <section className="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
             <h2 className="font-display text-lg font-extrabold">Payment</h2>
-            <p className="mt-1 text-xs text-ink/60">
-              DropX takes no online payments. Your order stays <strong>unpaid</strong> until
-              we confirm it — cash on delivery, or a bank receipt verified by our team.
-            </p>
-            <div className="mt-3 space-y-2">
-              {PAYMENT_METHODS.map((p) => (
-                <button
-                  key={p.method}
-                  onClick={() => setPayMethod(p.method)}
-                  aria-pressed={payMethod === p.method}
-                  className={`w-full rounded-2xl border p-4 text-left transition ${
-                    payMethod === p.method ? 'border-ember bg-ember/5' : 'border-ink/15 hover:border-ink/40'
-                  }`}
-                >
-                  <span className="block font-bold">{p.label}</span>
-                  <span className="mt-1 block text-xs text-ink/60">{p.hint}</span>
-                </button>
-              ))}
+            <div className="mt-3 rounded-2xl border border-ember bg-ember/5 p-4">
+              <p className="font-bold">Cash on Delivery</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink/60">
+                Pay in cash when your order arrives — Kathmandu, Lalitpur or Bhaktapur.
+                No online payments, no advance. Your order stays <strong>unpaid</strong> until
+                our courier collects it.
+              </p>
             </div>
             <div className="mt-4">
               <Field label="Order notes (optional)">
-                <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Gate code, landmarks, delivery timing…" />
+                <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Gate code, landmarks, delivery timing…" maxLength={1000} />
               </Field>
             </div>
           </section>
@@ -281,7 +268,7 @@ export default function CheckoutPage() {
           {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800">{error}</div>}
         </div>
 
-        <aside className="h-fit rounded-2xl bg-ink p-6 text-paper lg:sticky lg:top-32">
+        <aside className="glass-dark h-fit rounded-2xl p-6 text-paper lg:sticky lg:top-32">
           <h2 className="font-display text-lg font-extrabold">Order summary</h2>
           <ul className="mt-4 space-y-3">
             {lines.map((l) => (
@@ -313,7 +300,7 @@ export default function CheckoutPage() {
             <span>
               I agree to the <Link to="/terms" target="_blank" className="font-bold text-paper underline underline-offset-2">Terms of Service</Link>{' '}
               and <Link to="/privacy" target="_blank" className="font-bold text-paper underline underline-offset-2">Privacy Policy</Link>,
-              including 7-day exchanges and cash/bank payment confirmation.
+              including 7-day exchanges and cash payment on delivery.
             </span>
           </label>
           <p className="mt-2 text-center text-[11px] text-paper/50">Prices & stock re-verified server-side at order time.</p>

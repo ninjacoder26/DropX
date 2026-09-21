@@ -3,14 +3,14 @@
 React + TypeScript + Vite + Tailwind frontend · **Supabase** (Postgres, Auth, RLS) backend ·
 **Cloudinary** product imagery · **Vercel** hosting. Brand palette: ember `#F06427`, ink `#101010`, paper `#F7F5F0`.
 
-Offline payments only — Cash on Delivery + manual bank transfer. No online payment providers, no fake success screens.
+Offline payments only — Cash on Delivery. No online payment providers, no fake success screens.
 
 ## What is built
 
 - **Storefront** — homepage (hero, categories, trending, new arrivals, drops), shop with search/filter/sort/price/stock filters, product detail (gallery, variants, stock states, reviews, related), cart (guest + persistent server cart), wishlist, collections, 404.
 - **Signature drops** — *Drop of the Month* (`kind='monthly'`) and *Mega Drop of the Year* (`kind='mega'`), fully managed in admin (title, slug, description, artwork upload, theme, dates, curated products + badges, publish flag). The storefront only surfaces drops that are published (enabled) **and** inside their date window: live drops are shoppable, upcoming ones are teaser previews, ended ones retire to a collapsible archive. States derive from `starts_at`/`ends_at` — nothing hardcoded, no fake countdowns.
 - **Auth** — email/password + Google OAuth, email verification, password recovery (`/forgot-password` → `/reset-password`), session handling, `customer` / `admin` / `superadmin` roles enforced by **RLS + server functions**, never by hidden routes alone.
-- **Checkout** — addresses, shipping methods (free standard over NPR 2,999), Terms/Privacy consent gate. Totals, stock and the payment method are enforced in `place_order()` — client prices are ignored. Orders stay `unpaid` until an admin confirms cash collection or verifies a bank receipt via `mark_order_paid()`. Order snapshots preserve product names/prices.
+- **Checkout** — addresses, shipping methods (free standard over NPR 2,999), Terms/Privacy consent gate. Totals, stock and the COD-only rule are enforced in `place_order()` — client prices are ignored. Orders stay `unpaid` until the courier collects cash, then an admin marks them `paid` via `mark_order_paid()`. Order snapshots preserve product names/prices.
 - **Admin** (`/admin`) — sidebar dashboard with overview queues (unpaid orders, pending reviews, low stock), products + variants/inventory with thumbnail grid and **CSV import/export**, Cloudinary image manager (upload/preview/reorder/primary/delete) plus one-click artwork upload for categories and drops, categories with image tiles, orders (status workflow + verified-paid transition + search), customers (roles), drops, review moderation, analytics, **Settings** (announcement bar, support email, shipping fees/threshold, **profit margin with one-click repricing**), activity logs. Every admin write is audited to `admin_logs`.
 - **Uploads** — product/category/drop artwork → **Cloudinary** (validated, auto-optimized delivery with responsive `srcset`s); profile avatars → **Supabase Storage** (`dropx-assets` bucket, owner-only writes). No secrets ever touch the browser.
 - **Legal & auth flow** — Terms of Service + Privacy Policy pages, consent checkbox at checkout, and login/register that return you to where you were going (`?next=/checkout`) with your guest bag merged on sign-in.
@@ -61,6 +61,7 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/011_retire_demos.sql` *(removes first-draft demos)*
    - `supabase/migrations/012_restore_drops.sql` *(repairs deleted drops — rerun-safe)*
    - `supabase/migrations/013_margin.sql` *(real cost prices + default 20% margin)*
+   - `supabase/migrations/014_place_order_fix.sql` *(FK-safe order flow, COD-only)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -89,14 +90,9 @@ The anon key is designed to be public; **Row Level Security** is what protects y
 
 **Bandwidth diet (already wired):** uploads are pre-compressed in-browser to ≤1600px WebP before leaving the device (`src/lib/image.ts`); delivery uses `f_auto` + sized widths everywhere, `q_auto:eco` for grids/tiles/thumbs and full quality only for hero/gallery views; admin tables and cart thumbs load 100–200px renditions, never full files. Belt-and-braces: in your upload preset, set an **Incoming transformation** of `w_1600,c_limit/f_auto,q_auto` so even non-dashboard uploads stay lean.
 
-## 5. Payments — offline only
+## 5. Payments — Cash on Delivery only
 
-Cash on Delivery and manual bank transfer work end-to-end:
-
-- **COD** — customer pays cash at the door; the courier/admin marks the order `paid` in the dashboard (reference = receipt / handover note).
-- **Bank transfer** — after ordering, the team calls the customer with the store account details; the order ships once an admin verifies the receipt and marks it `paid` with the transaction reference.
-
-There is intentionally no eSewa/Khalti/card code in this build — no credentials to leak, no redirects, no webhooks, and nothing that can pretend a payment succeeded. The `mark_order_paid()` RPC (admin/service-role only, reference required) is the single gate to `paid`.
+There is no online payment integration and no bank-transfer flow: the courier collects cash at the door and an admin marks the order `paid` in the dashboard. `place_order()` (migration `014`) rejects any other payment method server-side.
 
 ## 6. Server environment (`.env` — secrets only)
 
@@ -138,7 +134,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md
@@ -158,7 +154,6 @@ DropX/
 | Supabase URL + anon key | `src/config.ts` — §1/§2 |
 | Google OAuth client | Supabase dashboard — §3 |
 | Cloudinary cloud + preset | `src/config.ts` — §4 |
-| Store bank account details | Share by phone on bank-transfer orders — §5 |
 | Server secrets (if using `/api`) | `.env` / Vercel — §6 |
 
 © 2026 DropX.

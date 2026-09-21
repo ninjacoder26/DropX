@@ -156,6 +156,10 @@ export const GRID_COMPACT =
 export const GRID_COMFORTABLE =
   'grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] lg:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]';
 
+/** Swipeable rail on phones, calm 4-column grid on desktop (category tiles). */
+export const GRID_RAIL =
+  'no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0';
+
 export function ProductGrid({ products, density = 'compact' }: { products: Product[]; density?: 'compact' | 'comfortable' }) {
   // Phones: strict 2 columns. Beyond that auto-fit: rows always stretch
   // edge to edge, however many items remain.

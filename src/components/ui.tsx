@@ -123,7 +123,7 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-4 sm:items-center" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-pop">
+      <div className="glass w-full max-w-md rounded-2xl border border-ink/10 p-6 shadow-pop">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-extrabold">{title}</h3>
           <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-ink/5">

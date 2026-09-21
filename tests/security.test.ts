@@ -91,6 +91,14 @@ describe('security invariants', () => {
     expect(fix).toContain("('profit_margin', '20')");
   });
 
+  it('place_order inserts the parent order before its items (FK-safe) and is COD-only', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/014_place_order_fix.sql'), 'utf8');
+    expect(fix).toContain('Skeleton parent row FIRST');
+    expect(fix).toContain('update public.orders');
+    expect(fix).toContain("Cash on Delivery only");
+    expect(fix).not.toContain('bank_transfer');
+  });
+
   it('no dynamic SQL anywhere — injection has nowhere to land', () => {
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {

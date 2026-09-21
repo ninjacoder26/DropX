@@ -23,7 +23,7 @@ export default function OrderSuccessPage() {
       <h1 className="mt-4 font-display text-3xl font-black">Order placed!</h1>
       <p className="mt-2 text-sm text-ink/60">
         {order ? (
-          <>Order <strong className="text-ink">{order.order_number}</strong> · {formatNPR(order.grand_total)} · {order.payment_provider === 'bank_transfer' ? 'Bank transfer — we will call you with the account details.' : 'Cash on Delivery.'} We will call to confirm before dispatch.</>
+          <>Order <strong className="text-ink">{order.order_number}</strong> · {formatNPR(order.grand_total)} · Cash on Delivery. We will call to confirm before dispatch.</>
         ) : (
           <>Your order is confirmed. We will call to confirm before dispatch.</>
         )}

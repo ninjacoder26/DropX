@@ -30,7 +30,7 @@ export default function TermsPage() {
           <p>An order is confirmed when you see an order number and receive confirmation. Prices and stock are re-verified by our system at order time — if a price was displayed incorrectly, we will contact you before dispatch and you may cancel for a full refund of any amount paid.</p>
         </Section>
         <Section title="4. Payments">
-          <p>We accept <strong>Cash on Delivery</strong> and <strong>manual bank transfer</strong>. For bank transfers, our team shares the account details by phone and ships only after the receipt is verified. We take no online card or wallet payments on this website.</p>
+          <p>We accept <strong>Cash on Delivery only</strong> — you pay in cash when your order arrives. We take no online card or wallet payments on this website.</p>
         </Section>
         <Section title="5. Delivery">
           <p>We currently deliver inside <strong>Kathmandu Valley only</strong> (Kathmandu, Lalitpur and Bhaktapur), within 1–3 business days. Standard shipping is NPR 99, express NPR 199, and standard shipping is free on orders over NPR 2,999. Orders from outside the Valley are confirmed by phone before dispatch. Risk passes to you on delivery; please inspect items on arrival.</p>

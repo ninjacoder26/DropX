@@ -1,17 +1,17 @@
 /**
- * Offline payment methods — DropX takes NO online payments.
+ * Cash on Delivery — the one and only way to pay on DropX.
  *
- * There is no eSewa / Khalti / card integration in this build, on purpose:
+ * There is no online payment integration in this build, on purpose:
  * no provider credentials, no redirects, no webhooks, no simulated success
- * screens. Orders are paid in person (cash) or confirmed manually by an
- * admin after a bank transfer receipt is verified.
+ * screens. The courier collects cash at the door; an admin marks the order
+ * `paid` in the dashboard afterwards.
  *
  * RULE: an order becomes `paid` only through the `mark_order_paid()` RPC,
- * called by an admin (or service-role automation) with a verified reference.
- * The storefront never marks anything paid.
+ * called by an admin with a verified reference. The storefront never marks
+ * anything paid, and place_order() rejects any other payment method.
  */
 
-export type PaymentMethod = 'cod' | 'bank_transfer';
+export type PaymentMethod = 'cod';
 
 export interface PaymentMethodInfo {
   method: PaymentMethod;
@@ -23,11 +23,6 @@ export const PAYMENT_METHODS: PaymentMethodInfo[] = [
   {
     method: 'cod',
     label: 'Cash on Delivery',
-    hint: 'Pay in cash when your order arrives. Available across the Kathmandu Valley and major cities.',
-  },
-  {
-    method: 'bank_transfer',
-    label: 'Bank Transfer (manual)',
-    hint: 'We will call you with the store account details after you order. Your order ships once our team verifies the receipt.',
+    hint: 'Pay in cash when your order arrives. Available inside Kathmandu Valley: Kathmandu, Lalitpur and Bhaktapur.',
   },
 ];

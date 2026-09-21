@@ -85,7 +85,7 @@ export default function CartPage() {
           ))}
         </ul>
 
-        <aside className="h-fit rounded-2xl bg-ink p-6 text-paper lg:sticky lg:top-32">
+        <aside className="glass-dark h-fit rounded-2xl p-6 text-paper lg:sticky lg:top-32">
           <h2 className="font-display text-lg font-extrabold">Order summary</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-paper/60">Subtotal</dt><dd className="font-bold">{formatNPR(subtotal)}</dd></div>
