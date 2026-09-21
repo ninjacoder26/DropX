@@ -20,7 +20,7 @@ export default function TermsPage() {
         <Section title="1. Who we are">
           <p>
             DropX (“we”, “our”) operates the online store at this website, selling apparel, footwear and
-            accessories across Nepal. By placing an order you agree to these terms.
+            accessories inside Kathmandu Valley. By placing an order you agree to these terms.
           </p>
         </Section>
         <Section title="2. Products & pricing">
@@ -33,10 +33,10 @@ export default function TermsPage() {
           <p>We accept <strong>Cash on Delivery</strong> and <strong>manual bank transfer</strong>. For bank transfers, our team shares the account details by phone and ships only after the receipt is verified. We take no online card or wallet payments on this website.</p>
         </Section>
         <Section title="5. Delivery">
-          <p>Standard delivery takes 2–5 business days across Nepal (remote areas may take longer). Standard shipping is NPR 99, express NPR 199, and standard shipping is free on orders over NPR 2,999. Risk passes to you on delivery; please inspect items on arrival.</p>
+          <p>We currently deliver inside <strong>Kathmandu Valley only</strong> (Kathmandu, Lalitpur and Bhaktapur), within 1–3 business days. Standard shipping is NPR 99, express NPR 199, and standard shipping is free on orders over NPR 2,999. Orders from outside the Valley are confirmed by phone before dispatch. Risk passes to you on delivery; please inspect items on arrival.</p>
         </Section>
         <Section title="6. Exchanges & returns">
-          <p>Unworn items with tags attached can be exchanged for a different size within <strong>7 days of delivery</strong>. Exchanges are subject to stock availability. Items worn, washed, altered or damaged after delivery cannot be exchanged. To start an exchange, contact support@dropx.com.np with your order number.</p>
+          <p>Unworn items with tags attached can be exchanged for a different size within <strong>7 days of delivery</strong>. Exchanges are subject to stock availability. Items worn, washed, altered or damaged after delivery cannot be exchanged. To start an exchange, contact dropx.nepal@gmail.com with your order number.</p>
         </Section>
         <Section title="7. Accounts">
           <p>You are responsible for activity under your account and for keeping your password confidential. We may suspend accounts used for fraud, abuse or repeated payment refusal on delivery.</p>
@@ -48,7 +48,7 @@ export default function TermsPage() {
           <p>To the maximum extent permitted by the laws of Nepal, our liability for any order is limited to the amount you paid for that order. Nothing here limits rights you hold under Nepalese consumer law.</p>
         </Section>
         <Section title="10. Changes & contact">
-          <p>We may update these terms; the version at order time applies to your purchase. Questions: support@dropx.com.np.</p>
+          <p>We may update these terms; the version at order time applies to your purchase. Questions: dropx.nepal@gmail.com.</p>
         </Section>
       </div>
       <p className="mt-6 text-center text-sm">

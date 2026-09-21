@@ -13,7 +13,7 @@ export interface StoreSettings {
 
 export const DEFAULT_SETTINGS: StoreSettings = {
   announcement: 'Free standard shipping over NPR 2,999',
-  supportEmail: 'support@dropx.com.np',
+  supportEmail: 'dropx.nepal@gmail.com',
   freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
   shippingStandard: SHIPPING_FEES.standard,
   shippingExpress: SHIPPING_FEES.express,

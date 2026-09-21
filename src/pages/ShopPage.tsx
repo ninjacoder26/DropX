@@ -20,6 +20,7 @@ export default function ShopPage() {
 
   const category = params.get('category') ?? '';
   const q = params.get('q') ?? '';
+  const tag = params.get('tag') ?? '';
   const sort = (params.get('sort') as Sort) || 'new';
   const [maxPrice, setMaxPrice] = useState<number>(10000);
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -56,6 +57,7 @@ export default function ShopPage() {
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
+      if (tag && !(p.tags ?? []).map((t) => t.toLowerCase()).includes(tag.toLowerCase())) return false;
       const price = Number(p.base_price);
       if (price > maxPrice) return false;
       if (inStockOnly) {
@@ -64,7 +66,18 @@ export default function ShopPage() {
       }
       return true;
     });
-  }, [products, maxPrice, inStockOnly]);
+  }, [products, maxPrice, inStockOnly, tag]);
+
+  const availableTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of products) {
+      for (const t of p.tags ?? []) {
+        const k = t.toLowerCase();
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
+  }, [products]);
 
   const set = (k: string, v: string) => {
     const next = new URLSearchParams(params);
@@ -80,6 +93,27 @@ export default function ShopPage() {
         {q ? `Results for “${q}”` : category ? cats.find((c) => c.slug === category)?.name ?? 'Shop' : 'Shop all'}
       </h1>
       <p className="mt-1 text-sm text-ink/60">{filtered.length} product{filtered.length === 1 ? '' : 's'}</p>
+      {availableTags.length > 0 && (
+        <div className="no-scrollbar -mx-4 mt-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Filter by tag">
+          {tag && (
+            <button
+              onClick={() => set('tag', '')}
+              className="shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-paper"
+            >
+              #{tag} ✕
+            </button>
+          )}
+          {availableTags.filter((t) => t !== tag.toLowerCase()).map((t) => (
+            <button
+              key={t}
+              onClick={() => set('tag', t)}
+              className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-ink/70 ring-1 ring-ink/10 transition hover:ring-ink/30"
+            >
+              #{t}
+            </button>
+          ))}
+        </div>
+      )}
       {!isSupabaseConfigured && (
         <div className="mt-4"><SetupNotice area="product catalog" /></div>
       )}

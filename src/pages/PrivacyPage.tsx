@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           <p>Order records are kept as required for accounting and warranty support. You may ask us to delete your account and marketing-free profile data at any time (completed-order invoices may be retained for legal records).</p>
         </Section>
         <Section title="6. Your rights">
-          <p>You can view and edit your profile and addresses in <Link to="/account" className="font-bold text-ember">My account</Link>, and request a copy, correction or deletion of your data at support@dropx.com.np. We respond within 15 days.</p>
+          <p>You can view and edit your profile and addresses in <Link to="/account" className="font-bold text-ember">My account</Link>, and request a copy, correction or deletion of your data at dropx.nepal@gmail.com. We respond within 15 days.</p>
         </Section>
         <Section title="7. Cookies & local storage">
           <p>We use essential browser storage only: your login session, guest bag, wishlist and recently-viewed items. No third-party advertising or cross-site tracking cookies.</p>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
           <p>DropX is not directed at children under 13. Accounts for minors should be managed by a parent or guardian.</p>
         </Section>
         <Section title="9. Changes & contact">
-          <p>Material changes will be announced on this page with a new date. Privacy questions: support@dropx.com.np.</p>
+          <p>Material changes will be announced on this page with a new date. Privacy questions: dropx.nepal@gmail.com.</p>
         </Section>
       </div>
       <p className="mt-6 text-center text-sm">

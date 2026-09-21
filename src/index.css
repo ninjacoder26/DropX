@@ -47,6 +47,28 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .marquee { animation: none; }
   .reveal { animation: none; }
+  .install-banner { animation: none; }
+}
+
+/* PWA install banner: slides in once, never jarring */
+@keyframes dropx-banner-in {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+.install-banner {
+  animation: dropx-banner-in 0.35s ease both;
+}
+
+/* ── Smartphone comfort ─────────────────────────────────────── */
+/* 16px+ fields stop iOS auto-zoom on focus; keep desktop sizes intact. */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Focus visibility for a11y */

@@ -145,6 +145,9 @@ export default function CheckoutPage() {
         <div className="space-y-5">
           <section className="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
             <h2 className="font-display text-lg font-extrabold">Delivery address</h2>
+            <p className="mt-1 rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold text-ink/70">
+              We currently deliver inside Kathmandu Valley only (Kathmandu, Lalitpur, Bhaktapur).
+            </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label="Full name">
                 <Input value={addr.full_name} onChange={(e) => setAddr({ ...addr, full_name: e.target.value })} placeholder="Aashish Sharma" autoComplete="name" />
@@ -181,7 +184,7 @@ export default function CheckoutPage() {
                   aria-pressed={method === m}
                   className={`rounded-2xl border p-4 text-left transition ${method === m ? 'border-ember bg-ember/5' : 'border-ink/15 hover:border-ink/40'}`}
                 >
-                  <p className="font-bold capitalize">{m} <span className="text-ink/50">· 2–5 days</span></p>
+                  <p className="font-bold capitalize">{m} <span className="text-ink/50">· 1–3 days</span></p>
                   <p className="mt-1 text-sm font-bold text-ember">
                     {shippingFeeFor(m, subtotal, settings) === 0 ? 'FREE' : formatNPR(shippingFeeFor(m, subtotal, settings))}
                   </p>

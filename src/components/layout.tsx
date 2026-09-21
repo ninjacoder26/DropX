@@ -182,7 +182,7 @@ export function Footer() {
         <nav aria-label="Support and legal">
           <p className="text-xs font-bold uppercase tracking-widest text-paper/50">Support</p>
           <ul className="mt-3 space-y-2.5 text-sm">
-            <li className="text-paper/80">Delivery across Nepal (2–5 days)</li>
+            <li className="text-paper/80">Kathmandu Valley delivery (1–3 days)</li>
             <li className="text-paper/80">COD · Bank transfer</li>
             <li className="text-paper/80">7-day size exchanges</li>
             <li className="text-paper/80">{supportEmail}</li>

@@ -38,17 +38,23 @@ export function useWishlist() {
   return { ids, toggle, has: (id: string) => ids.includes(id) };
 }
 
-/** Recently viewed products (local only). */
+/** Recently viewed products (local only), with per-product view counts. */
 export function useRecentlyViewed() {
   const [ids, setIds] = useState<string[]>(() => safeGet<string[]>('dropx-recent', []));
+  const [views, setViews] = useState<Record<string, number>>(() => safeGet<Record<string, number>>('dropx-views', {}));
 
   useEffect(() => {
     safeSet('dropx-recent', ids);
   }, [ids]);
 
+  useEffect(() => {
+    safeSet('dropx-views', views);
+  }, [views]);
+
   const push = useCallback((id: string) => {
     setIds((prev) => [id, ...prev.filter((x) => x !== id)].slice(0, 8));
+    setViews((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
   }, []);
 
-  return { ids, push };
+  return { ids, views, push };
 }

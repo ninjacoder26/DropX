@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, Flame, Sparkles, Truck, ShieldCheck, RefreshCcw, History } from 'lucide-react';
 import { fetchCategories, fetchDrops, fetchProducts, fetchProductsByIds } from '../lib/catalog';
+import { useRecommendations } from '../lib/recommend';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { cloudinaryThumb } from '../lib/shop';
 import type { Category, Drop, Product } from '../types';
@@ -94,6 +95,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { ids: recentIds } = useRecentlyViewed();
+  const { items: recommended } = useRecommendations(6);
 
   useEffect(() => {
     (async () => {
@@ -152,7 +154,7 @@ export default function HomePage() {
             </h1>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-paper/70">
               Heavyweight streetwear designed in Kathmandu. A fresh drop every month,
-              one Mega Drop a year — delivered to your doorstep anywhere in Nepal.
+              one Mega Drop a year — delivered to your doorstep inside Kathmandu Valley.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/shop" className="inline-flex items-center gap-2 rounded-full bg-ember px-7 py-3.5 text-sm font-bold text-white transition hover:bg-ember-dark">
@@ -320,6 +322,20 @@ export default function HomePage() {
           )}
         </section>
 
+        {/* ── Recommended for you (grows smarter as you browse) ── */}
+        {recommended.length > 0 && (
+          <section>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Based on your browsing</p>
+                <h2 className="mt-1 font-display text-2xl font-black tracking-tight sm:text-3xl">Recommended for you</h2>
+              </div>
+              <Link to="/shop" className="shrink-0 text-sm font-bold text-ember hover:underline">View all</Link>
+            </div>
+            <div className="mt-5"><ProductGrid products={recommended.slice(0, 6)} /></div>
+          </section>
+        )}
+
         {/* ── Recently viewed ── */}
         {recent.length > 0 && (
           <section>
@@ -333,7 +349,7 @@ export default function HomePage() {
         {/* ── Perks ── */}
         <section className="grid gap-3 rounded-3xl bg-ink p-6 text-paper sm:grid-cols-3 md:p-8">
           {[
-            { icon: Truck, title: 'Nationwide delivery', body: '2–5 days across Nepal. Free standard shipping over NPR 2,999.' },
+            { icon: Truck, title: 'Valley delivery', body: '1–3 days inside Kathmandu Valley. Free standard shipping over NPR 2,999.' },
             { icon: ShieldCheck, title: 'Pay your way', body: 'Cash on Delivery or bank transfer — confirmed by our team.' },
             { icon: RefreshCcw, title: '7-day exchanges', body: 'Wrong size? Exchange within 7 days, no interrogation.' },
           ].map((p) => (

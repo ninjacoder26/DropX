@@ -27,6 +27,7 @@ export interface Product {
   rating_avg: number;
   rating_count: number;
   total_sold: number;
+  tags: string[];
   created_at: string;
   category?: Category | null;
   images?: ProductImage[];

@@ -62,4 +62,11 @@ describe('security invariants', () => {
     expect(fn).toContain('store_settings');
     expect(fn).toContain('free_shipping_threshold');
   });
+
+  it('tags migration caps at 3 tags and the seed uses only vocabulary tags', () => {
+    const tags = readFileSync(join(root, 'supabase/migrations/007_product_tags.sql'), 'utf8');
+    expect(tags).toContain('products_tags_max3');
+    const seed = readFileSync(join(root, 'supabase/migrations/008_catalog_seed.sql'), 'utf8');
+    expect(seed).toContain('200 products');
+  });
 });

@@ -37,4 +37,35 @@ describe('CSV import/export', () => {
   it('slugifies names', () => {
     expect(slugify('Himalayan Heavyweight Hoodie!')).toBe('himalayan-heavyweight-hoodie');
   });
+
+  it('accepts pipe-separated tags from the fixed vocabulary', () => {
+    const { valid, errors } = validateProductRows([
+      ['name', 'base_price', 'tags'],
+      ['Hoodie', '1000', 'apparel|winter|accessories'],
+    ]);
+    expect(errors).toEqual([]);
+    expect(valid[0].tags).toEqual(['apparel', 'winter', 'accessories']);
+  });
+
+  it('rejects unknown tags and more than 3 tags', () => {
+    const bad = validateProductRows([
+      ['name', 'base_price', 'tags'],
+      ['Weird', '100', 'apparel|nonsense'],
+    ]);
+    expect(bad.valid).toHaveLength(0);
+    expect(bad.errors[0]).toMatch(/unknown tags/);
+
+    const many = validateProductRows([
+      ['name', 'base_price', 'tags'],
+      ['Crowded', '100', 'apparel|winter|accessories|travel'],
+    ]);
+    expect(many.valid).toHaveLength(0);
+    expect(many.errors[0]).toMatch(/at most 3 tags/);
+  });
+
+  it('works without a tags column (backwards compatible)', () => {
+    const { valid, errors } = validateProductRows([['name', 'base_price'], ['Plain', '500']]);
+    expect(errors).toEqual([]);
+    expect(valid[0].tags).toEqual([]);
+  });
 });

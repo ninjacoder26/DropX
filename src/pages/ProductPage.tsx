@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Heart, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
 import { clsx } from 'clsx';
-import { fetchProductBySlug, fetchProducts } from '../lib/catalog';
+import { fetchProductBySlug } from '../lib/catalog';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useRecommendations } from '../lib/recommend';
 import type { Product, ProductVariant, Review } from '../types';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
@@ -15,7 +16,7 @@ import { ProductGrid, primaryImage, srcSetFor } from '../components/product';
 export default function ProductPage() {
   const { slug = '' } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
-  const [related, setRelated] = useState<Product[]>([]);
+  const { items: recommended } = useRecommendations(6);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -44,11 +45,6 @@ export default function ProductPage() {
       setVariant(active.find((v) => v.stock > 0) ?? active[0] ?? null);
       setQty(1);
       setImgIdx(0);
-      const rel = await fetchProducts({
-        categorySlug: p.category?.slug,
-        limit: 8,
-      }).catch(() => [] as Product[]);
-      setRelated(rel.filter((r) => r.id !== p.id).slice(0, 4));
       if (isSupabaseConfigured) {
         const { data } = await supabase
           .from('reviews')
@@ -144,6 +140,19 @@ export default function ProductPage() {
         <div>
           <p className="text-[11px] font-bold uppercase tracking-widest text-ink/40">{product.category?.name}</p>
           <h1 className="mt-1 font-display text-2xl font-black tracking-tight sm:text-3xl">{product.name}</h1>
+          {(product.tags?.length ?? 0) > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Product tags">
+              {product.tags!.slice(0, 3).map((t) => (
+                <Link
+                  key={t}
+                  to={`/shop?tag=${encodeURIComponent(t)}`}
+                  className="rounded-full bg-ink/5 px-2.5 py-1 text-[11px] font-bold text-ink/60 transition hover:bg-ember/10 hover:text-ember"
+                >
+                  #{t}
+                </Link>
+              ))}
+            </div>
+          )}
           <div className="mt-2 flex items-center gap-2 text-sm">
             <span className="flex items-center gap-1">
               <Star size={15} className="fill-ember text-ember" />
@@ -236,7 +245,7 @@ export default function ProductPage() {
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-2 text-xs text-ink/70">
-            <span className="flex items-center gap-1.5 rounded-xl bg-white p-3 ring-1 ring-ink/5"><Truck size={14} className="text-ember" /> Delivery 2–5 days across Nepal</span>
+            <span className="flex items-center gap-1.5 rounded-xl bg-white p-3 ring-1 ring-ink/5"><Truck size={14} className="text-ember" /> 1–3 day Valley delivery</span>
             <span className="flex items-center gap-1.5 rounded-xl bg-white p-3 ring-1 ring-ink/5"><ShieldCheck size={14} className="text-ember" /> Cash on Delivery available</span>
           </div>
 
@@ -271,13 +280,37 @@ export default function ProductPage() {
         )}
       </section>
 
-      {/* Related */}
-      {related.length > 0 && (
+      {/* Recommended — engine blends your viewed tags/categories with fresh picks */}
+      {recommended.filter((r) => r.id !== product.id).length > 0 && (
         <section className="mt-14">
-          <h2 className="font-display text-2xl font-black">You may also like</h2>
-          <div className="mt-5"><ProductGrid products={related} /></div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Picked for you</p>
+          <h2 className="mt-1 font-display text-2xl font-black">Recommended</h2>
+          <div className="mt-5"><ProductGrid products={recommended.filter((r) => r.id !== product.id).slice(0, 6)} /></div>
         </section>
       )}
+
+      {/* Sticky add-to-bag bar — phones only, sits above the bottom tab bar */}
+      <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] z-30 border-t border-ink/10 bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-7xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold">{product.name}</p>
+            <p className="font-display text-base font-black">{formatNPR(unit)}</p>
+          </div>
+          <Button
+            disabled={!variant || out}
+            onClick={() => {
+              if (!variant) return;
+              void add(product, variant, qty).then(() => {
+                setAdded(true);
+                setTimeout(() => setAdded(false), 2000);
+              });
+            }}
+            className="!px-6 !py-2.5"
+          >
+            <ShoppingBag size={15} /> {added ? 'Added!' : out ? 'Sold out' : 'Add to bag'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

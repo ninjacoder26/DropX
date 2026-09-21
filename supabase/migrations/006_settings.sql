@@ -11,7 +11,7 @@ create table if not exists public.store_settings (
 
 insert into public.store_settings (key, value) values
   ('announcement', 'Free standard shipping over NPR 2,999'),
-  ('support_email', 'support@dropx.com.np'),
+  ('support_email', 'dropx.nepal@gmail.com'),
   ('free_shipping_threshold', '2999'),
   ('shipping_standard', '99'),
   ('shipping_express', '199')

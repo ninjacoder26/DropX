@@ -52,6 +52,8 @@ export function toCSV(rows: (string | number | boolean | null)[][]): string {
   return rows.map((r) => r.map(esc).join(',')).join('\n') + '\n';
 }
 
+import { MAX_TAGS_PER_PRODUCT, TAG_VOCABULARY, normalizeTags } from './tags';
+
 export const PRODUCT_CSV_HEADERS = [
   'name',
   'slug',
@@ -63,6 +65,7 @@ export const PRODUCT_CSV_HEADERS = [
   'is_featured',
   'is_trending',
   'is_new',
+  'tags',
 ] as const;
 
 export interface ProductCSVRow {
@@ -77,6 +80,7 @@ export interface ProductCSVRow {
   is_featured: boolean;
   is_trending: boolean;
   is_new: boolean;
+  tags: string[];
 }
 
 const truthy = (v: string) => ['1', 'true', 'yes', 'y'].includes(v.trim().toLowerCase());
@@ -121,6 +125,19 @@ export function validateProductRows(raw: string[][]): { valid: ProductCSVRow[]; 
       errors.push(`Line ${line} (“${name}”): compare_at_price must be a number ≥ 0.`);
       continue;
     }
+    // Tags: pipe-separated, fixed vocabulary only, max 3. Unknown tags are
+    // reported (not silently dropped) so catalogs stay clean.
+    const rawTags = idx('tags') >= 0 ? cell('tags') : '';
+    const tagList = rawTags ? rawTags.split('|').map((t) => t.trim().toLowerCase()).filter(Boolean) : [];
+    const unknown = tagList.filter((t) => !(TAG_VOCABULARY as readonly string[]).includes(t));
+    if (unknown.length > 0) {
+      errors.push(`Line ${line} (“${name}”): unknown tags: ${unknown.join(', ')}. Allowed: ${TAG_VOCABULARY.join(', ')}.`);
+      continue;
+    }
+    if (tagList.length > MAX_TAGS_PER_PRODUCT) {
+      errors.push(`Line ${line} (“${name}”): at most ${MAX_TAGS_PER_PRODUCT} tags allowed.`);
+      continue;
+    }
     valid.push({
       line,
       name,
@@ -133,6 +150,7 @@ export function validateProductRows(raw: string[][]): { valid: ProductCSVRow[]; 
       is_featured: truthy(cell('is_featured')),
       is_trending: truthy(cell('is_trending')),
       is_new: idx('is_new') < 0 ? true : truthy(cell('is_new') || 'true'),
+      tags: normalizeTags(tagList),
     });
   }
   return { valid, errors };

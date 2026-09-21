@@ -13,6 +13,7 @@ import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Skeleton 
 import { ImageManager } from '../components/ImageManager';
 import { CloudinaryUpload } from '../components/CloudinaryUpload';
 import { PRODUCT_CSV_HEADERS, parseCSV, slugify, toCSV, validateProductRows } from '../lib/csv';
+import { MAX_TAGS_PER_PRODUCT, TAG_VOCABULARY } from '../lib/tags';
 import { primaryImage } from '../components/product';
 
 const TABS = [
@@ -243,7 +244,7 @@ function Overview() {
 }
 
 /* ─── Products ─── */
-const EMPTY_PRODUCT = { name: '', slug: '', description: '', category_id: '', base_price: '', compare_at_price: '', is_active: true, is_featured: false, is_trending: false, is_new: true };
+const EMPTY_PRODUCT = { name: '', slug: '', description: '', category_id: '', base_price: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
 function Products() {
   const [items, setItems] = useState<Product[]>([]);
@@ -291,6 +292,7 @@ function Products() {
       name: p.name, slug: p.slug, description: p.description,
       category_id: p.category_id ?? '', base_price: String(p.base_price),
       compare_at_price: p.compare_at_price ? String(p.compare_at_price) : '',
+      tags: (p.tags ?? []).slice(0, MAX_TAGS_PER_PRODUCT),
       is_active: p.is_active, is_featured: p.is_featured, is_trending: p.is_trending, is_new: p.is_new,
     });
     const { data } = await supabase.from('product_variants').select('*').eq('product_id', p.id).order('created_at');
@@ -311,6 +313,7 @@ function Products() {
       category_id: form.category_id || null,
       base_price: Number(form.base_price),
       compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
+      tags: form.tags.slice(0, MAX_TAGS_PER_PRODUCT),
       is_active: form.is_active, is_featured: form.is_featured,
       is_trending: form.is_trending, is_new: form.is_new,
     };
@@ -403,6 +406,7 @@ function Products() {
           is_featured: r.is_featured,
           is_trending: r.is_trending,
           is_new: r.is_new,
+          tags: r.tags,
         });
         if (error) problems.push(`Line ${r.line} (“${r.name}”): ${error.message}`);
         else inserted++;
@@ -426,7 +430,7 @@ function Products() {
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
         <div className="ml-auto flex flex-wrap gap-2">
           <button
-            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Himalayan Hoodie', 'himalayan-hoodie', 'Heavyweight fleece', 'fashion-accessories', 3499, 4299, true, true, true, true]]))}
+            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Himalayan Hoodie', 'himalayan-hoodie', 'Heavyweight fleece', 'fashion-accessories', 3499, 4299, true, true, true, true, 'apparel|winter|accessories']]))}
             className="rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30"
           >
             Template
@@ -478,6 +482,36 @@ function Products() {
             <div className="grid grid-cols-2 gap-3">
               <Field label="Base price (NPR)"><Input type="number" min={0} value={form.base_price} onChange={(e) => setForm({ ...form, base_price: e.target.value })} /></Field>
               <Field label="Compare-at (optional)"><Input type="number" min={0} value={form.compare_at_price} onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })} /></Field>
+            </div>
+            <div className="md:col-span-2">
+              <p className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink/60">
+                Tags · {form.tags.length}/{MAX_TAGS_PER_PRODUCT} (fixed list — powers filters & recommendations)
+              </p>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Product tags">
+                {TAG_VOCABULARY.map((t) => {
+                  const on = form.tags.includes(t);
+                  const full = !on && form.tags.length >= MAX_TAGS_PER_PRODUCT;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      disabled={full}
+                      aria-pressed={on}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          tags: on ? form.tags.filter((x) => x !== t) : [...form.tags, t].slice(0, MAX_TAGS_PER_PRODUCT),
+                        })
+                      }
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        on ? 'bg-ember text-white' : full ? 'cursor-not-allowed bg-ink/5 text-ink/30' : 'bg-ink/5 text-ink/70 hover:bg-ink/10'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="flex flex-wrap gap-4 text-sm md:col-span-2">
               {(['is_active', 'is_featured', 'is_trending', 'is_new'] as const).map((k) => (
@@ -1257,7 +1291,7 @@ function Settings() {
             <Input value={form.announcement} onChange={(e) => setForm({ ...form, announcement: e.target.value })} placeholder="Free standard shipping over NPR 2,999" />
           </Field>
           <Field label="Support email">
-            <Input type="email" value={form.support_email} onChange={(e) => setForm({ ...form, support_email: e.target.value })} placeholder="support@dropx.com.np" />
+            <Input type="email" value={form.support_email} onChange={(e) => setForm({ ...form, support_email: e.target.value })} placeholder="dropx.nepal@gmail.com" />
           </Field>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Free shipping over (NPR)">
