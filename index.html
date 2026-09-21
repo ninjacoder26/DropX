@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="DropX — Nepal's premium streetwear & lifestyle store. Monthly drops, mega collections, and everyday essentials delivered across Nepal." />
+    <meta name="theme-color" content="#101010" />
+    <meta property="og:title" content="DropX — Wear the Drop" />
+    <meta property="og:description" content="Nepal-focused premium e-commerce. Drop of the Month, Mega Drop of the Year, trending streetwear and more." />
+    <meta property="og:type" content="website" />
+    <title>DropX — Wear the Drop | Nepal Streetwear & Lifestyle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      #boot-fallback { display: none; font-family: Inter, system-ui, sans-serif; background: #F7F5F0; color: #101010; min-height: 100vh; align-items: center; justify-content: center; padding: 2rem; }
+      #boot-fallback .card { background: #fff; border-radius: 1rem; padding: 2rem; max-width: 32rem; box-shadow: 0 8px 24px rgba(16,16,16,.08); }
+      #boot-fallback code { background: rgba(16,16,16,.06); padding: .1rem .4rem; border-radius: .375rem; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="boot-fallback" role="alert"></div>
+    <noscript>
+      <p style="font-family: sans-serif; padding: 2rem;">DropX needs JavaScript enabled to run.</p>
+    </noscript>
+    <script>
+      // Boot guard: if the app hasn't rendered anything after 10s, explain why
+      // instead of leaving a blank page (e.g. dist opened via file://, or a
+      // blocked CDN / failed deploy).
+      (function () {
+        function show(title, lines) {
+          var el = document.getElementById('boot-fallback');
+          if (!el || document.getElementById('root').childElementCount > 0) return;
+          el.style.display = 'flex';
+          el.innerHTML =
+            '<div class="card"><h1 style="font-size:1.25rem;font-weight:800">' + title + '</h1>' +
+            lines.map(function (l) { return '<p style="margin-top:.5rem;font-size:.875rem;opacity:.75">' + l + '</p>'; }).join('') +
+            '</div>';
+        }
+        if (location.protocol === 'file:') {
+          show('DropX cannot run from a file:// URL', [
+            'This is a Vite app — open it with a dev server instead:',
+            '<code>npm install</code> then <code>npm run dev</code> → http://localhost:5173',
+            'Or serve the production build with <code>npm run preview</code>.',
+          ]);
+          return;
+        }
+        setTimeout(function () {
+          show('DropX is taking too long to load', [
+            'Check your connection (fonts + app bundle load from CDN), then reload.',
+            'Developers: open the browser console for the real error, or run <code>npm run build</code> to verify the bundle.',
+          ]);
+        }, 10000);
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

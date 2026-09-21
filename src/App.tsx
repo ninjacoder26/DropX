@@ -1,0 +1,74 @@
+import { Suspense, lazy } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navbar, Footer } from './components/layout';
+import { useAuth } from './store/AuthContext';
+import type { ReactNode } from 'react';
+
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ShopPage = lazy(() => import('./pages/ShopPage'));
+const ProductPage = lazy(() => import('./pages/ProductPage'));
+const CartPage = lazy(() => import('./pages/CartPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
+const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+const DropsPage = lazy(() => import('./pages/DropsPage'));
+const CollectionsPage = lazy(() => import('./pages/CollectionsPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, loading, configured } = useAuth();
+  if (loading) return <div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>;
+  if (!configured || !user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const { isAdmin, loading, user } = useAuth();
+  if (loading) return <div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Checking permissions…</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  // Frontend gate is UX only — Supabase RLS + SECURITY DEFINER functions enforce admin server-side.
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+export default function App() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:slug" element={<ProductPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
+            <Route path="/order-success/:id" element={<RequireAuth><OrderSuccessPage /></RequireAuth>} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
+            <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
+            <Route path="/orders/:id" element={<RequireAuth><OrderDetailPage /></RequireAuth>} />
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/drops" element={<DropsPage />} />
+            <Route path="/drops/:slug" element={<DropsPage />} />
+            <Route path="/collections" element={<CollectionsPage />} />
+            <Route path="/admin/*" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+}
