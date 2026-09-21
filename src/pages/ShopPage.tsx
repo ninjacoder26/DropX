@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import { SetupNotice } from '../components/layout';
 import type { Category, Product } from '../types';
 import { ProductGrid } from '../components/product';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { EmptyState, ErrorState, Input, Skeleton } from '../components/ui';
 
 type Sort = 'new' | 'price-asc' | 'price-desc' | 'popular';
@@ -26,6 +27,8 @@ export default function ShopPage() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [localQ, setLocalQ] = useState(q);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const title = q ? `Results for “${q}”` : category ? cats.find((c) => c.slug === category)?.name ?? 'Shop' : 'Shop all';
+  usePageTitle(title);
 
   useEffect(() => {
     setLocalQ(q);
@@ -90,7 +93,7 @@ export default function ShopPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Catalog</p>
       <h1 className="mt-1 font-display text-3xl font-black tracking-tight sm:text-4xl">
-        {q ? `Results for “${q}”` : category ? cats.find((c) => c.slug === category)?.name ?? 'Shop' : 'Shop all'}
+        {title}
       </h1>
       <p className="mt-1 text-sm text-ink/60">{filtered.length} product{filtered.length === 1 ? '' : 's'}</p>
       {availableTags.length > 0 && (

@@ -10,6 +10,7 @@ import type { Address } from '../types';
 import { shippingFeeFor, useStoreSettings } from '../lib/settings';
 import { PAYMENT_METHODS, type PaymentMethod } from '../lib/payments';
 import { Button, Field, Input } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { primaryImage } from '../components/product';
 
 interface Addr {
@@ -36,6 +37,7 @@ export default function CheckoutPage() {
   const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  usePageTitle('Checkout');
   // Set when the order succeeds so the empty-cart redirect below doesn't
   // fire after we clear the cart on the way to the success page.
   const placedRef = useRef(false);

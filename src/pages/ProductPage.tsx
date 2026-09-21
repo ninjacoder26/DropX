@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { fetchProductBySlug } from '../lib/catalog';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useRecommendations } from '../lib/recommend';
+import { usePageTitle } from '../hooks/usePageTitle';
 import type { Product, ProductVariant, Review } from '../types';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
@@ -25,6 +26,7 @@ export default function ProductPage() {
   const [imgIdx, setImgIdx] = useState(0);
   const [added, setAdded] = useState(false);
   const [shared, setShared] = useState(false);
+  usePageTitle(product?.name ?? 'Product');
   const { add } = useCart();
   const { user } = useAuth();
   const { has, toggle } = useWishlist();

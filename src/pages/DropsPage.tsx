@@ -6,6 +6,7 @@ import { cloudinaryThumb } from '../lib/shop';
 import type { Drop } from '../types';
 import { dropState } from '../types';
 import { ProductGrid } from '../components/product';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Badge, Skeleton } from '../components/ui';
 
 function DropHero({ drop, mega }: { drop: Drop; mega?: boolean }) {
@@ -53,6 +54,7 @@ export default function DropsPage() {
   const [drops, setDrops] = useState<Drop[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPast, setShowPast] = useState(false);
+  usePageTitle(slug ? 'Drop details' : 'Drops');
 
   useEffect(() => {
     fetchDrops().then((d) => {

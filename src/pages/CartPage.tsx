@@ -4,12 +4,14 @@ import { useCart } from '../store/CartContext';
 import { formatNPR } from '../lib/shop';
 import { useStoreSettings } from '../lib/settings';
 import { Button } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { EmptyState } from '../components/ui';
 import { primaryImage } from '../components/product';
 
 export default function CartPage() {
   const { lines, subtotal, setQty, remove, count } = useCart();
   const { freeShippingThreshold } = useStoreSettings();
+  usePageTitle('Your Bag');
   const progress = Math.min(1, subtotal / freeShippingThreshold);
 
   if (lines.length === 0) {

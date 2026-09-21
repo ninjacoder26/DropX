@@ -15,6 +15,7 @@ import { CloudinaryUpload } from '../components/CloudinaryUpload';
 import { PRODUCT_CSV_HEADERS, parseCSV, slugify, toCSV, validateProductRows } from '../lib/csv';
 import { MAX_TAGS_PER_PRODUCT, TAG_VOCABULARY } from '../lib/tags';
 import { primaryImage } from '../components/product';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const TABS = [
   { to: '/admin', label: 'Overview', end: true, icon: LayoutDashboard },
@@ -36,6 +37,7 @@ function log(action: string, entity: string, entity_id?: string, meta: object = 
 
 export default function AdminPage() {
   const [drawer, setDrawer] = useState(false);
+  usePageTitle('Admin Dashboard');
 
   const nav = (
     <nav className="space-y-1" aria-label="Admin sections">

@@ -8,6 +8,7 @@ import { cloudinaryThumb } from '../lib/shop';
 import type { Category, Drop, Product } from '../types';
 import { dropState } from '../types';
 import { useRecentlyViewed } from '../hooks/useShop';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { ProductGrid } from '../components/product';
 import { Badge, Skeleton } from '../components/ui';
 import { SetupNotice } from '../components/layout';
@@ -96,6 +97,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const { ids: recentIds } = useRecentlyViewed();
   const { items: recommended } = useRecommendations(6);
+  usePageTitle('Wear the Drop');
 
   useEffect(() => {
     (async () => {
