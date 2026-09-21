@@ -57,6 +57,9 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/007_product_tags.sql` *(tags column + demo backfill)*
    - `supabase/migrations/008_catalog_seed.sql` *(generated 200-product catalog — run last)*
    - `supabase/migrations/009_sold_counters.sql` *(keeps “sold” counts in sync)*
+   - `supabase/migrations/010_input_limits.sql` *(length constraints)*
+   - `supabase/migrations/011_retire_demos.sql` *(removes first-draft demos)*
+   - `supabase/migrations/012_restore_drops.sql` *(repairs deleted drops — rerun-safe)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -134,7 +137,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold counters
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md

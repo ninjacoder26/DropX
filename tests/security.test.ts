@@ -78,6 +78,13 @@ describe('security invariants', () => {
     expect(fix).toContain('trg_items_sold');
   });
 
+  it('drop restore is guarded and rerunnable', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/012_restore_drops.sql'), 'utf8');
+    expect(fix).toContain('where not exists');
+    expect(fix).toContain('ashwin-drop-city-after-monsoon');
+    expect(fix).toContain('dashain-mega-drop-2026');
+  });
+
   it('no dynamic SQL anywhere — injection has nowhere to land', () => {
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
