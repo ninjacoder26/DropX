@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Flame, Sparkles, Truck, ShieldCheck, RefreshCcw, History } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Truck, ShieldCheck, RefreshCcw, History } from 'lucide-react';
 import { fetchCategories, fetchDrops, fetchProducts, fetchProductsByIds } from '../lib/catalog';
 import { useRecommendations } from '../lib/recommend';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -132,10 +132,21 @@ export default function HomePage() {
     fetchProductsByIds(recentIds).then(setRecent).catch(() => undefined);
   }, [recentIds]);
 
+  // Empty shelves collapse instead of rendering hollow sections with big gaps.
+  const storeEmpty =
+    !loading && !error && cats.length === 0 && trending.length === 0 &&
+    fresh.length === 0 && !monthly && !mega && !upcomingMega;
+
   return (
     <div>
       {/* ── Hero ── */}
       <section className="texture-ink relative overflow-hidden bg-ink text-paper">
+        <p
+          aria-hidden
+          className="pointer-events-none absolute -top-6 left-0 select-none whitespace-nowrap font-display text-[26vw] font-black leading-none text-transparent opacity-100 md:text-[18vw] [-webkit-text-stroke:2px_rgba(247,245,240,0.10)]"
+        >
+          DROPX
+        </p>
         <div
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-ember/20 blur-3xl"
@@ -144,7 +155,7 @@ export default function HomePage() {
           aria-hidden
           className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-ember/10 blur-3xl"
         />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.1fr_1fr] md:py-20 lg:px-8">
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 md:grid-cols-[1.1fr_1fr] md:py-16 lg:px-8">
           <div className="reveal flex flex-col justify-center">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-paper/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-paper/80">
               <span className="h-1.5 w-1.5 rounded-full bg-ember" /> New season · Nepal
@@ -167,7 +178,7 @@ export default function HomePage() {
               </Link>
             </div>
             <p className="mt-7 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-paper/60">
-              <span className="flex items-center gap-1.5"><Truck size={14} className="text-ember" /> Nationwide delivery</span>
+              <span className="flex items-center gap-1.5"><Truck size={14} className="text-ember" /> Valley delivery in 1–3 days</span>
               <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-ember" /> Cash on Delivery</span>
               <span className="flex items-center gap-1.5"><RefreshCcw size={14} className="text-ember" /> 7-day exchanges</span>
             </p>
@@ -213,7 +224,7 @@ export default function HomePage() {
         </div>
 
         {/* Marquee */}
-        <div className="relative border-t border-paper/10 bg-ink py-3" aria-hidden>
+        <div className="relative overflow-hidden border-t border-paper/10 bg-ink py-3" aria-hidden>
           <div className="marquee flex gap-8 whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.25em] text-paper/50">
             {[...MARQUEE, ...MARQUEE].map((m, i) => (
               <span key={i} className="flex items-center gap-8">
@@ -229,12 +240,23 @@ export default function HomePage() {
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800">{error}</div>
         )}
+        {storeEmpty && isSupabaseConfigured && (
+          <div className="rounded-2xl bg-white p-6 text-sm text-ink/60 ring-1 ring-ink/5">
+            <p className="font-display font-extrabold text-ink">Your shelves are empty</p>
+            <p className="mt-1">Run <code className="rounded bg-ink/5 px-1">008_catalog_seed.sql</code> in Supabase, or add products in the admin dashboard — then this page fills itself in.</p>
+          </div>
+        )}
 
         {/* ── Categories ── */}
+        {(loading || cats.length > 0) && (
         <section>
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Browse</p>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+                <span className="font-display text-sm font-black">00</span>
+                <span aria-hidden className="h-px w-8 bg-ember/60" />
+                Browse
+              </p>
               <h2 className="mt-1 font-display text-2xl font-black tracking-tight sm:text-3xl">Shop by category</h2>
             </div>
             <Link to="/shop" className="shrink-0 text-sm font-bold text-ember hover:underline">View all</Link>
@@ -243,8 +265,6 @@ export default function HomePage() {
             <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[4/3]" />)}
             </div>
-          ) : cats.length === 0 ? (
-            <p className="mt-5 rounded-2xl bg-white p-6 text-sm text-ink/60 ring-1 ring-ink/5">No categories yet — add them in the admin dashboard.</p>
           ) : (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {cats.slice(0, 4).map((c) => (
@@ -253,6 +273,7 @@ export default function HomePage() {
             </div>
           )}
         </section>
+        )}
 
         {/* ── Drop of the Month spotlight (active only) ── */}
         {monthly && (
@@ -260,11 +281,14 @@ export default function HomePage() {
         )}
 
         {/* ── Trending ── */}
+        {(loading || trending.length > 0) && (
         <section>
           <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
-                <Flame size={13} /> Hot right now
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+                <span className="font-display text-sm font-black">01</span>
+                <span aria-hidden className="h-px w-8 bg-ember/60" />
+                Hot right now
               </p>
               <h2 className="mt-1 font-display text-2xl font-black tracking-tight sm:text-3xl">Trending now</h2>
             </div>
@@ -274,12 +298,11 @@ export default function HomePage() {
             <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
-          ) : trending.length === 0 ? (
-            <p className="mt-5 text-sm text-ink/60">No trending products yet.</p>
           ) : (
             <div className="mt-5"><ProductGrid products={trending.slice(0, 4)} /></div>
           )}
         </section>
+        )}
 
         {/* ── Mega drop (active full / upcoming teaser / hidden when ended) ── */}
         {mega ? (
@@ -303,11 +326,14 @@ export default function HomePage() {
         ) : null}
 
         {/* ── New arrivals ── */}
+        {(loading || fresh.length > 0) && (
         <section>
           <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
-                <Sparkles size={13} /> Fresh off the truck
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+                <span className="font-display text-sm font-black">02</span>
+                <span aria-hidden className="h-px w-8 bg-ember/60" />
+                Fresh off the truck
               </p>
               <h2 className="mt-1 font-display text-2xl font-black tracking-tight sm:text-3xl">New arrivals</h2>
             </div>
@@ -317,19 +343,22 @@ export default function HomePage() {
             <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
-          ) : fresh.length === 0 ? (
-            <p className="mt-5 text-sm text-ink/60">Nothing new yet — check back after the next drop.</p>
           ) : (
             <div className="mt-5"><ProductGrid products={fresh.slice(0, 4)} /></div>
           )}
         </section>
+        )}
 
         {/* ── Recommended for you (grows smarter as you browse) ── */}
         {recommended.length > 0 && (
           <section>
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Based on your browsing</p>
+                <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+                  <span className="font-display text-sm font-black">03</span>
+                  <span aria-hidden className="h-px w-8 bg-ember/60" />
+                  Based on your browsing
+                </p>
                 <h2 className="mt-1 font-display text-2xl font-black tracking-tight sm:text-3xl">Recommended for you</h2>
               </div>
               <Link to="/shop" className="shrink-0 text-sm font-bold text-ember hover:underline">View all</Link>

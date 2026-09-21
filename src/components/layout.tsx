@@ -21,11 +21,11 @@ export function Navbar() {
   const nav = useNavigate();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink/10 bg-paper/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper/90 backdrop-blur">
       {/* announcement */}
-      <div className="bg-ink text-paper">
-        <p className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]">
-          <Zap size={12} className="text-ember" />
+      <div className="bg-ember text-white">
+        <p className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">
+          <Zap size={12} className="text-ink" />
           {announcement}
         </p>
       </div>
@@ -198,6 +198,9 @@ export function Footer() {
           <p>© 2026 DropX. All rights reserved.</p>
           <p className="ml-auto">Prices include taxes where applicable.</p>
         </div>
+        <p aria-hidden className="select-none overflow-hidden whitespace-nowrap text-center font-display text-[18vw] font-black leading-[0.8] text-paper/[0.04] lg:text-[12rem]">
+          DROPX
+        </p>
       </div>
     </footer>
   );

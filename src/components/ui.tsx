@@ -10,7 +10,7 @@ export function Button({
     <button
       className={clsx(
         'inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50',
-        variant === 'primary' && 'bg-ember text-white hover:bg-ember-dark',
+        variant === 'primary' && 'border-2 border-ink bg-ember text-white shadow-sticker-sm hover:bg-ember-dark',
         variant === 'dark' && 'bg-ink text-paper hover:bg-ink-soft',
         variant === 'outline' && 'border border-ink/15 bg-white text-ink hover:border-ink/40',
         variant === 'ghost' && 'text-ink hover:bg-ink/5',
