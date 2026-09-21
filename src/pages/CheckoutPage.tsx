@@ -5,6 +5,7 @@ import { useAuth } from '../store/AuthContext';
 import { useCart } from '../store/CartContext';
 import { formatNPR } from '../lib/shop';
 import { districtOfArea, isGuidedComplete } from '../lib/address';
+import { resolveCheckoutPrefill } from '../lib/checkoutProfile';
 import { DELIVERY_METHODS, HUB_NAME, deliveryQuote, type DeliveryMethod } from '../lib/delivery';
 import { AddressForm } from '../components/AddressForm';
 import type { Address } from '../types';
@@ -47,27 +48,51 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!user || !isSupabaseConfigured) return;
-    supabase
-      .from('addresses')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('is_default', { ascending: false })
-      .then(({ data }) => {
-        const list = (data ?? []) as Address[];
-        setSaved(list);
-        const first = list[0];
-        if (first) {
-          setSelectedId(first.id);
-          setAddr({
-            full_name: first.full_name,
-            phone: first.phone,
-            district: districtOfArea(first.city) ?? 'Kathmandu',
-            area: first.city,
-            street: first.street,
-            postal_code: first.postal_code ?? '',
-          });
-        }
+    (async () => {
+      const [{ data: addrRows }, { data: prof }] = await Promise.all([
+        supabase
+          .from('addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false }),
+        supabase
+          .from('profiles')
+          .select('checkout_name,checkout_phone,checkout_district,checkout_area,checkout_street,checkout_postal,preferred_shipping')
+          .eq('id', user.id)
+          .single(),
+      ]);
+      const list = (addrRows ?? []) as Address[];
+      setSaved(list);
+      // Checkout profile wins; then the address book; then a blank form.
+      // Columns are missing entirely before migration 018 runs — default everything.
+      const p = (prof ?? {}) as Partial<Record<
+        'checkout_name' | 'checkout_phone' | 'checkout_district' |
+        'checkout_area' | 'checkout_street' | 'checkout_postal' | 'preferred_shipping',
+        string | null
+      >>;
+      const pre = resolveCheckoutPrefill(
+        {
+          checkout_name: p.checkout_name ?? '',
+          checkout_phone: p.checkout_phone ?? '',
+          checkout_district: p.checkout_district ?? '',
+          checkout_area: p.checkout_area ?? '',
+          checkout_street: p.checkout_street ?? '',
+          checkout_postal: p.checkout_postal ?? '',
+          preferred_shipping: p.preferred_shipping ?? 'standard',
+        },
+        list
+      );
+      setSelectedId(pre.addressId ?? 'new');
+      setAddr({
+        full_name: pre.full_name,
+        phone: pre.phone,
+        district: pre.district,
+        area: pre.area,
+        street: pre.street,
+        postal_code: pre.postal_code,
       });
+      setMethod(pre.method);
+    })();
   }, [user]);
 
   const pickSaved = (id: string) => {
@@ -142,8 +167,18 @@ export default function CheckoutPage() {
       if (rpcError) throw new Error(rpcError.message);
       const orderId = data as string;
       placedRef.current = true;
-      // Best-effort: remember this address for next time (never blocks success).
+      // Remember everything for next time: the checkout profile (best-effort,
+      // never blocks success) plus an address-book entry for first-timers.
       if (user && isSupabaseConfigured) {
+        void supabase.from('profiles').update({
+          checkout_name: addr.full_name,
+          checkout_phone: addr.phone,
+          checkout_district: addr.district,
+          checkout_area: addr.area,
+          checkout_street: addr.street,
+          checkout_postal: addr.postal_code || null,
+          preferred_shipping: method,
+        }).eq('id', user.id);
         supabase
           .from('addresses')
           .select('id', { count: 'exact', head: true })

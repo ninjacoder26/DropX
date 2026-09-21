@@ -191,6 +191,114 @@ export default function AccountPage() {
           </ul>
         </section>
       </div>
+
+      <section className="mt-5 rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
+        <h2 className="font-display text-lg font-extrabold">Checkout defaults</h2>
+        <p className="mt-1 text-xs text-ink/60">
+          Saved once, prefilled at every checkout — update here and skip typing forever.
+        </p>
+        <CheckoutDefaultsForm />
+      </section>
+    </div>
+  );
+}
+
+function CheckoutDefaultsForm() {
+  const { user, profile, refreshProfile } = useAuth();
+  const [form, setForm] = useState({
+    name: profile?.checkout_name ?? '',
+    phone: profile?.checkout_phone ?? '',
+    district: profile?.checkout_district || 'Kathmandu',
+    area: profile?.checkout_area ?? '',
+    street: profile?.checkout_street ?? '',
+    postal: profile?.checkout_postal ?? '',
+    method: (profile?.preferred_shipping === 'express' ? 'express' : 'standard') as 'standard' | 'express',
+  });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  // Refresh when the profile arrives late (or changes elsewhere).
+  useEffect(() => {
+    setForm({
+      name: profile?.checkout_name ?? '',
+      phone: profile?.checkout_phone ?? '',
+      district: profile?.checkout_district || 'Kathmandu',
+      area: profile?.checkout_area ?? '',
+      street: profile?.checkout_street ?? '',
+      postal: profile?.checkout_postal ?? '',
+      method: (profile?.preferred_shipping === 'express' ? 'express' : 'standard') as 'standard' | 'express',
+    });
+  }, [profile?.checkout_area, profile?.checkout_street]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!user) return null;
+  const complete =
+    form.name.trim().length >= 2 &&
+    form.phone.trim().length >= 7 &&
+    isGuidedComplete({ district: form.district, area: form.area, street: form.street, postal_code: form.postal });
+
+  return (
+    <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <Field label="Full name">
+        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={120} />
+      </Field>
+      <Field label="Phone">
+        <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={20} />
+      </Field>
+      <div className="md:col-span-2">
+              <AddressForm
+                value={{ district: form.district, area: form.area, street: form.street, postal_code: form.postal }}
+                onChange={(v) => setForm({ ...form, district: v.district, area: v.area, street: v.street, postal: v.postal_code })}
+              />
+      </div>
+      <Field label="Preferred shipping">
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Preferred shipping">
+          {(['standard', 'express'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={form.method === m}
+              onClick={() => setForm({ ...form, method: m })}
+              className={`rounded-xl border px-3 py-2.5 text-sm font-bold capitalize transition ${
+                form.method === m ? 'border-ink bg-ink text-paper' : 'border-ink/15 bg-white hover:border-ink/40'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      </Field>
+      <div className="flex items-end">
+        <Button
+          variant="dark"
+          className="w-full"
+          disabled={saving || !complete}
+          onClick={() => {
+            if (!user || !complete) return;
+            setSaving(true);
+            setMsg(null);
+            supabase.from('profiles').update({
+              checkout_name: form.name.trim(),
+              checkout_phone: form.phone.trim(),
+              checkout_district: form.district,
+              checkout_area: form.area,
+              checkout_street: form.street,
+              checkout_postal: form.postal || null,
+              preferred_shipping: form.method,
+            }).eq('id', user.id).then(({ error }) => {
+              setSaving(false);
+              if (error) setMsg(error.message);
+              else {
+                setMsg('Saved — checkout will prefill these next time.');
+                void refreshProfile();
+              }
+            });
+          }}
+        >
+          {saving ? 'Saving…' : 'Save checkout defaults'}
+        </Button>
+      </div>
+      {msg && <p className="text-xs md:col-span-2">{msg}</p>}
     </div>
   );
 }

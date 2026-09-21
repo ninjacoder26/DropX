@@ -70,6 +70,13 @@ export interface Profile {
   phone: string | null;
   avatar_url: string | null;
   role: Role;
+  checkout_name: string;
+  checkout_phone: string;
+  checkout_district: string;
+  checkout_area: string;
+  checkout_street: string;
+  checkout_postal: string | null;
+  preferred_shipping: string;
 }
 
 export interface Address {
