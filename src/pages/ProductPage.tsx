@@ -13,7 +13,7 @@ import { useRecentlyViewed, useWishlist } from '../hooks/useShop';
 import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
 import { Badge, Button, EmptyState, Skeleton } from '../components/ui';
 import { useStoreSettings } from '../lib/settings';
-import { ProductGrid, primaryImage, srcSetFor } from '../components/product';
+import { ProductGrid, primaryImage, specLabel, srcSetFor } from '../components/product';
 
 export default function ProductPage() {
   const { slug = '' } = useParams();
@@ -308,14 +308,13 @@ export default function ProductPage() {
                   );
                 })}
               </ul>
-              <dl className="grid grid-cols-1 gap-px border-t border-ink/10 bg-ink/10 text-xs sm:grid-cols-3">
+              <dl className="grid grid-cols-1 gap-px border-t border-ink/10 bg-ink/10 text-xs sm:grid-cols-2">
                 {[
-                  ['Delivery', '1–3 days, Kathmandu Valley'],
-                  ['Payment', 'Cash on Delivery only'],
-                  ['Exchanges', '7 days, unworn with tags'],
+                  ...((product.brand ?? '') !== '' ? [['Brand', product.brand] as [string, string]] : []),
+                  ...Object.entries(product.specs ?? {}).filter(([, v]) => v != null && String(v).trim() !== ''),
                 ].map(([k, v]) => (
                   <div key={k} className="bg-white px-5 py-3">
-                    <dt className="font-bold uppercase tracking-wider text-ink/40">{k}</dt>
+                    <dt className="font-bold uppercase tracking-wider text-ink/40">{specLabel(k)}</dt>
                     <dd className="mt-0.5 font-semibold">{v}</dd>
                   </div>
                 ))}

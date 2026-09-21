@@ -62,6 +62,8 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/012_restore_drops.sql` *(repairs deleted drops — rerun-safe)*
    - `supabase/migrations/013_margin.sql` *(real cost prices + default 20% margin)*
    - `supabase/migrations/014_place_order_fix.sql` *(FK-safe order flow, COD-only)*
+   - `supabase/migrations/016_brand_specs.sql` *(brand + specs columns)*
+   - `supabase/migrations/017_product_specs.sql` *(generated brand/specs backfill — run last)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -134,7 +136,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 016 brand/specs · 017 specs backfill
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md

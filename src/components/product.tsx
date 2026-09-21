@@ -49,8 +49,14 @@ export function srcSetFor(
   return widths.map((w) => `${cloudinaryThumb(url, w, quality)} ${w}w`).join(', ');
 }
 
-export function minPrice(p: Product): number {
-  const base = Number(p.base_price);
+/** "battery_life" → "Battery Life" for spec table labels. */
+export function specLabel(key: string): string {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function minPrice(p: Product): number {  const base = Number(p.base_price);
   const adj = (p.variants ?? []).map((v) => Number(v.price_adjustment));
   if (adj.length === 0) return base;
   return base + Math.min(...adj);

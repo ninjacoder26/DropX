@@ -91,6 +91,14 @@ describe('security invariants', () => {
     expect(fix).toContain("('profit_margin', '20')");
   });
 
+  it('brand + specs columns exist with a full backfill', () => {
+    const cols = readFileSync(join(root, 'supabase/migrations/016_brand_specs.sql'), 'utf8');
+    expect(cols).toContain('brand');
+    expect(cols).toContain('specs jsonb');
+    const backfill = readFileSync(join(root, 'supabase/migrations/017_product_specs.sql'), 'utf8');
+    expect(backfill.split('\n').filter((l) => l.startsWith('update public.products set')).length).toBe(200);
+  });
+
   it('place_order inserts the parent order before its items (FK-safe) and is COD-only', () => {
     const fix = readFileSync(join(root, 'supabase/migrations/014_place_order_fix.sql'), 'utf8');
     expect(fix).toContain('Skeleton parent row FIRST');

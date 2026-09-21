@@ -5,9 +5,10 @@ import { useAuth } from '../store/AuthContext';
 import { useCart } from '../store/CartContext';
 import { formatNPR } from '../lib/shop';
 import { districtOfArea, isGuidedComplete } from '../lib/address';
+import { DELIVERY_METHODS, HUB_NAME, deliveryQuote, type DeliveryMethod } from '../lib/delivery';
 import { AddressForm } from '../components/AddressForm';
 import type { Address } from '../types';
-import { shippingFeeFor, useStoreSettings } from '../lib/settings';
+import { useStoreSettings } from '../lib/settings';
 import { Button, Field, Input } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { primaryImage } from '../components/product';
@@ -90,7 +91,8 @@ export default function CheckoutPage() {
   };
 
   const settings = useStoreSettings();
-  const shippingFee = shippingFeeFor(method, subtotal, settings);
+  const quote = deliveryQuote(method, addr.area, subtotal, settings);
+  const shippingFee = quote.fee ?? 0;
   const total = subtotal + shippingFee;
 
   const valid =
@@ -231,20 +233,44 @@ export default function CheckoutPage() {
 
           <section className="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
             <h2 className="font-display text-lg font-extrabold">Shipping method</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {(['standard', 'express'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMethod(m)}
-                  aria-pressed={method === m}
-                  className={`rounded-2xl border p-4 text-left transition ${method === m ? 'border-ember bg-ember/5' : 'border-ink/15 hover:border-ink/40'}`}
-                >
-                  <p className="font-bold capitalize">{m} <span className="text-ink/50">· 1–3 days</span></p>
-                  <p className="mt-1 text-sm font-bold text-ember">
-                    {shippingFeeFor(m, subtotal, settings) === 0 ? 'FREE' : formatNPR(shippingFeeFor(m, subtotal, settings))}
-                  </p>
-                </button>
-              ))}
+            <p className="mt-1 text-xs text-ink/60">
+              Measured from our hub in {HUB_NAME}
+              {quote.km !== null ? <> · <strong className="text-ink">{addr.area} is ~{quote.km} km away</strong></> : ' — pick your area above for an exact fee'}.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {DELIVERY_METHODS.map((d) => {
+                const disabled = !!d.comingSoon;
+                const q = disabled ? null : deliveryQuote(d.method, addr.area, subtotal, settings);
+                const selected = !disabled && method === d.method;
+                return (
+                  <button
+                    key={d.method}
+                    disabled={disabled}
+                    onClick={() => setMethod(d.method as 'standard' | 'express')}
+                    aria-pressed={selected}
+                    className={`relative rounded-2xl border p-4 text-left transition ${
+                      selected ? 'border-ember bg-ember/5' : 'border-ink/15 hover:border-ink/40'
+                    } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
+                  >
+                    {disabled && (
+                      <span className="absolute right-3 top-3 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-paper">
+                        Soon
+                      </span>
+                    )}
+                    <p className="font-bold capitalize">{d.label}</p>
+                    <p className="text-xs text-ink/50">{d.eta}</p>
+                    <p className="mt-1.5 text-sm font-bold text-ember">
+                      {disabled
+                        ? '—'
+                        : q && q.fee !== null
+                          ? q.free
+                            ? 'FREE'
+                            : formatNPR(q.fee)
+                          : `Rs ${d.method === 'express' ? settings.deliveryRateExpress : settings.deliveryRateStandard}/km`}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </section>
 

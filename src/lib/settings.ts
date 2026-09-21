@@ -11,6 +11,9 @@ export interface StoreSettings {
   shippingExpress: number;
   /** Profit margin %, applied as cost × (1 + margin/100). Default 20. */
   profitMargin: number;
+  /** Rs per km from Imadol. Defaults: standard 10, express 20. */
+  deliveryRateStandard: number;
+  deliveryRateExpress: number;
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
@@ -20,6 +23,8 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   shippingStandard: SHIPPING_FEES.standard,
   shippingExpress: SHIPPING_FEES.express,
   profitMargin: 20,
+  deliveryRateStandard: 10,
+  deliveryRateExpress: 20,
 };
 
 const num = (v: string | undefined, fallback: number): number => {
@@ -49,6 +54,8 @@ export function mapSettings(rows: { key: string; value: string }[]): StoreSettin
     shippingStandard: num(get('shipping_standard'), DEFAULT_SETTINGS.shippingStandard),
     shippingExpress: num(get('shipping_express'), DEFAULT_SETTINGS.shippingExpress),
     profitMargin: clampMargin(num(get('profit_margin'), DEFAULT_SETTINGS.profitMargin)),
+    deliveryRateStandard: num(get('delivery_rate_standard'), DEFAULT_SETTINGS.deliveryRateStandard),
+    deliveryRateExpress: num(get('delivery_rate_express'), DEFAULT_SETTINGS.deliveryRateExpress),
   };
 }
 

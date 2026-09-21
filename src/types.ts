@@ -29,6 +29,8 @@ export interface Product {
   rating_count: number;
   total_sold: number;
   tags: string[];
+  brand: string;
+  specs: Record<string, string>;
   created_at: string;
   category?: Category | null;
   images?: ProductImage[];

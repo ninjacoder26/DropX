@@ -67,6 +67,7 @@ export const PRODUCT_CSV_HEADERS = [
   'is_new',
   'tags',
   'cost_price',
+  'brand',
 ] as const;
 
 export interface ProductCSVRow {
@@ -84,6 +85,8 @@ export interface ProductCSVRow {
   tags: string[];
   /** Real cost; when present the selling price is recomputed with the live margin. */
   cost_price: number | null;
+  /** Real brand name; blank means unbranded (no brand row shown). */
+  brand: string;
 }
 
 const truthy = (v: string) => ['1', 'true', 'yes', 'y'].includes(v.trim().toLowerCase());
@@ -147,6 +150,7 @@ export function validateProductRows(raw: string[][]): { valid: ProductCSVRow[]; 
       errors.push(`Line ${line} (“${name}”): cost_price must be a number ≥ 0.`);
       continue;
     }
+    const brand = idx('brand') >= 0 ? cell('brand').slice(0, 60) : '';
     valid.push({
       line,
       name,
@@ -161,6 +165,7 @@ export function validateProductRows(raw: string[][]): { valid: ProductCSVRow[]; 
       is_new: idx('is_new') < 0 ? true : truthy(cell('is_new') || 'true'),
       tags: normalizeTags(tagList),
       cost_price: cost,
+      brand,
     });
   }
   return { valid, errors };

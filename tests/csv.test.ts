@@ -80,4 +80,17 @@ describe('CSV import/export', () => {
     const nocost = validateProductRows([['name', 'base_price'], ['Plain', '500']]);
     expect(nocost.valid[0].cost_price).toBeNull();
   });
+
+  it('parses an optional brand column (blank = unbranded)', () => {
+    const { valid, errors } = validateProductRows([
+      ['name', 'base_price', 'brand'],
+      ['Buds', '2000', 'Anker'],
+      ['Mystery', '500', ''],
+    ]);
+    expect(errors).toEqual([]);
+    expect(valid[0].brand).toBe('Anker');
+    expect(valid[1].brand).toBe('');
+    const nobrand = validateProductRows([['name', 'base_price'], ['Plain', '500']]);
+    expect(nobrand.valid[0].brand).toBe('');
+  });
 });

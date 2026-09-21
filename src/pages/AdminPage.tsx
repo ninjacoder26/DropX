@@ -247,7 +247,7 @@ function Overview() {
 }
 
 /* ─── Products ─── */
-const EMPTY_PRODUCT = { name: '', slug: '', description: '', category_id: '', cost_price: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
+const EMPTY_PRODUCT = { name: '', slug: '', brand: '', description: '', category_id: '', cost_price: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
 function Products() {
   const [items, setItems] = useState<Product[]>([]);
@@ -294,7 +294,7 @@ function Products() {
     }
     setEditing(p.id);
     setForm({
-      name: p.name, slug: p.slug, description: p.description,
+      name: p.name, slug: p.slug, brand: p.brand ?? '', description: p.description,
       category_id: p.category_id ?? '',
       cost_price: p.cost_price != null ? String(p.cost_price) : '',
       compare_at_price: p.compare_at_price ? String(p.compare_at_price) : '',
@@ -316,6 +316,7 @@ function Products() {
     const payload = {
       name: form.name.trim(),
       slug: form.slug.trim().toLowerCase().replace(/\s+/g, '-'),
+      brand: form.brand.trim().slice(0, 60),
       description: form.description,
       category_id: form.category_id || null,
       cost_price: cost,
@@ -384,7 +385,7 @@ function Products() {
       rows.push([
         p.name, p.slug, p.description, catById.get(p.category_id ?? '') ?? '',
         p.base_price, p.compare_at_price, p.is_active, p.is_featured, p.is_trending, p.is_new,
-        (p.tags ?? []).join('|'), p.cost_price ?? '',
+        (p.tags ?? []).join('|'), p.cost_price ?? '', p.brand ?? '',
       ]);
     }
     download('dropx-products.csv', toCSV(rows));
@@ -411,6 +412,7 @@ function Products() {
         const { error } = await supabase.from('products').insert({
           name: r.name,
           slug: r.slug || `${slugify(r.name)}-${Date.now().toString(36)}`,
+          brand: r.brand,
           description: r.description,
           category_id: (r.category_slug && catBySlug.get(r.category_slug)) || null,
           base_price: selling,
@@ -444,7 +446,7 @@ function Products() {
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
         <div className="ml-auto flex flex-wrap gap-2">
           <button
-            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Sample Hoodie', 'sample-hoodie', 'Heavyweight fleece sample', 'fashion-accessories', 1620, 1999, true, true, true, true, 'apparel|winter|accessories', 1350]]))}
+            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Sample Hoodie', 'sample-hoodie', 'Heavyweight fleece sample', 'fashion-accessories', 1620, 1999, true, true, true, true, 'apparel|winter|accessories', 1350, 'Sample Brand']]))}
             className="rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30"
           >
             Template
@@ -494,6 +496,9 @@ function Products() {
               />
             </Field>
             <Field label="Slug"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
+            <Field label="Brand (blank = no brand row)">
+              <Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} maxLength={60} placeholder="e.g. Anker" />
+            </Field>
             <div className="md:col-span-2">
               <Field label="Description">
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-sm" />
@@ -1279,6 +1284,8 @@ function Settings() {
     shipping_standard: '',
     shipping_express: '',
     profit_margin: '',
+    delivery_rate_standard: '',
+    delivery_rate_express: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1295,6 +1302,8 @@ function Settings() {
         shipping_standard: get('shipping_standard'),
         shipping_express: get('shipping_express'),
         profit_margin: get('profit_margin'),
+        delivery_rate_standard: get('delivery_rate_standard'),
+        delivery_rate_express: get('delivery_rate_express'),
       });
       setLoading(false);
     });
@@ -1311,6 +1320,8 @@ function Settings() {
       free_shipping_threshold: form.free_shipping_threshold,
       shipping_standard: form.shipping_standard,
       shipping_express: form.shipping_express,
+      delivery_rate_standard: form.delivery_rate_standard,
+      delivery_rate_express: form.delivery_rate_express,
     };
     for (const [k, v] of Object.entries(nums)) {
       if (v.trim() !== '' && (Number.isNaN(Number(v)) || Number(v) < 0)) {
@@ -1409,6 +1420,22 @@ function Settings() {
             <Field label="Express fee (NPR)">
               <Input type="number" min={0} value={form.shipping_express} onChange={(e) => setForm({ ...form, shipping_express: e.target.value })} />
             </Field>
+          </div>
+          <div className="rounded-2xl border border-ink/10 bg-paper p-4">
+            <h3 className="font-display font-extrabold">Distance rates from Imadol (Rs/km)</h3>
+            <p className="mt-1 text-xs text-ink/60">
+              Checkout multiplies these by each area's road distance — e.g. Thamel (~8 km):
+              standard Rs {8 * (Number(form.delivery_rate_standard) || 10)} ·
+              express Rs {8 * (Number(form.delivery_rate_express) || 20)}.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-4">
+              <Field label="Standard Rs/km">
+                <Input type="number" min={0} value={form.delivery_rate_standard} onChange={(e) => setForm({ ...form, delivery_rate_standard: e.target.value })} placeholder="10" />
+              </Field>
+              <Field label="Express Rs/km">
+                <Input type="number" min={0} value={form.delivery_rate_express} onChange={(e) => setForm({ ...form, delivery_rate_express: e.target.value })} placeholder="20" />
+              </Field>
+            </div>
           </div>
           {msg && <p className="whitespace-pre-line rounded-xl bg-paper px-3 py-2 text-xs">{msg}</p>}
           <div className="flex flex-wrap gap-2">
