@@ -135,8 +135,8 @@ export default function OrderDetailPage() {
             <select value={review.rating} onChange={(e) => setReview({ ...review, rating: Number(e.target.value) })} className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm" aria-label="Rating">
               {[5, 4, 3, 2, 1].map((r) => <option key={r} value={r}>{r} star{r > 1 ? 's' : ''}</option>)}
             </select>
-            <input value={review.title} onChange={(e) => setReview({ ...review, title: e.target.value })} placeholder="Title" className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm" />
-            <textarea value={review.body} onChange={(e) => setReview({ ...review, body: e.target.value })} placeholder="How was the fit, fabric, delivery?" rows={3} className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm sm:col-span-2" />
+            <input value={review.title} onChange={(e) => setReview({ ...review, title: e.target.value })} placeholder="Title" maxLength={120} className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm" />
+            <textarea value={review.body} onChange={(e) => setReview({ ...review, body: e.target.value })} placeholder="How was the fit, fabric, delivery?" rows={3} maxLength={2000} className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm sm:col-span-2" />
           </div>
           {reviewMsg && <p className="mt-2 text-xs">{reviewMsg}</p>}
           <Button

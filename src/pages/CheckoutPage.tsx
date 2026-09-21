@@ -217,10 +217,10 @@ export default function CheckoutPage() {
             )}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label="Full name">
-                <Input value={addr.full_name} onChange={(e) => setAddr({ ...addr, full_name: e.target.value })} placeholder="Aashish Sharma" autoComplete="name" />
+                <Input value={addr.full_name} onChange={(e) => setAddr({ ...addr, full_name: e.target.value })} placeholder="Aashish Sharma" autoComplete="name" maxLength={120} />
               </Field>
               <Field label="Phone">
-                <Input value={addr.phone} onChange={(e) => setAddr({ ...addr, phone: e.target.value })} placeholder="98XXXXXXXX" autoComplete="tel" />
+                <Input value={addr.phone} onChange={(e) => setAddr({ ...addr, phone: e.target.value })} placeholder="98XXXXXXXX" autoComplete="tel" maxLength={20} />
               </Field>
             </div>
             <div className="mt-4">

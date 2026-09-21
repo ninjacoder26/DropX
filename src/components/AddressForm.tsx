@@ -62,6 +62,7 @@ export function AddressForm({
             onChange={(e) => onChange({ ...value, street: e.target.value })}
             placeholder="House 12, Lazimpat Rd — opposite City Center"
             autoComplete="street-address"
+            maxLength={300}
           />
         </Field>
       </div>
@@ -71,6 +72,7 @@ export function AddressForm({
           onChange={(e) => onChange({ ...value, postal_code: e.target.value })}
           placeholder="44600"
           inputMode="numeric"
+          maxLength={20}
         />
       </Field>
     </div>

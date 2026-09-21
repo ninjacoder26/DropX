@@ -20,6 +20,45 @@ body {
   font-family: 'Archivo', 'Inter', system-ui, sans-serif;
 }
 
+/* Editorial serif accent — the anti-template touch. */
+.font-accent {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Sticker language: thick ink edge + hard offset shadow. */
+.shadow-sticker {
+  box-shadow: 5px 5px 0 #101010;
+}
+.shadow-sticker-sm {
+  box-shadow: 3px 3px 0 #101010;
+}
+.sticker {
+  border: 2px solid #101010;
+  box-shadow: 4px 4px 0 #101010;
+}
+
+/* Film grain for ink sections — kills the flat-template look. */
+.texture-ink {
+  position: relative;
+  isolation: isolate;
+}
+.texture-ink::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.34'/%3E%3C/svg%3E");
+}
+.texture-ink > * {
+  position: relative;
+  z-index: 2;
+}
+
 /* Subtle reveal animation — used sparingly */
 @keyframes dropx-rise {
   from { opacity: 0; transform: translateY(14px); }

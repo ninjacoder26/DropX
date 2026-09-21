@@ -3,6 +3,20 @@ import type { Category, Drop, DropState, Product } from '../types';
 import { dropState } from '../types';
 import { TAG_VOCABULARY } from './tags';
 
+/**
+ * Allowlist-sanitize free text before it touches a query. The Supabase client
+ * already parameterizes everything (there is no string-concatenated SQL in
+ * this codebase — verified by tests), and this additionally strips PostgREST
+ * filter metacharacters (,%()) so search terms can't reshape the filter.
+ */
+export function sanitizeSearch(raw: string): string {
+  return raw
+    .replace(/[%(),."'*\\<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
+}
+
 const PRODUCT_SELECT = `
   *,
   category:categories (*),
@@ -32,8 +46,8 @@ export async function fetchProducts(opts?: {
   if (opts?.isNew) q = q.eq('is_new', true);
   if (opts?.featured) q = q.eq('is_featured', true);
   if (opts?.search && !tagHit) {
-    const term = opts.search.replace(/[%(),]/g, '').slice(0, 60);
-    q = q.or(`name.ilike.%${term}%,description.ilike.%${term}%`);
+    const term = sanitizeSearch(opts.search);
+    if (term) q = q.or(`name.ilike.%${term}%,description.ilike.%${term}%`);
   }
   if (opts?.sort === 'price-asc') q = q.order('base_price', { ascending: true });
   else if (opts?.sort === 'price-desc') q = q.order('base_price', { ascending: false });

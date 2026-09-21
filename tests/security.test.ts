@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { sanitizeSearch } from '../src/lib/catalog';
 import { join } from 'node:path';
 
 const root = join(__dirname, '..');
@@ -75,5 +76,40 @@ describe('security invariants', () => {
     expect(fix).toContain('bump_total_sold');
     expect(fix).toContain('total_sold = total_sold + new.quantity');
     expect(fix).toContain('trg_items_sold');
+  });
+
+  it('no dynamic SQL anywhere — injection has nowhere to land', () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const p = join(dir, e.name);
+        return e.isDirectory() ? walk(p) : [p];
+      });
+    for (const f of walk(join(root, 'supabase/migrations'))) {
+      const sql = readFileSync(f, 'utf8');
+      // EXECUTE is only ever "execute function/procedure" (static trigger
+      // bodies) — never EXECUTE <expression> / format() / USING (dynamic SQL).
+      expect(sql).not.toMatch(/\bEXECUTE\b(?!\s+(function|procedure))/i);
+      expect(/format\s*\(/i.test(sql), f).toBe(false);
+    }
+  });
+
+  it('search input is allowlist-sanitized', () => {
+    expect(sanitizeSearch('hoodie %,()')).toBe('hoodie');
+    expect(sanitizeSearch('  a  b  ')).toBe('a b');
+    expect(sanitizeSearch('x'.repeat(200)).length).toBeLessThanOrEqual(60);
+    expect(sanitizeSearch('"><script>')).not.toContain('<');
+  });
+
+  it('ships hardened response headers including a CSP', () => {
+    const vercel = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')) as {
+      headers: { headers: { key: string; value: string }[] }[];
+    };
+    const all = vercel.headers.flatMap((h) => h.headers);
+    const get = (k: string) => all.find((h) => h.key === k)?.value ?? '';
+    expect(get('Strict-Transport-Security')).toContain('max-age');
+    expect(get('X-Frame-Options')).toBe('DENY');
+    expect(get('Content-Security-Policy')).toContain("frame-ancestors 'none'");
+    expect(get('Content-Security-Policy')).toContain('https://*.supabase.co');
+    expect(get('Content-Security-Policy')).not.toContain('unsafe-eval');
   });
 });

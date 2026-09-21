@@ -147,7 +147,7 @@ export function Navbar() {
 export function Footer() {
   const { supportEmail } = useStoreSettings();
   return (
-    <footer className="mt-16 bg-ink text-paper">
+    <footer className="texture-ink mt-16 bg-ink text-paper">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.3fr_1fr_1fr_1fr] lg:px-8">
         <div>
           <p className="font-display text-2xl font-black">

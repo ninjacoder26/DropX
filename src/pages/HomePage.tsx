@@ -135,7 +135,7 @@ export default function HomePage() {
   return (
     <div>
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-ink text-paper">
+      <section className="texture-ink relative overflow-hidden bg-ink text-paper">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-ember/20 blur-3xl"
@@ -152,14 +152,14 @@ export default function HomePage() {
             <h1 className="mt-5 font-display text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl md:text-7xl">
               Wear the
               <br />
-              <span className="text-ember">Drop.</span>
+              <span className="font-accent font-normal tracking-normal text-ember">Drop.</span>
             </h1>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-paper/70">
               Heavyweight streetwear designed in Kathmandu. A fresh drop every month,
               one Mega Drop a year — delivered to your doorstep inside Kathmandu Valley.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/shop" className="inline-flex items-center gap-2 rounded-full bg-ember px-7 py-3.5 text-sm font-bold text-white transition hover:bg-ember-dark">
+              <Link to="/shop" className="shadow-sticker inline-flex items-center gap-2 rounded-full border-2 border-paper/80 bg-ember px-7 py-3.5 text-sm font-bold text-white transition hover:bg-ember-dark">
                 Shop the collection <ArrowRight size={16} />
               </Link>
               <Link to="/drops" className="inline-flex items-center gap-2 rounded-full border border-paper/25 px-7 py-3.5 text-sm font-bold transition hover:border-paper/60 hover:bg-paper/5">
@@ -349,7 +349,7 @@ export default function HomePage() {
         )}
 
         {/* ── Perks ── */}
-        <section className="grid gap-3 rounded-3xl bg-ink p-6 text-paper sm:grid-cols-3 md:p-8">
+        <section className="texture-ink grid gap-3 rounded-3xl bg-ink p-6 text-paper sm:grid-cols-3 md:p-8">
           {[
             { icon: Truck, title: 'Valley delivery', body: '1–3 days inside Kathmandu Valley. Free standard shipping over NPR 2,999.' },
             { icon: ShieldCheck, title: 'Pay your way', body: 'Cash on Delivery or bank transfer — confirmed by our team.' },
