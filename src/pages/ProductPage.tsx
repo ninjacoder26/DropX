@@ -79,7 +79,7 @@ export default function ProductPage() {
   if (loading) {
     return (
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 md:grid-cols-2">
-        <Skeleton className="aspect-[7/8]" />
+        <Skeleton className="aspect-square" />
         <div className="space-y-3">
           <Skeleton className="h-8 w-2/3" />
           <Skeleton className="h-5 w-1/3" />
@@ -102,7 +102,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <nav className="text-xs text-ink/50" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-ember">Home</Link> /{' '}
         <Link to="/shop" className="hover:text-ember">Shop</Link> /{' '}
@@ -118,7 +118,7 @@ export default function ProductPage() {
               srcSet={images[imgIdx] ? srcSetFor(images[imgIdx].secure_url, [600, 1000, 1400]) : undefined}
               sizes="(max-width: 768px) 100vw, 50vw"
               alt={images[imgIdx]?.alt_text || product.name}
-              className="aspect-[7/8] w-full object-cover"
+              className="aspect-square w-full object-cover"
             />
           </div>
           {images.length > 1 && (
@@ -128,7 +128,7 @@ export default function ProductPage() {
                   key={im.id}
                   onClick={() => setImgIdx(i)}
                   className={clsx(
-                    'h-20 w-16 shrink-0 overflow-hidden rounded-xl ring-2',
+                    'h-20 w-20 shrink-0 overflow-hidden rounded-xl ring-2',
                     i === imgIdx ? 'ring-ember' : 'ring-transparent'
                   )}
                   aria-label={`View image ${i + 1}`}

@@ -74,8 +74,9 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="font-display text-3xl font-black tracking-tight">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Catalog</p>
+      <h1 className="mt-1 font-display text-3xl font-black tracking-tight sm:text-4xl">
         {q ? `Results for “${q}”` : category ? cats.find((c) => c.slug === category)?.name ?? 'Shop' : 'Shop all'}
       </h1>
       <p className="mt-1 text-sm text-ink/60">{filtered.length} product{filtered.length === 1 ? '' : 's'}</p>
@@ -166,7 +167,7 @@ export default function ShopPage() {
         <div>
           {loading ? (
             <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
-              {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="aspect-[7/8]" />)}
+              {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
           ) : error ? (
             <ErrorState message={error} onRetry={() => window.location.reload()} />

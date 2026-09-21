@@ -10,7 +10,7 @@ export default function ForgotPasswordPage() {
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-14">
+    <div className="mx-auto max-w-md px-4 sm:px-6 py-14">
       <h1 className="font-display text-3xl font-black">Reset password</h1>
       <p className="mt-1 text-sm text-ink/60">We will email you a recovery link.</p>
       <form

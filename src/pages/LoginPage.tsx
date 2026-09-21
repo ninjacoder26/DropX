@@ -24,7 +24,7 @@ export default function LoginPage() {
   }, [loading, user, next, nav]);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-14">
+    <div className="mx-auto max-w-md px-4 sm:px-6 py-14">
       <h1 className="font-display text-3xl font-black">Welcome back</h1>
       <p className="mt-1 text-sm text-ink/60">
         {next === '/checkout'

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Heart, Menu, Search, ShoppingBag, User, X, Zap } from 'lucide-react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Heart, Home, LayoutGrid, Menu, Search, ShoppingBag, User, X, Zap } from 'lucide-react';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
 import { useStoreSettings } from '../lib/settings';
@@ -29,7 +29,7 @@ export function Navbar() {
           {announcement}
         </p>
       </div>
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <button className="rounded-lg p-2 hover:bg-ink/5 lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -148,7 +148,7 @@ export function Footer() {
   const { supportEmail } = useStoreSettings();
   return (
     <footer className="mt-16 bg-ink text-paper">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.3fr_1fr_1fr_1fr] lg:px-8">
         <div>
           <p className="font-display text-2xl font-black">
             Drop<span className="text-ember">X</span>
@@ -194,12 +194,57 @@ export function Footer() {
         </nav>
       </div>
       <div className="border-t border-paper/10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-4 text-xs text-paper/50">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-4 text-xs text-paper/50 sm:px-6 lg:px-8">
           <p>© 2026 DropX. All rights reserved.</p>
           <p className="ml-auto">Prices include taxes where applicable.</p>
         </div>
       </div>
     </footer>
+  );
+}
+
+/** Thumb-friendly bottom tab bar for phones/tablets. Hidden on desktop and in admin. */
+export function MobileNav() {
+  const { count } = useCart();
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  if (pathname.startsWith('/admin')) return null;
+
+  const tabs = [
+    { to: '/', label: 'Home', icon: Home, match: (p: string) => p === '/' },
+    { to: '/shop', label: 'Shop', icon: LayoutGrid, match: (p: string) => p.startsWith('/shop') || p.startsWith('/product') },
+    { to: '/drops', label: 'Drops', icon: Zap, match: (p: string) => p.startsWith('/drops') },
+    { to: '/cart', label: 'Bag', icon: ShoppingBag, match: (p: string) => p.startsWith('/cart') || p.startsWith('/checkout'), badge: count },
+    { to: user ? '/account' : '/login', label: 'Account', icon: User, match: (p: string) => ['/account', '/login', '/register', '/orders', '/wishlist'].some((s) => p.startsWith(s)) },
+  ];
+
+  return (
+    <nav aria-label="Mobile" className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-white/95 backdrop-blur lg:hidden">
+      <div className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+        {tabs.map((t) => {
+          const active = t.match(pathname);
+          return (
+            <NavLink
+              key={t.label}
+              to={t.to}
+              aria-current={active ? 'page' : undefined}
+              className={`relative flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-[10px] font-bold transition ${
+                active ? 'text-ember' : 'text-ink/50 hover:text-ink'
+              }`}
+            >
+              <t.icon size={20} />
+              {t.label}
+              {!!t.badge && t.badge > 0 && (
+                <span className="absolute right-1/2 top-1 flex h-4 min-w-4 translate-x-4 items-center justify-center rounded-full bg-ember px-1 text-[9px] font-bold text-white">
+                  {t.badge > 99 ? '99+' : t.badge}
+                </span>
+              )}
+              {active && <span className="absolute bottom-1 h-1 w-8 rounded-full bg-ember" aria-hidden />}
+            </NavLink>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 

@@ -67,7 +67,7 @@ export default function DropsPage() {
   const focused = slug ? drops.find((d) => d.slug === slug) : null;
 
   if (loading) {
-    return <div className="mx-auto max-w-7xl space-y-4 px-4 py-8"><Skeleton className="h-64" /><Skeleton className="h-40" /></div>;
+    return <div className="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8 py-8"><Skeleton className="h-64" /><Skeleton className="h-40" /></div>;
   }
 
   // Single-drop view — ended drops keep their page (shared links don't rot),
@@ -75,7 +75,7 @@ export default function DropsPage() {
   if (slug) {
     if (!focused) {
       return (
-        <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="font-display text-3xl font-black">Drop not found</h1>
           <Link to="/drops" className="mt-4 inline-block rounded-full bg-ink px-6 py-2.5 text-sm font-bold text-paper">All drops</Link>
         </div>
@@ -83,7 +83,7 @@ export default function DropsPage() {
     }
     const isLive = dropState(focused) === 'active';
     return (
-      <div className="mx-auto max-w-7xl space-y-8 px-4 py-8">
+      <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8 py-8">
         <Link to="/drops" className="text-xs font-bold text-ember hover:underline">← All drops</Link>
         <DropHero drop={focused} mega={focused.kind === 'mega'} />
         <div>
@@ -105,9 +105,10 @@ export default function DropsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-4 py-8">
+    <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8 py-8">
       <div>
-        <h1 className="font-display text-4xl font-black tracking-tight">Drops</h1>
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Limited collections</p>
+        <h1 className="mt-1 font-display text-3xl font-black tracking-tight sm:text-4xl">Drops</h1>
         <p className="mt-1 max-w-2xl text-sm text-ink/60">
           Limited collections, curated monthly — plus one Mega Drop a year. Only live drops can be shopped; upcoming ones are previews.
         </p>

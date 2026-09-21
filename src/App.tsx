@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { Navbar, Footer } from './components/layout';
+import { Navbar, Footer, MobileNav } from './components/layout';
 import { useAuth } from './store/AuthContext';
 import type { ReactNode } from 'react';
 
@@ -28,7 +28,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading, configured } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>;
+  if (loading) return <div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60 sm:px-6 lg:px-8">Loading…</div>;
   if (!configured || !user) {
     // Preserve intent: after login the customer lands back here with their
     // guest bag intact (it merges into the server cart on sign-in).
@@ -49,7 +49,7 @@ function RequireAdmin({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col pb-16 lg:pb-0">
       <Navbar />
       <main className="flex-1">
         <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>}>
@@ -79,6 +79,7 @@ export default function App() {
         </Suspense>
       </main>
       <Footer />
+      <MobileNav />
     </div>
   );
 }

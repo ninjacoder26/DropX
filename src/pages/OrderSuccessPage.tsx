@@ -18,7 +18,7 @@ export default function OrderSuccessPage() {
   }, [id]);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-14 text-center">
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 py-14 text-center">
       <CheckCircle2 size={56} className="mx-auto text-ember" />
       <h1 className="mt-4 font-display text-3xl font-black">Order placed!</h1>
       <p className="mt-2 text-sm text-ink/60">

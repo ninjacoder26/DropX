@@ -15,7 +15,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
   render() {
     if (this.state.error) {
       return (
-        <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        <div className="mx-auto max-w-lg px-4 py-20 text-center sm:px-6">
           <p className="font-display text-5xl font-black text-ember">Oops</p>
           <h1 className="mt-2 font-display text-xl font-extrabold">Something broke on this page</h1>
           <p className="mt-2 break-words rounded-2xl bg-white p-4 text-left font-mono text-xs text-ink/70 shadow-card ring-1 ring-ink/5">

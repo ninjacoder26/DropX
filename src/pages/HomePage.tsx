@@ -140,7 +140,7 @@ export default function HomePage() {
           aria-hidden
           className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-ember/10 blur-3xl"
         />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-[1.1fr_1fr] md:py-20">
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.1fr_1fr] md:py-20 lg:px-8">
           <div className="reveal flex flex-col justify-center">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-paper/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-paper/80">
               <span className="h-1.5 w-1.5 rounded-full bg-ember" /> New season · Nepal
@@ -227,7 +227,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl space-y-14 px-4 py-10 md:py-14">
+      <div className="mx-auto max-w-7xl space-y-12 px-4 py-10 sm:px-6 md:py-14 lg:px-8">
         {!isSupabaseConfigured && <SetupNotice area="homepage catalog" />}
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800">{error}</div>
@@ -275,7 +275,7 @@ export default function HomePage() {
           </div>
           {loading ? (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-              {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[7/8]" />)}
+              {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
           ) : trending.length === 0 ? (
             <p className="mt-5 text-sm text-ink/60">No trending products yet.</p>
@@ -318,7 +318,7 @@ export default function HomePage() {
           </div>
           {loading ? (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-              {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[7/8]" />)}
+              {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
             </div>
           ) : fresh.length === 0 ? (
             <p className="mt-5 text-sm text-ink/60">Nothing new yet — check back after the next drop.</p>

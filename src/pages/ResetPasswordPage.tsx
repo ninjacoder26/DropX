@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-14">
+    <div className="mx-auto max-w-md px-4 sm:px-6 py-14">
       <h1 className="font-display text-3xl font-black">Set a new password</h1>
       {ready === null ? (
         <p className="mt-4 rounded-2xl bg-white p-6 text-sm text-ink/60 shadow-card ring-1 ring-ink/5">

@@ -29,11 +29,11 @@ export default function WishlistPage() {
   }, [ids]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="font-display text-3xl font-black">Wishlist ({ids.length})</h1>
       {loading ? (
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[7/8]" />)}
+          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square" />)}
         </div>
       ) : products.length === 0 ? (
         <div className="mt-8">

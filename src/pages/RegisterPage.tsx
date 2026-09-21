@@ -16,7 +16,7 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-14">
+    <div className="mx-auto max-w-md px-4 sm:px-6 py-14">
       <h1 className="font-display text-3xl font-black">Join DropX</h1>
       <p className="mt-1 text-sm text-ink/60">Early access to drops, faster checkout, order tracking.</p>
       <div className="mt-6 rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">

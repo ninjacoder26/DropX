@@ -27,27 +27,27 @@ export default function OrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-16">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-16">
         <EmptyState title="No orders yet" body="Your order history and live tracking will appear here." action={<Link to="/shop" className="rounded-full bg-ember px-6 py-2.5 text-sm font-bold text-white">Start shopping</Link>} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8">
       <h1 className="font-display text-3xl font-black">Order history</h1>
       <ul className="mt-6 space-y-3">
         {orders.map((o) => (
           <li key={o.id}>
-            <Link to={`/orders/${o.id}`} className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-card ring-1 ring-ink/5 transition hover:shadow-pop">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-ink text-paper"><Package size={18} /></span>
-              <span className="min-w-0 flex-1">
+            <Link to={`/orders/${o.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-white p-4 shadow-card ring-1 ring-ink/5 transition hover:shadow-pop">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink text-paper"><Package size={18} /></span>
+              <span className="min-w-0 flex-1 basis-32">
                 <span className="block font-display font-bold">{o.order_number}</span>
                 <span className="block text-xs text-ink/50">
                   {new Date(o.placed_at).toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' })} · {formatNPR(o.grand_total)}
                 </span>
               </span>
-              <span className="flex gap-1.5">
+              <span className="flex flex-wrap gap-1.5">
                 <Badge tone={tone(o.status)}>{o.status}</Badge>
                 <Badge tone={tone(o.payment_status)}>{o.payment_status.replace('_', ' ')}</Badge>
               </span>

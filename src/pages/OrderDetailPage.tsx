@@ -30,10 +30,10 @@ export default function OrderDetailPage() {
       });
   }, [id]);
 
-  if (loading) return <div className="mx-auto max-w-3xl px-4 py-8"><Skeleton className="h-64" /></div>;
+  if (loading) return <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8"><Skeleton className="h-64" /></div>;
   if (!order) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-16">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16">
         <EmptyState title="Order not found" body="Check the link or your order history." action={<Link to="/orders" className="rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-paper">Back to orders</Link>} />
       </div>
     );
@@ -42,7 +42,7 @@ export default function OrderDetailPage() {
   const stageIdx = STAGES.indexOf(order.status as (typeof STAGES)[number]);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
       <Link to="/orders" className="text-xs font-bold text-ember hover:underline">← All orders</Link>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <h1 className="font-display text-3xl font-black">{order.order_number}</h1>
@@ -85,7 +85,7 @@ export default function OrderDetailPage() {
       <ul className="mt-5 space-y-2">
         {(order.items ?? []).map((it) => (
           <li key={it.id} className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-ink/5">
-            {it.image_url && <img src={it.image_url} alt="" className="h-14 w-12 rounded-lg object-cover" loading="lazy" />}
+            {it.image_url && <img src={it.image_url} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" />}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold">{it.product_name}</p>
               <p className="text-xs text-ink/50">{it.variant_name ?? ''} · × {it.quantity}</p>

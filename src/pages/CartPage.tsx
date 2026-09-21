@@ -25,7 +25,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="font-display text-3xl font-black">Your bag ({count})</h1>
 
       <div className="mt-4 rounded-2xl bg-white p-4 shadow-card ring-1 ring-ink/5">
@@ -42,35 +42,43 @@ export default function CartPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <ul className="space-y-3">
           {lines.map((l) => (
-            <li key={`${l.product.id}-${l.variant?.id ?? 'base'}`} className="flex flex-wrap items-start gap-4 rounded-2xl bg-white p-4 shadow-card ring-1 ring-ink/5">
-              <Link to={`/product/${l.product.slug}`} className="h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-paper-dark">
+            <li
+              key={`${l.product.id}-${l.variant?.id ?? 'base'}`}
+              className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-ink/5 sm:gap-4 sm:p-4"
+            >
+              <Link to={`/product/${l.product.slug}`} className="aspect-square w-full overflow-hidden rounded-xl bg-paper-dark">
                 <img src={primaryImage(l.product)} alt={l.product.name} className="h-full w-full object-cover" loading="lazy" />
               </Link>
-              <div className="min-w-0 flex-1">
-                <Link to={`/product/${l.product.slug}`} className="font-display font-bold hover:text-ember">
-                  {l.product.name}
-                </Link>
-                {l.variant && <p className="text-xs text-ink/50">{l.variant.name} · {l.variant.sku}</p>}
-                <p className="mt-1 text-sm font-bold">{formatNPR(l.unitPrice)}</p>
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="flex items-center rounded-full border border-ink/15">
-                    <button onClick={() => void setQty(l.product.id, l.variant?.id ?? null, l.quantity - 1)} className="p-2 hover:text-ember" aria-label="Decrease">
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-7 text-center text-sm font-bold">{l.quantity}</span>
-                    <button onClick={() => void setQty(l.product.id, l.variant?.id ?? null, l.quantity + 1)} className="p-2 hover:text-ember" aria-label="Increase">
-                      <Plus size={14} />
-                    </button>
+              <div className="min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <Link to={`/product/${l.product.slug}`} className="block truncate font-display font-bold hover:text-ember">
+                      {l.product.name}
+                    </Link>
+                    {l.variant && <p className="mt-0.5 truncate text-xs text-ink/50">{l.variant.name} · {l.variant.sku}</p>}
                   </div>
                   <button
                     onClick={() => void remove(l.product.id, l.variant?.id ?? null)}
-                    className="flex items-center gap-1 text-xs font-semibold text-ink/50 hover:text-red-600"
+                    aria-label={`Remove ${l.product.name}`}
+                    className="shrink-0 rounded-full p-1.5 text-ink/40 transition hover:bg-red-50 hover:text-red-600"
                   >
-                    <Trash2 size={14} /> Remove
+                    <Trash2 size={15} />
                   </button>
                 </div>
+                <p className="mt-1 text-xs text-ink/50">{formatNPR(l.unitPrice)} each</p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center rounded-full border border-ink/15">
+                    <button onClick={() => void setQty(l.product.id, l.variant?.id ?? null, l.quantity - 1)} className="p-2.5 hover:text-ember" aria-label="Decrease quantity">
+                      <Minus size={14} />
+                    </button>
+                    <span className="w-7 text-center text-sm font-bold" aria-live="polite">{l.quantity}</span>
+                    <button onClick={() => void setQty(l.product.id, l.variant?.id ?? null, l.quantity + 1)} className="p-2.5 hover:text-ember" aria-label="Increase quantity">
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                  <p className="font-display font-extrabold">{formatNPR(l.unitPrice * l.quantity)}</p>
+                </div>
               </div>
-              <p className="ml-auto font-display font-extrabold">{formatNPR(l.unitPrice * l.quantity)}</p>
             </li>
           ))}
         </ul>

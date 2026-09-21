@@ -1,11 +1,25 @@
 /**
  * Render smoke tests — the "blank page" regression net.
- * Runs with NO backend configured (src/config.ts empty), asserting every
- * public route renders real content instead of a blank screen.
+ * Forces the UNCONFIGURED state (empty config) regardless of what the
+ * developer has in their local src/config.ts, asserting every public
+ * route renders real content instead of a blank screen.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+
+vi.mock('../src/config', () => ({
+  APP_CONFIG: {
+    appName: 'DropX',
+    supabaseUrl: '',
+    supabaseAnonKey: '',
+    cloudinaryCloudName: '',
+    cloudinaryUploadPreset: '',
+  },
+  isSupabaseConfigured: false,
+  isCloudinaryConfigured: false,
+}));
+
 import App from '../src/App';
 import { AuthProvider } from '../src/store/AuthContext';
 import { CartProvider } from '../src/store/CartContext';
@@ -44,7 +58,7 @@ describe('unconfigured storefront renders (never blank)', () => {
 
   it('/drops explains there is nothing published yet', async () => {
     renderAt('/drops');
-    expect(await screen.findByText('Drops')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Drops' })).toBeInTheDocument();
     expect(await screen.findByText(/No published drops yet/)).toBeInTheDocument();
   });
 

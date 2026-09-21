@@ -16,7 +16,7 @@ export function primaryImage(p: Product): string {
   // Branded placeholder (SVG data URI in brand colors — not a fake product photo)
   const label = encodeURIComponent(p.name.slice(0, 18));
   return `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="700" height="800"><rect width="700" height="800" fill="#101010"/><text x="50%" y="46%" fill="#F06427" font-family="Arial" font-size="44" font-weight="900" text-anchor="middle">DropX</text><text x="50%" y="56%" fill="#F7F5F0" font-family="Arial" font-size="22" text-anchor="middle">${label}</text></svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="800" height="800" fill="#101010"/><text x="50%" y="46%" fill="#F06427" font-family="Arial" font-size="44" font-weight="900" text-anchor="middle">DropX</text><text x="50%" y="56%" fill="#F7F5F0" font-family="Arial" font-size="22" text-anchor="middle">${label}</text></svg>`
   )}`;
 }
 
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
     <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5 transition duration-300 hover:-translate-y-1 hover:shadow-pop">
       <div className="relative">
         <Link to={`/product/${product.slug}`} aria-label={product.name} className="relative block">
-          <div className="relative aspect-[7/8] overflow-hidden bg-paper-dark">
+          <div className="relative aspect-square overflow-hidden bg-paper-dark">
             <img
               src={primaryImage(product)}
               srcSet={srcSetFor(raw, [400, 700, 1000])}
