@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = join(__dirname, '..');
@@ -32,5 +32,25 @@ describe('security invariants', () => {
     expect(fn).toContain('for update');
     expect(fn).toContain('Insufficient stock');
     expect(fn).toContain('p_payment_provider');
+  });
+
+  it('no client source file reads env vars or embeds online providers', () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const p = join(dir, e.name);
+        return e.isDirectory() ? walk(p) : [p];
+      });
+    const files = walk(join(root, 'src')).filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'));
+    for (const f of files) {
+      const src = readFileSync(f, 'utf8');
+      expect(src, f).not.toContain('import.meta.env');
+      expect(src, f).not.toMatch(/VITE_[A-Z_]+/);
+    }
+  });
+
+  it('storage migration keeps non-image uploads in Supabase with owner-only writes', () => {
+    const sql = readFileSync(join(root, 'supabase/migrations/005_storage.sql'), 'utf8');
+    expect(sql).toContain('dropx-assets');
+    expect(sql).toContain('auth.uid()');
   });
 });

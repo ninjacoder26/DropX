@@ -12,7 +12,7 @@ interface AuthState {
   configured: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signInWithGoogle: () => Promise<{ error: string | null }>;
+  signInWithGoogle: (next?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   refreshProfile: () => Promise<void>;
@@ -74,11 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         return { error: error?.message ?? null };
       },
-      signInWithGoogle: async () => {
+      signInWithGoogle: async (next = '/account') => {
         if (!isSupabaseConfigured) return { error: 'Supabase is not configured yet.' };
+        const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/account';
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: `${window.location.origin}/account` },
+          options: { redirectTo: `${window.location.origin}${safeNext}` },
         });
         return { error: error?.message ?? null };
       },

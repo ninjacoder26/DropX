@@ -62,4 +62,17 @@ describe('unconfigured storefront renders (never blank)', () => {
     renderAt('/product/no-such-product');
     expect(await screen.findByText(/Product not found/)).toBeInTheDocument();
   });
+
+  it('/terms and /privacy render legal content', async () => {
+    renderAt('/terms');
+    expect(await screen.findByText('Terms of Service')).toBeInTheDocument();
+    renderAt('/privacy');
+    expect(await screen.findByText('Privacy Policy')).toBeInTheDocument();
+  });
+
+  it('/checkout redirects to login while preserving intent', async () => {
+    renderAt('/checkout');
+    expect(await screen.findByText(/Welcome back/)).toBeInTheDocument();
+    expect(await screen.findByText(/finish checking out/)).toBeInTheDocument();
+  });
 });

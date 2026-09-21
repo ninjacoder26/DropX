@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Navbar, Footer } from './components/layout';
 import { useAuth } from './store/AuthContext';
 import type { ReactNode } from 'react';
@@ -20,13 +20,21 @@ const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const DropsPage = lazy(() => import('./pages/DropsPage'));
 const CollectionsPage = lazy(() => import('./pages/CollectionsPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading, configured } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>;
-  if (!configured || !user) return <Navigate to="/login" replace />;
+  if (!configured || !user) {
+    // Preserve intent: after login the customer lands back here with their
+    // guest bag intact (it merges into the server cart on sign-in).
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?next=${next}`} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -63,6 +71,8 @@ export default function App() {
             <Route path="/drops" element={<DropsPage />} />
             <Route path="/drops/:slug" element={<DropsPage />} />
             <Route path="/collections" element={<CollectionsPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/admin/*" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

@@ -13,7 +13,7 @@ const links = [
 
 export function Navbar() {
   const { count } = useCart();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const nav = useNavigate();
@@ -83,8 +83,12 @@ export function Navbar() {
           <Link to="/wishlist" className="rounded-full p-2.5 hover:bg-ink/5" aria-label="Wishlist">
             <Heart size={19} />
           </Link>
-          <Link to={user ? '/account' : '/login'} className="rounded-full p-2.5 hover:bg-ink/5" aria-label="Account">
-            <User size={19} />
+          <Link to={user ? '/account' : '/login'} className="rounded-full p-1.5 hover:bg-ink/5" aria-label="Account">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Account" className="h-7 w-7 rounded-full object-cover ring-1 ring-ink/15" />
+            ) : (
+              <span className="block p-1"><User size={19} /></span>
+            )}
           </Link>
           <Link
             to="/cart"
@@ -141,47 +145,56 @@ export function Navbar() {
 export function Footer() {
   return (
     <footer className="mt-16 bg-ink text-paper">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
         <div>
           <p className="font-display text-2xl font-black">
             Drop<span className="text-ember">X</span>
           </p>
-          <p className="mt-3 max-w-xs text-sm text-paper/60">
-            Nepal-focused premium streetwear & lifestyle. Designed in Kathmandu, delivered across the country.
+          <p className="mt-3 max-w-xs text-sm leading-relaxed text-paper/60">
+            Nepal-focused premium streetwear & lifestyle. Designed in Kathmandu,
+            delivered across the country — cash on delivery, no fuss.
+          </p>
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-paper/5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-paper/60 ring-1 ring-paper/10">
+            <span className="h-1.5 w-1.5 rounded-full bg-ember" /> All prices in NPR
           </p>
         </div>
-        <div>
+        <nav aria-label="Shop">
           <p className="text-xs font-bold uppercase tracking-widest text-paper/50">Shop</p>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li><Link className="hover:text-ember" to="/shop">All products</Link></li>
-            <li><Link className="hover:text-ember" to="/drops">Drop of the Month</Link></li>
-            <li><Link className="hover:text-ember" to="/drops">Mega Drop of the Year</Link></li>
-            <li><Link className="hover:text-ember" to="/collections">Collections</Link></li>
+          <ul className="mt-3 space-y-2.5 text-sm">
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/shop">All products</Link></li>
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/drops">Drop of the Month</Link></li>
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/drops">Mega Drop of the Year</Link></li>
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/collections">Collections</Link></li>
           </ul>
-        </div>
-        <div>
+        </nav>
+        <nav aria-label="Account">
           <p className="text-xs font-bold uppercase tracking-widest text-paper/50">Account</p>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li><Link className="hover:text-ember" to="/account">My account</Link></li>
-            <li><Link className="hover:text-ember" to="/orders">Order history</Link></li>
-            <li><Link className="hover:text-ember" to="/wishlist">Wishlist</Link></li>
-            <li><Link className="hover:text-ember" to="/cart">Cart</Link></li>
+          <ul className="mt-3 space-y-2.5 text-sm">
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/account">My account</Link></li>
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/orders">Order history</Link></li>
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/wishlist">Wishlist</Link></li>
+            <li><Link className="text-paper/80 transition hover:text-ember" to="/cart">Bag</Link></li>
           </ul>
-        </div>
-        <div>
+        </nav>
+        <nav aria-label="Support and legal">
           <p className="text-xs font-bold uppercase tracking-widest text-paper/50">Support</p>
-          <ul className="mt-3 space-y-2 text-sm text-paper/80">
-            <li>Delivery across Nepal (2–5 days)</li>
-            <li>Cash on Delivery · Bank transfer</li>
-            <li>Easy 7-day size exchanges</li>
-            <li>support@dropx.com.np</li>
+          <ul className="mt-3 space-y-2.5 text-sm">
+            <li className="text-paper/80">Delivery across Nepal (2–5 days)</li>
+            <li className="text-paper/80">COD · Bank transfer</li>
+            <li className="text-paper/80">7-day size exchanges</li>
+            <li className="text-paper/80">support@dropx.com.np</li>
+            <li className="flex gap-4 pt-1 font-bold">
+              <Link className="text-paper/80 transition hover:text-ember" to="/terms">Terms</Link>
+              <Link className="text-paper/80 transition hover:text-ember" to="/privacy">Privacy</Link>
+            </li>
           </ul>
-        </div>
+        </nav>
       </div>
       <div className="border-t border-paper/10">
-        <p className="mx-auto max-w-7xl px-4 py-4 text-xs text-paper/50">
-          © 2026 DropX. All rights reserved. Prices in NPR, inclusive of taxes where applicable.
-        </p>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-4 text-xs text-paper/50">
+          <p>© 2026 DropX. All rights reserved.</p>
+          <p className="ml-auto">Prices include taxes where applicable.</p>
+        </div>
       </div>
     </footer>
   );

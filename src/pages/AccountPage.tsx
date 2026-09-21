@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Camera } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { uploadAvatar } from '../lib/avatar';
 import { useAuth } from '../store/AuthContext';
 import type { Address } from '../types';
 import { NEPAL_PROVINCES } from '../lib/shop';
@@ -14,6 +16,9 @@ export default function AccountPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showAddr, setShowAddr] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
+  const avatarRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState({ label: 'Home', full_name: '', phone: '', province: 'Bagmati', city: '', street: '', postal_code: '' });
 
   useEffect(() => {
@@ -35,6 +40,52 @@ export default function AccountPage() {
       <div className="mt-6 grid gap-5 md:grid-cols-2">
         <section className="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
           <h2 className="font-display text-lg font-extrabold">Profile</h2>
+          <div className="mt-4 flex items-center gap-4">
+            <div className="relative">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile photo" className="h-16 w-16 rounded-full object-cover ring-2 ring-ember/30" />
+              ) : (
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink font-display text-xl font-black text-paper">
+                  {(profile?.full_name || user?.email || 'D')[0].toUpperCase()}
+                </span>
+              )}
+              <button
+                onClick={() => avatarRef.current?.click()}
+                disabled={avatarBusy}
+                aria-label="Upload profile photo"
+                className="absolute -bottom-1 -right-1 rounded-full bg-ember p-1.5 text-white shadow transition hover:bg-ember-dark disabled:opacity-50"
+              >
+                <Camera size={13} />
+              </button>
+              <input
+                ref={avatarRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f || !user) return;
+                  setAvatarMsg(null);
+                  setAvatarBusy(true);
+                  uploadAvatar(user.id, f)
+                    .then(() => {
+                      setAvatarMsg('Photo updated.');
+                      return refreshProfile();
+                    })
+                    .catch((err: Error) => setAvatarMsg(err.message))
+                    .finally(() => {
+                      setAvatarBusy(false);
+                      if (avatarRef.current) avatarRef.current.value = '';
+                    });
+                }}
+              />
+            </div>
+            <div className="text-xs text-ink/60">
+              <p className="font-bold text-ink">{avatarBusy ? 'Uploading…' : 'Profile photo'}</p>
+              <p>JPG/PNG/WebP · under 2 MB · stored in Supabase</p>
+              {avatarMsg && <p className="mt-0.5 font-semibold">{avatarMsg}</p>}
+            </div>
+          </div>
           <div className="mt-4 space-y-3">
             <Field label="Full name">
               <Input value={name} onChange={(e) => setName(e.target.value)} />

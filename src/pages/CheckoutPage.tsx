@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 import { useCart } from '../store/CartContext';
@@ -27,6 +27,7 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState<'standard' | 'express'>('standard');
   const [payMethod, setPayMethod] = useState<PaymentMethod>('cod');
   const [notes, setNotes] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Set when the order succeeds so the empty-cart redirect below doesn't
@@ -68,10 +69,15 @@ export default function CheckoutPage() {
     addr.full_name.trim().length >= 2 &&
     addr.phone.trim().length >= 7 &&
     addr.city.trim().length >= 2 &&
-    addr.street.trim().length >= 3;
+    addr.street.trim().length >= 3 &&
+    agreed;
 
   async function placeOrder() {
     setError(null);
+    if (!agreed) {
+      setError('Please accept the Terms of Service and Privacy Policy to order.');
+      return;
+    }
     if (!valid) {
       setError('Please complete name, phone, city and street address.');
       return;
@@ -214,6 +220,19 @@ export default function CheckoutPage() {
           <Button onClick={placeOrder} disabled={placing || !valid} className="mt-5 w-full">
             {placing ? 'Placing order…' : `Place order · ${formatNPR(total)}`}
           </Button>
+          <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-paper/60">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#F06427]"
+            />
+            <span>
+              I agree to the <Link to="/terms" target="_blank" className="font-bold text-paper underline underline-offset-2">Terms of Service</Link>{' '}
+              and <Link to="/privacy" target="_blank" className="font-bold text-paper underline underline-offset-2">Privacy Policy</Link>,
+              including 7-day exchanges and cash/bank payment confirmation.
+            </span>
+          </label>
           <p className="mt-2 text-center text-[11px] text-paper/50">Prices & stock re-verified server-side at order time.</p>
         </aside>
       </div>

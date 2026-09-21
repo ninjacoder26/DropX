@@ -35,6 +35,20 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Marquee strip */
+@keyframes dropx-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  width: max-content;
+  animation: dropx-marquee 28s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee { animation: none; }
+  .reveal { animation: none; }
+}
+
 /* Focus visibility for a11y */
 :focus-visible {
   outline: 2px solid #f06427;

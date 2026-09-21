@@ -10,7 +10,7 @@ import { useAuth } from '../store/AuthContext';
 import { useRecentlyViewed, useWishlist } from '../hooks/useShop';
 import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
 import { Badge, Button, EmptyState, Skeleton } from '../components/ui';
-import { ProductGrid, primaryImage } from '../components/product';
+import { ProductGrid, primaryImage, srcSetFor } from '../components/product';
 
 export default function ProductPage() {
   const { slug = '' } = useParams();
@@ -115,6 +115,8 @@ export default function ProductPage() {
           <div className="overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5">
             <img
               src={images[imgIdx] ? cloudinaryThumb(images[imgIdx].secure_url, 1000) : primaryImage(product)}
+              srcSet={images[imgIdx] ? srcSetFor(images[imgIdx].secure_url, [600, 1000, 1400]) : undefined}
+              sizes="(max-width: 768px) 100vw, 50vw"
               alt={images[imgIdx]?.alt_text || product.name}
               className="aspect-[7/8] w-full object-cover"
             />

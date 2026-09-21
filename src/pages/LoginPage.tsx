@@ -1,27 +1,43 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { Button, Field, Input } from '../components/ui';
 
+function safeNext(raw: string | null): string {
+  if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  return '/account';
+}
+
 export default function LoginPage() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, user, loading } = useAuth();
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const next = safeNext(params.get('next'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Already signed in (e.g. returned from OAuth)? Continue the journey.
+  useEffect(() => {
+    if (!loading && user) nav(next, { replace: true });
+  }, [loading, user, next, nav]);
+
   return (
     <div className="mx-auto max-w-md px-4 py-14">
       <h1 className="font-display text-3xl font-black">Welcome back</h1>
-      <p className="mt-1 text-sm text-ink/60">Log in to check out faster and track orders.</p>
+      <p className="mt-1 text-sm text-ink/60">
+        {next === '/checkout'
+          ? 'Log in to finish checking out — your bag is saved and waiting.'
+          : 'Log in to check out faster and track orders.'}
+      </p>
       <div className="mt-6 rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
         <Button
           variant="outline"
           className="w-full"
           onClick={() => {
             setError(null);
-            void signInWithGoogle().then(({ error: e }) => {
+            void signInWithGoogle(next).then(({ error: e }) => {
               if (e) setError(e);
             });
           }}
@@ -40,7 +56,7 @@ export default function LoginPage() {
             void signIn(email.trim(), password).then(({ error: err }) => {
               setBusy(false);
               if (err) setError(err);
-              else nav('/account');
+              else nav(next, { replace: true });
             });
           }}
         >
@@ -55,7 +71,7 @@ export default function LoginPage() {
         </form>
         <div className="mt-4 flex justify-between text-xs font-semibold">
           <Link to="/forgot-password" className="text-ember hover:underline">Forgot password?</Link>
-          <Link to="/register" className="hover:underline">Create account</Link>
+          <Link to={`/register?next=${encodeURIComponent(next)}`} className="hover:underline">Create account</Link>
         </div>
       </div>
     </div>

@@ -1,22 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import {
+  BarChart3, ClipboardList, LayoutDashboard, Menu, Package,
+  ScrollText, Star, Tags, Users, X, Zap,
+} from 'lucide-react';
+import { clsx } from 'clsx';
 import { supabase } from '../lib/supabase';
 import type { Category, Drop, Order, Product, ProductVariant, Profile, Review } from '../types';
 import { dropState } from '../types';
 import { formatNPR } from '../lib/shop';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Skeleton } from '../components/ui';
 import { ImageManager } from '../components/ImageManager';
+import { CloudinaryUpload } from '../components/CloudinaryUpload';
+import { PRODUCT_CSV_HEADERS, parseCSV, slugify, toCSV, validateProductRows } from '../lib/csv';
+import { primaryImage } from '../components/product';
 
 const TABS = [
-  { to: '/admin', label: 'Overview', end: true },
-  { to: '/admin/products', label: 'Products' },
-  { to: '/admin/categories', label: 'Categories' },
-  { to: '/admin/orders', label: 'Orders' },
-  { to: '/admin/customers', label: 'Customers' },
-  { to: '/admin/drops', label: 'Drops' },
-  { to: '/admin/reviews', label: 'Reviews' },
-  { to: '/admin/analytics', label: 'Analytics' },
-  { to: '/admin/logs', label: 'Activity' },
+  { to: '/admin', label: 'Overview', end: true, icon: LayoutDashboard },
+  { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/categories', label: 'Categories', icon: Tags },
+  { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
+  { to: '/admin/customers', label: 'Customers', icon: Users },
+  { to: '/admin/drops', label: 'Drops', icon: Zap },
+  { to: '/admin/reviews', label: 'Reviews', icon: Star },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/admin/logs', label: 'Activity', icon: ScrollText },
 ];
 
 function log(action: string, entity: string, entity_id?: string, meta: object = {}) {
@@ -25,46 +33,91 @@ function log(action: string, entity: string, entity_id?: string, meta: object = 
 }
 
 export default function AdminPage() {
+  const [drawer, setDrawer] = useState(false);
+
+  const nav = (
+    <nav className="space-y-1" aria-label="Admin sections">
+      {TABS.map((t) => (
+        <NavLink
+          key={t.to}
+          to={t.to}
+          end={t.end}
+          onClick={() => setDrawer(false)}
+          className={({ isActive }) =>
+            clsx(
+              'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+              isActive ? 'bg-ember text-white shadow-card' : 'text-ink/70 hover:bg-ink/5 hover:text-ink'
+            )
+          }
+        >
+          <t.icon size={17} />
+          {t.label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+
   return (
-    <div className="bg-paper">
-      <div className="border-b border-ink/10 bg-ink text-paper">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ember font-display text-sm font-black text-white">DX</span>
-          <div>
-            <h1 className="font-display text-lg font-black leading-none">DropX Admin</h1>
-            <p className="text-[11px] text-paper/60">Enforced server-side by Supabase RLS · every write is audited</p>
+    <div className="bg-paper lg:grid lg:grid-cols-[250px_minmax(0,1fr)]">
+      {/* Desktop sidebar */}
+      <aside className="hidden border-r border-ink/10 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:p-5">
+        <Link to="/" className="flex items-center gap-2 px-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink font-display text-sm font-black text-paper">
+            D<span className="text-ember">X</span>
+          </span>
+          <span>
+            <span className="block font-display text-base font-black leading-none">DropX Admin</span>
+            <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-widest text-ink/40">Server-enforced</span>
+          </span>
+        </Link>
+        <div className="mt-6 flex-1">{nav}</div>
+        <Link to="/" className="mt-4 block rounded-xl bg-paper px-4 py-2.5 text-center text-xs font-bold text-ink/70 transition hover:bg-paper-dark">
+          ← Back to storefront
+        </Link>
+      </aside>
+
+      {/* Mobile drawer */}
+      {drawer && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">
+          <div className="absolute inset-0 bg-ink/50" onClick={() => setDrawer(false)} />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto bg-white p-5 shadow-pop">
+            <div className="mb-5 flex items-center justify-between">
+              <span className="font-display text-base font-black">DropX Admin</span>
+              <button onClick={() => setDrawer(false)} aria-label="Close menu" className="rounded-full p-2 hover:bg-ink/5">
+                <X size={18} />
+              </button>
+            </div>
+            {nav}
           </div>
-          <Link to="/" className="ml-auto rounded-full border border-paper/20 px-4 py-1.5 text-xs font-bold hover:border-paper/50">
-            ← Storefront
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="min-w-0">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-ink/10 bg-paper/90 px-4 py-3 backdrop-blur lg:px-8">
+          <button onClick={() => setDrawer(true)} aria-label="Open admin menu" className="rounded-lg p-2 hover:bg-ink/5 lg:hidden">
+            <Menu size={20} />
+          </button>
+          <p className="text-xs font-semibold text-ink/50">
+            RLS-enforced · every write is audited
+          </p>
+          <Link to="/" className="ml-auto rounded-full border border-ink/15 bg-white px-4 py-1.5 text-xs font-bold lg:hidden">
+            Storefront
           </Link>
         </div>
-        <nav className="no-scrollbar mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 pb-3" aria-label="Admin sections">
-          {TABS.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              end={t.end}
-              className={({ isActive }) =>
-                `whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-bold ${isActive ? 'bg-ember text-white' : 'bg-paper/10 text-paper/80 hover:bg-paper/20'}`
-              }
-            >
-              {t.label}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-      <div className="mx-auto max-w-7xl px-4 py-6">
-        <Routes>
-          <Route index element={<Overview />} />
-          <Route path="products" element={<Products />} />
-          <Route path="categories" element={<Categories />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="drops" element={<Drops />} />
-          <Route path="reviews" element={<ReviewsMod />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="logs" element={<Logs />} />
-        </Routes>
+        <div className="mx-auto max-w-6xl px-4 py-6 lg:px-8">
+          <Routes>
+            <Route index element={<Overview />} />
+            <Route path="products" element={<Products />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="drops" element={<Drops />} />
+            <Route path="reviews" element={<ReviewsMod />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="logs" element={<Logs />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );
@@ -72,27 +125,38 @@ export default function AdminPage() {
 
 /* ─── Overview ─── */
 function Overview() {
-  const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, customers: 0, lowStock: 0 as number | { name: string; stock: number }[] });
+  const [stats, setStats] = useState({
+    products: 0,
+    orders: 0,
+    revenue: 0,
+    customers: 0,
+    unpaid: 0,
+    pendingReviews: 0,
+    lowStock: [] as { name: string; stock: number }[],
+  });
   const [loading, setLoading] = useState(true);
   const [recent, setRecent] = useState<Order[]>([]);
 
   useEffect(() => {
     (async () => {
-      const [p, o, c, v] = await Promise.all([
+      const [p, o, c, v, unpaid, pending] = await Promise.all([
         supabase.from('products').select('id', { count: 'exact' }),
         supabase.from('orders').select('id,grand_total,payment_status').neq('status', 'cancelled'),
         supabase.from('profiles').select('id', { count: 'exact' }).eq('role', 'customer'),
         supabase.from('product_variants').select('name,stock').lt('stock', 6).limit(8),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).neq('payment_status', 'paid').neq('status', 'cancelled'),
+        supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('is_approved', false),
       ]);
-      const rev = ((o.data ?? []) as { grand_total: number; payment_status: string }[])
-        .filter((x) => x.payment_status === 'paid')
-        .reduce((s, x) => s + Number(x.grand_total), 0);
+      const list = (o.data ?? []) as { grand_total: number; payment_status: string }[];
+      const rev = list.filter((x) => x.payment_status === 'paid').reduce((s, x) => s + Number(x.grand_total), 0);
       setStats({
         products: p.count ?? 0,
-        orders: o.count ?? (o.data?.length ?? 0),
+        orders: list.length,
         revenue: rev,
         customers: c.count ?? 0,
-        lowStock: ((v.data ?? []) as { name: string; stock: number }[]),
+        unpaid: unpaid.count ?? 0,
+        pendingReviews: pending.count ?? 0,
+        lowStock: (v.data ?? []) as { name: string; stock: number }[],
       });
       const { data: r } = await supabase.from('orders').select('*').order('placed_at', { ascending: false }).limit(5);
       setRecent((r ?? []) as Order[]);
@@ -102,29 +166,51 @@ function Overview() {
 
   if (loading) return <Skeleton className="h-48" />;
   const cards = [
-    { label: 'Products', value: String(stats.products) },
-    { label: 'Orders', value: String(stats.orders) },
-    { label: 'Paid revenue', value: formatNPR(stats.revenue) },
-    { label: 'Customers', value: String(stats.customers) },
+    { label: 'Products', value: String(stats.products), to: '/admin/products' },
+    { label: 'Orders', value: String(stats.orders), to: '/admin/orders' },
+    { label: 'Paid revenue', value: formatNPR(stats.revenue), to: '/admin/analytics' },
+    { label: 'Customers', value: String(stats.customers), to: '/admin/customers' },
   ];
   return (
     <div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <h2 className="font-display text-2xl font-black tracking-tight">Good day — here is the store at a glance</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.label} className="p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-ink/50">{c.label}</p>
-            <p className="mt-1 font-display text-2xl font-black">{c.value}</p>
-          </Card>
+          <Link key={c.label} to={c.to}>
+            <Card className="p-5 transition hover:-translate-y-0.5 hover:shadow-pop">
+              <p className="text-xs font-bold uppercase tracking-widest text-ink/50">{c.label}</p>
+              <p className="mt-1 font-display text-2xl font-black">{c.value}</p>
+            </Card>
+          </Link>
         ))}
       </div>
+
+      {(stats.unpaid > 0 || stats.pendingReviews > 0) && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {stats.unpaid > 0 && (
+            <Link to="/admin/orders" className="rounded-full bg-ember px-4 py-2 text-xs font-bold text-white">
+              {stats.unpaid} order{stats.unpaid === 1 ? '' : 's'} awaiting payment
+            </Link>
+          )}
+          {stats.pendingReviews > 0 && (
+            <Link to="/admin/reviews" className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-paper">
+              {stats.pendingReviews} review{stats.pendingReviews === 1 ? '' : 's'} to moderate
+            </Link>
+          )}
+        </div>
+      )}
+
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <Card className="p-5">
-          <h2 className="font-display font-extrabold">Low stock alerts</h2>
-          {(stats.lowStock as { name: string; stock: number }[]).length === 0 ? (
+          <div className="flex items-center justify-between">
+            <h3 className="font-display font-extrabold">Low stock alerts</h3>
+            <Link to="/admin/products" className="text-xs font-bold text-ember hover:underline">Manage inventory</Link>
+          </div>
+          {stats.lowStock.length === 0 ? (
             <p className="mt-2 text-sm text-ink/60">All variants healthy.</p>
           ) : (
             <ul className="mt-2 space-y-1.5 text-sm">
-              {(stats.lowStock as { name: string; stock: number }[]).map((v, i) => (
+              {stats.lowStock.map((v, i) => (
                 <li key={i} className="flex justify-between rounded-lg bg-paper px-3 py-2">
                   <span>{v.name}</span>
                   <Badge tone={v.stock === 0 ? 'red' : 'ember'}>{v.stock} left</Badge>
@@ -134,11 +220,14 @@ function Overview() {
           )}
         </Card>
         <Card className="p-5">
-          <h2 className="font-display font-extrabold">Recent orders</h2>
+          <div className="flex items-center justify-between">
+            <h3 className="font-display font-extrabold">Recent orders</h3>
+            <Link to="/admin/orders" className="text-xs font-bold text-ember hover:underline">All orders</Link>
+          </div>
           <ul className="mt-2 space-y-1.5 text-sm">
             {recent.length === 0 && <li className="text-ink/60">No orders yet.</li>}
             {recent.map((o) => (
-              <li key={o.id} className="flex items-center justify-between rounded-lg bg-paper px-3 py-2">
+              <li key={o.id} className="flex items-center justify-between gap-2 rounded-lg bg-paper px-3 py-2">
                 <span className="font-bold">{o.order_number}</span>
                 <span className="text-ink/60">{formatNPR(o.grand_total)}</span>
                 <Badge>{o.status}</Badge>
@@ -166,6 +255,8 @@ function Products() {
   const [confirmDel, setConfirmDel] = useState<Product | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [vForm, setVForm] = useState({ name: '', sku: '', size: '', color: '', price_adjustment: '0', stock: '10' });
+  const [csvMsg, setCsvMsg] = useState<string | null>(null);
+  const [csvBusy, setCsvBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -264,12 +355,106 @@ function Products() {
 
   if (loading) return <Skeleton className="h-64" />;
 
+  const download = (filename: string, text: string) => {
+    const blob = new Blob([text], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const exportCSV = () => {
+    const catById = new Map(cats.map((c) => [c.id, c.slug]));
+    const rows: (string | number | boolean | null)[][] = [[...PRODUCT_CSV_HEADERS]];
+    for (const p of filtered) {
+      rows.push([
+        p.name, p.slug, p.description, catById.get(p.category_id ?? '') ?? '',
+        p.base_price, p.compare_at_price, p.is_active, p.is_featured, p.is_trending, p.is_new,
+      ]);
+    }
+    download('dropx-products.csv', toCSV(rows));
+  };
+
+  const importCSV = async (file: File) => {
+    setCsvMsg(null);
+    setCsvBusy(true);
+    try {
+      const text = await file.text();
+      const { valid, errors } = validateProductRows(parseCSV(text));
+      const catBySlug = new Map(cats.map((c) => [c.slug, c.id]));
+      let inserted = 0;
+      const problems = [...errors];
+      for (const r of valid) {
+        if (r.category_slug && !catBySlug.has(r.category_slug)) {
+          problems.push(`Line ${r.line} (“${r.name}”): unknown category_slug “${r.category_slug}”.`);
+          continue;
+        }
+        const { error } = await supabase.from('products').insert({
+          name: r.name,
+          slug: r.slug || `${slugify(r.name)}-${Date.now().toString(36)}`,
+          description: r.description,
+          category_id: (r.category_slug && catBySlug.get(r.category_slug)) || null,
+          base_price: r.base_price,
+          compare_at_price: r.compare_at_price,
+          is_active: r.is_active,
+          is_featured: r.is_featured,
+          is_trending: r.is_trending,
+          is_new: r.is_new,
+        });
+        if (error) problems.push(`Line ${r.line} (“${r.name}”): ${error.message}`);
+        else inserted++;
+      }
+      log('product.csv_import', 'products', undefined, { inserted, errors: problems.length });
+      setCsvMsg(
+        `Imported ${inserted} product${inserted === 1 ? '' : 's'}.` +
+          (problems.length > 0 ? ` ${problems.length} issue${problems.length === 1 ? '' : 's'}:\n` + problems.slice(0, 8).join('\n') : '')
+      );
+      await load();
+    } catch (e) {
+      setCsvMsg(e instanceof Error ? e.message : 'Import failed.');
+    } finally {
+      setCsvBusy(false);
+    }
+  };
+
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-3">
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs" aria-label="Search products" />
-        <Button onClick={() => void startEdit(undefined)} className="ml-auto">+ New product</Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
+        <div className="ml-auto flex flex-wrap gap-2">
+          <button
+            onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Himalayan Hoodie', 'himalayan-hoodie', 'Heavyweight fleece', 'streetwear', 3499, 4299, true, true, true, true]]))}
+            className="rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30"
+          >
+            Template
+          </button>
+          <button
+            onClick={exportCSV}
+            className="rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30"
+          >
+            Export CSV
+          </button>
+          <label className="cursor-pointer rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30">
+            {csvBusy ? 'Importing…' : 'Import CSV'}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              disabled={csvBusy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void importCSV(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+          <Button onClick={() => void startEdit(undefined)}>+ New product</Button>
+        </div>
       </div>
+      {csvMsg && (
+        <p className="mt-3 whitespace-pre-line rounded-2xl bg-white px-4 py-3 text-xs ring-1 ring-ink/10">{csvMsg}</p>
+      )}
 
       {editing && (
         <Card className="mt-4 p-6">
@@ -378,8 +563,13 @@ function Products() {
               return (
                 <tr key={p.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-4 py-3">
-                    <p className="font-bold">{p.name}</p>
-                    <p className="text-xs text-ink/50">{p.slug} · {p.category?.name ?? '—'}</p>
+                    <span className="flex items-center gap-3">
+                      <img src={primaryImage(p)} alt="" loading="lazy" className="h-11 w-9 shrink-0 rounded-lg bg-paper-dark object-cover ring-1 ring-ink/10" />
+                      <span className="min-w-0">
+                        <p className="truncate font-bold">{p.name}</p>
+                        <p className="truncate text-xs text-ink/50">{p.slug} · {p.category?.name ?? '—'}</p>
+                      </span>
+                    </span>
                   </td>
                   <td className="px-4 py-3">{formatNPR(p.base_price)}</td>
                   <td className="px-4 py-3"><Badge tone={stock === 0 ? 'red' : stock < 10 ? 'ember' : 'green'}>{stock}</Badge></td>
@@ -423,7 +613,7 @@ function Products() {
 /* ─── Categories ─── */
 function Categories() {
   const [items, setItems] = useState<Category[]>([]);
-  const [form, setForm] = useState({ name: '', slug: '', description: '' });
+  const [form, setForm] = useState({ name: '', slug: '', description: '', image_url: '' });
   const [msg, setMsg] = useState<string | null>(null);
 
   const load = async () => {
@@ -444,6 +634,7 @@ function Categories() {
           <Field label="Description">
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full rounded-xl border border-ink/15 px-3 py-2 text-sm" />
           </Field>
+          <CloudinaryUpload label="Tile image" value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
           {msg && <p className="text-xs text-red-700">{msg}</p>}
           <Button
             className="w-full"
@@ -454,12 +645,12 @@ function Categories() {
                 return;
               }
               const slug = (form.slug.trim() || name).toLowerCase().replace(/\s+/g, '-');
-              supabase.from('categories').insert({ name, slug, description: form.description, sort_order: items.length })
+              supabase.from('categories').insert({ name, slug, description: form.description, image_url: form.image_url || null, sort_order: items.length })
                 .then(({ error }) => {
                   if (error) setMsg(error.message);
                   else {
                     log('category.create', 'categories', undefined, { name });
-                    setForm({ name: '', slug: '', description: '' });
+                    setForm({ name: '', slug: '', description: '', image_url: '' });
                     void load();
                   }
                 });
@@ -474,7 +665,12 @@ function Categories() {
         <ul className="mt-3 space-y-2">
           {items.map((c) => (
             <li key={c.id} className="flex items-center gap-3 rounded-xl bg-paper px-4 py-3 text-sm">
-              <span className="flex-1"><strong>{c.name}</strong> <span className="text-ink/50">· /{c.slug}</span></span>
+              {c.image_url ? (
+                <img src={c.image_url} alt="" loading="lazy" className="h-10 w-14 rounded-lg object-cover ring-1 ring-ink/10" />
+              ) : (
+                <span className="flex h-10 w-14 items-center justify-center rounded-lg bg-ink/10 font-display text-xs font-black text-ink/40">DX</span>
+              )}
+              <span className="min-w-0 flex-1"><strong>{c.name}</strong> <span className="text-ink/50">· /{c.slug}</span></span>
               <button
                 className="text-xs font-bold text-ink/50 hover:text-ink"
                 onClick={() => {
@@ -510,6 +706,7 @@ function Categories() {
 function Orders() {
   const [items, setItems] = useState<Order[]>([]);
   const [filter, setFilter] = useState('');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const nav = useNavigate();
 
@@ -551,9 +748,21 @@ function Orders() {
   };
 
   if (loading) return <Skeleton className="h-64" />;
+  const shown = items.filter((o) => {
+    const s = search.trim().toLowerCase();
+    if (!s) return true;
+    return (
+      o.order_number.toLowerCase().includes(s) ||
+      o.shipping_name.toLowerCase().includes(s) ||
+      o.shipping_phone.replace(/\s+/g, '').includes(s.replace(/\s+/g, ''))
+    );
+  });
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order №, name, phone…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search orders" />
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
         {['', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'all-pay'].map((s) => (
           <button
             key={s || 'all'}
@@ -566,7 +775,7 @@ function Orders() {
         <button onClick={() => void load()} className="ml-auto rounded-full bg-white px-3.5 py-1.5 text-xs font-bold ring-1 ring-ink/10">Refresh</button>
       </div>
       <div className="mt-4 space-y-3">
-        {items.map((o) => (
+        {shown.map((o) => (
           <Card key={o.id} className="p-4">
             <div className="flex flex-wrap items-center gap-2">
               <button onClick={() => nav(`/orders/${o.id}`)} className="font-display font-extrabold hover:text-ember">{o.order_number}</button>
@@ -599,7 +808,7 @@ function Orders() {
             </div>
           </Card>
         ))}
-        {items.length === 0 && <EmptyState title="No orders" body="Orders will appear here as customers check out." />}
+        {shown.length === 0 && <EmptyState title="No orders" body={search ? 'No orders match your search.' : 'Orders will appear here as customers check out.'} />}
       </div>
     </div>
   );
@@ -780,7 +989,12 @@ function Drops() {
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full rounded-xl border border-ink/15 px-3 py-2 text-sm" />
               </Field>
             </div>
-            <Field label="Artwork URL (Cloudinary)"><Input value={form.artwork_url} onChange={(e) => setForm({ ...form, artwork_url: e.target.value })} placeholder="https://res.cloudinary.com/…/mega.jpg" /></Field>
+            <Field label="Artwork URL (Cloudinary)"> 
+              <div className="space-y-2">
+                <CloudinaryUpload label="Drop artwork" value={form.artwork_url} onChange={(url) => setForm({ ...form, artwork_url: url })} />
+                <Input value={form.artwork_url} onChange={(e) => setForm({ ...form, artwork_url: e.target.value })} placeholder="…or paste an image URL" />
+              </div>
+            </Field>
             <Field label="Hero label"><Input value={form.hero_label} onChange={(e) => setForm({ ...form, hero_label: e.target.value })} placeholder="DROP OF THE MONTH" /></Field>
             <Field label="Starts at"><Input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} /></Field>
             <Field label="Ends at"><Input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} /></Field>

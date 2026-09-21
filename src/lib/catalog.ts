@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import type { Category, Drop, Product } from '../types';
+import type { Category, Drop, DropState, Product } from '../types';
+import { dropState } from '../types';
 
 const PRODUCT_SELECT = `
   *,
@@ -62,13 +63,17 @@ export async function fetchCategories(): Promise<Category[]> {
   return (data ?? []) as Category[];
 }
 
-export async function fetchDrops(kind?: 'monthly' | 'mega'): Promise<Drop[]> {
+export async function fetchDrops(kind?: 'monthly' | 'mega', status?: DropState | 'not-ended'): Promise<Drop[]> {
   if (!isSupabaseConfigured) return [];
   let q = supabase.from('drops').select('*').eq('is_published', true).order('starts_at', { ascending: false });
   if (kind) q = q.eq('kind', kind);
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  const drops = (data ?? []) as Drop[];
+  let drops = (data ?? []) as Drop[];
+  // Storefront rule: a drop only "shows" when it is published (enabled) AND
+  // within its date window. Drafts never leave the admin dashboard.
+  if (status === 'not-ended') drops = drops.filter((d) => dropState(d) !== 'ended');
+  else if (status) drops = drops.filter((d) => dropState(d) === status);
   // Attach products per drop
   for (const d of drops) {
     const { data: links } = await supabase
@@ -86,4 +91,18 @@ export async function fetchDrops(kind?: 'monthly' | 'mega'): Promise<Drop[]> {
 export async function fetchDropBySlug(slug: string): Promise<Drop | null> {
   const drops = await fetchDrops();
   return drops.find((d) => d.slug === slug) ?? null;
+}
+
+/** Recently-viewed support: fetch specific products by id, newest-first. */
+export async function fetchProductsByIds(ids: string[]): Promise<Product[]> {
+  if (!isSupabaseConfigured || ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .in('id', ids.slice(0, 8))
+    .eq('is_active', true);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as unknown as Product[];
+  const order = new Map(ids.map((id, i) => [id, i]));
+  return rows.sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
 }

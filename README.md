@@ -8,10 +8,12 @@ Offline payments only — Cash on Delivery + manual bank transfer. No online pay
 ## What is built
 
 - **Storefront** — homepage (hero, categories, trending, new arrivals, drops), shop with search/filter/sort/price/stock filters, product detail (gallery, variants, stock states, reviews, related), cart (guest + persistent server cart), wishlist, collections, 404.
-- **Signature drops** — *Drop of the Month* (`kind='monthly'`) and *Mega Drop of the Year* (`kind='mega'`), fully managed in admin (title, slug, description, artwork, theme, dates, curated products + badges, publish flag). States (`upcoming`/`active`/`ended`) derive from `starts_at`/`ends_at` — nothing hardcoded, no fake countdowns.
+- **Signature drops** — *Drop of the Month* (`kind='monthly'`) and *Mega Drop of the Year* (`kind='mega'`), fully managed in admin (title, slug, description, artwork upload, theme, dates, curated products + badges, publish flag). The storefront only surfaces drops that are published (enabled) **and** inside their date window: live drops are shoppable, upcoming ones are teaser previews, ended ones retire to a collapsible archive. States derive from `starts_at`/`ends_at` — nothing hardcoded, no fake countdowns.
 - **Auth** — email/password + Google OAuth, email verification, password recovery (`/forgot-password` → `/reset-password`), session handling, `customer` / `admin` / `superadmin` roles enforced by **RLS + server functions**, never by hidden routes alone.
-- **Checkout** — addresses, shipping methods (free standard over NPR 2,999). Totals, stock and the payment method are enforced in `place_order()` — client prices are ignored. Orders stay `unpaid` until an admin confirms cash collection or verifies a bank receipt via `mark_order_paid()`. Order snapshots preserve product names/prices.
-- **Admin** (`/admin`) — overview, products + variants/inventory, Cloudinary image manager (upload/preview/reorder/primary/delete), categories, orders (status workflow + verified-paid transition), customers (roles), drops, review moderation, analytics, activity logs. Every admin write is audited to `admin_logs`.
+- **Checkout** — addresses, shipping methods (free standard over NPR 2,999), Terms/Privacy consent gate. Totals, stock and the payment method are enforced in `place_order()` — client prices are ignored. Orders stay `unpaid` until an admin confirms cash collection or verifies a bank receipt via `mark_order_paid()`. Order snapshots preserve product names/prices.
+- **Admin** (`/admin`) — sidebar dashboard with overview queues (unpaid orders, pending reviews, low stock), products + variants/inventory with thumbnail grid and **CSV import/export**, Cloudinary image manager (upload/preview/reorder/primary/delete) plus one-click artwork upload for categories and drops, categories with image tiles, orders (status workflow + verified-paid transition + search), customers (roles), drops, review moderation, analytics, activity logs. Every admin write is audited to `admin_logs`.
+- **Uploads** — product/category/drop artwork → **Cloudinary** (validated, auto-optimized delivery with responsive `srcset`s); profile avatars → **Supabase Storage** (`dropx-assets` bucket, owner-only writes). No secrets ever touch the browser.
+- **Legal & auth flow** — Terms of Service + Privacy Policy pages, consent checkbox at checkout, and login/register that return you to where you were going (`?next=/checkout`) with your guest bag merged on sign-in.
 - **Quality** — responsive from phones to desktops, keyboard-accessible, lazy images, SEO meta, error boundary + boot guard (never a blank page), reusable components, Vitest suite (`npm test`).
 
 ## Quick start
@@ -47,6 +49,7 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/002_rls.sql`
    - `supabase/migrations/003_functions.sql`
    - `supabase/migrations/004_seed.sql` *(optional demo catalog)*
+   - `supabase/migrations/005_storage.sql` *(avatar/file bucket + policies)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -117,13 +120,13 @@ DropX/
 │   ├── App.tsx main.tsx index.css
 │   ├── config.ts             # CLIENT config in code (Supabase URL+anon, Cloudinary)
 │   ├── types.ts              # shared domain types + dropState()
-│   ├── lib/                  # supabase, catalog API, shop helpers, cloudinary, offline payments
-│   ├── store/                # AuthContext, CartContext (guest + server cart)
+│   ├── lib/                  # supabase, catalog API, shop helpers, cloudinary, offline payments, avatar, csv, safe storage
+│   ├── store/                # AuthContext (OAuth w/ next-redirect), CartContext (guest + server cart)
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
-│   ├── components/           # layout, product cards, ui kit, ImageManager, ErrorBoundary
-│   └── pages/                # storefront + ResetPasswordPage + AdminPage (9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed
-├── tests/                    # vitest suite
+│   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
+│   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage
+├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md
 ```

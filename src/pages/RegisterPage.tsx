@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { Button, Field, Input } from '../components/ui';
 
 export default function RegisterPage() {
   const { signUp } = useAuth();
-  const nav = useNavigate();
+  const [params] = useSearchParams();
+  const next = params.get('next');
+  const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,8 +23,8 @@ export default function RegisterPage() {
         {done ? (
           <div className="text-sm">
             <p className="font-bold">Check your inbox ✉️</p>
-            <p className="mt-1 text-ink/60">We sent a verification link to {email}. Click it, then log in.</p>
-            <Link to="/login" className="mt-4 inline-block rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-paper">Go to login</Link>
+            <p className="mt-1 text-ink/60">We sent a verification link to {email}. Click it, then log in{next === '/checkout' ? ' to finish checking out — your bag is saved' : ''}.</p>
+            <Link to={loginHref} className="mt-4 inline-block rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-paper">Go to login</Link>
           </div>
         ) : (
           <form
@@ -56,7 +58,7 @@ export default function RegisterPage() {
           </form>
         )}
         <p className="mt-4 text-center text-xs text-ink/60">
-          Already have an account? <Link to="/login" className="font-bold text-ember">Log in</Link>
+          Already have an account? <Link to={loginHref} className="font-bold text-ember">Log in</Link>
         </p>
       </div>
     </div>
