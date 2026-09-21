@@ -22,10 +22,18 @@ export const NEPAL_PROVINCES = [
   'Sudurpashchim',
 ];
 
-export function cloudinaryThumb(url: string, width = 800): string {
-  // Insert a Cloudinary-style scale transform if the URL is a Cloudinary delivery URL.
+export function cloudinaryThumb(
+  url: string,
+  width = 800,
+  quality: 'auto' | 'eco' | 'good' = 'auto'
+): string {
+  // Insert a Cloudinary delivery transform if this is a Cloudinary URL.
+  // - auto: f_auto,q_auto — balanced default for hero/gallery imagery.
+  // - eco:  f_auto,q_auto:eco — ~40% fewer bytes, for grids, tiles, teasers.
+  // - good: f_auto,q_auto:good — near-lossless, for full product views.
   if (!url.includes('/upload/')) return url;
-  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
+  const q = quality === 'auto' ? 'q_auto' : `q_auto:${quality}`;
+  return url.replace('/upload/', `/upload/f_auto,${q},w_${width}/`);
 }
 
 export function discountPct(base: number, compareAt: number | null): number | null {

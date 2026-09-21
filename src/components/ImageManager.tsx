@@ -118,6 +118,7 @@ export function ImageManager({ productId }: { productId: string }) {
         </p>
       )}
       {error && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+      <p className="mt-2 text-[11px] text-ink/40">Photos are auto-compressed (≤1600px WebP) before upload to save bandwidth.</p>
       {images.length === 0 ? (
         <p className="mt-3 text-xs text-ink/50">No images yet. Upload product photography here.</p>
       ) : (

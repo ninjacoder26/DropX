@@ -142,7 +142,7 @@ export default function DropsPage() {
             {upcoming.map((d) => (
               <Link key={d.id} to={`/drops/${d.slug}`} className="group overflow-hidden rounded-3xl bg-ink text-paper ring-1 ring-paper/10 transition hover:-translate-y-0.5">
                 {d.artwork_url ? (
-                  <img src={cloudinaryThumb(d.artwork_url, 800)} alt="" loading="lazy" className="aspect-[16/8] w-full object-cover opacity-90 transition group-hover:opacity-70" />
+                  <img src={cloudinaryThumb(d.artwork_url, 700, 'eco')} alt="" loading="lazy" className="aspect-[16/8] w-full object-cover opacity-90 transition group-hover:opacity-70" />
                 ) : (
                   <div className="flex aspect-[16/8] items-center justify-center bg-ink-soft font-display text-3xl font-black text-paper/40">
                     {d.kind === 'mega' ? 'MEGA DROP' : 'MONTHLY DROP'}

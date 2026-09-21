@@ -49,7 +49,7 @@ export default function CartPage() {
               className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-ink/5 sm:gap-4 sm:p-4"
             >
               <Link to={`/product/${l.product.slug}`} className="aspect-square w-full overflow-hidden rounded-xl bg-paper-dark">
-                <img src={primaryImage(l.product)} alt={l.product.name} className="h-full w-full object-cover" loading="lazy" />
+                <img src={primaryImage(l.product, 200)} alt={l.product.name} className="h-full w-full object-cover" loading="lazy" />
               </Link>
               <div className="min-w-0">
                 <div className="flex items-start justify-between gap-2">

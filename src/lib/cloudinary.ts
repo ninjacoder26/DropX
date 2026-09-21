@@ -7,6 +7,7 @@
  */
 
 import { APP_CONFIG, isCloudinaryConfigured } from '../config';
+import { formatBytes, optimizeImageFile } from './image';
 
 export { isCloudinaryConfigured };
 
@@ -39,7 +40,15 @@ export async function uploadToCloudinary(file: File): Promise<UploadResult> {
     );
   }
   const form = new FormData();
-  form.append('file', file);
+  // Pre-compress in-browser (≤1600px WebP): uploads finish faster and every
+  // byte saved here is saved again on storage + every future delivery.
+  const optimized = await optimizeImageFile(file, { maxDim: 1600, quality: 0.82 });
+  if (optimized.optimized) {
+    console.debug(
+      `[DropX] image optimized: ${formatBytes(optimized.originalBytes)} → ${formatBytes(optimized.bytes)}`
+    );
+  }
+  form.append('file', optimized.blob, file.name);
   form.append('upload_preset', preset);
   form.append('folder', 'dropx/products');
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {

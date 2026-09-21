@@ -84,6 +84,7 @@ export function CloudinaryUpload({
         <p className="mt-1.5 text-xs text-ink/50">Cloudinary is not configured — fill it in src/config.ts to enable uploads.</p>
       )}
       {error && <p className="mt-1.5 text-xs text-red-700">{error}</p>}
+      <p className="mt-1 text-[11px] text-ink/40">Auto-compressed before upload (≤1600px WebP).</p>
     </div>
   );
 }

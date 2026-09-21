@@ -286,7 +286,7 @@ export default function CheckoutPage() {
           <ul className="mt-4 space-y-3">
             {lines.map((l) => (
               <li key={`${l.product.id}-${l.variant?.id}`} className="flex items-center gap-3">
-                <img src={primaryImage(l.product)} alt="" className="h-12 w-12 rounded-lg object-cover" loading="lazy" />
+                <img src={primaryImage(l.product, 100)} alt="" className="h-12 w-12 rounded-lg object-cover" loading="lazy" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{l.product.name}</p>
                   <p className="text-xs text-paper/50">× {l.quantity}{l.variant ? ` · ${l.variant.name}` : ''}</p>

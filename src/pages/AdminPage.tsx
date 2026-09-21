@@ -615,7 +615,7 @@ function Products() {
                 <tr key={p.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-3">
-                      <img src={primaryImage(p)} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-lg bg-paper-dark object-cover ring-1 ring-ink/10" />
+                      <img src={primaryImage(p, 100)} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-lg bg-paper-dark object-cover ring-1 ring-ink/10" />
                       <span className="min-w-0">
                         <p className="truncate font-bold">{p.name}</p>
                         <p className="truncate text-xs text-ink/50">{p.slug} · {p.category?.name ?? '—'}</p>

@@ -132,7 +132,7 @@ export default function ProductPage() {
                   )}
                   aria-label={`View image ${i + 1}`}
                 >
-                  <img src={cloudinaryThumb(im.secure_url, 200)} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <img src={cloudinaryThumb(im.secure_url, 200, 'eco')} alt="" className="h-full w-full object-cover" loading="lazy" />
                 </button>
               ))}
             </div>

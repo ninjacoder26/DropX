@@ -23,7 +23,7 @@ function CategoryTile({ category }: { category: Category }) {
     >
       {category.image_url ? (
         <img
-          src={cloudinaryThumb(category.image_url, 600)}
+          src={cloudinaryThumb(category.image_url, 600, 'eco')}
           alt=""
           loading="lazy"
           className="aspect-[4/3] w-full object-cover opacity-80 transition duration-500 group-hover:scale-105 group-hover:opacity-60"

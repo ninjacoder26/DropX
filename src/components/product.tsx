@@ -8,11 +8,11 @@ import { useWishlist } from '../hooks/useShop';
 import { useCart } from '../store/CartContext';
 import { Badge } from './ui';
 
-export function primaryImage(p: Product): string {
+export function primaryImage(p: Product, width = 700): string {
   const imgs = [...(p.images ?? [])].sort(
     (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
   );
-  if (imgs[0]) return cloudinaryThumb(imgs[0].secure_url, 700);
+  if (imgs[0]) return cloudinaryThumb(imgs[0].secure_url, width);
   // Studio-light placeholder (soft daylight sweep, 1:1 — not a fake product photo).
   // Real shots uploaded in admin replace this automatically.
   const xmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -40,9 +40,13 @@ function rawPrimary(p: Product): string | null {
 }
 
 /** Optimized responsive srcset for Cloudinary delivery URLs. */
-export function srcSetFor(url: string | null, widths: number[]): string | undefined {
+export function srcSetFor(
+  url: string | null,
+  widths: number[],
+  quality: 'auto' | 'eco' | 'good' = 'auto'
+): string | undefined {
   if (!url || !url.includes('/upload/')) return undefined;
-  return widths.map((w) => `${cloudinaryThumb(url, w)} ${w}w`).join(', ');
+  return widths.map((w) => `${cloudinaryThumb(url, w, quality)} ${w}w`).join(', ');
 }
 
 export function minPrice(p: Product): number {
@@ -72,10 +76,10 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative">
         <Link to={`/product/${product.slug}`} aria-label={product.name} className="relative block">
           <div className="relative aspect-square overflow-hidden bg-paper-dark">
-            <img
-              src={primaryImage(product)}
-              srcSet={srcSetFor(raw, [400, 700, 1000])}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          <img
+            src={primaryImage(product)}
+            srcSet={srcSetFor(raw, [320, 640, 960], 'eco')}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               alt={product.name}
               loading="lazy"
               decoding="async"

@@ -5,7 +5,7 @@ import { clsx } from 'clsx';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 import type { Order } from '../types';
-import { formatNPR } from '../lib/shop';
+import { cloudinaryThumb, formatNPR } from '../lib/shop';
 import { Badge, Button, EmptyState, Skeleton } from '../components/ui';
 
 const STAGES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'] as const;
@@ -95,7 +95,7 @@ export default function OrderDetailPage() {
       <ul className="mt-5 space-y-2">
         {(order.items ?? []).map((it) => (
           <li key={it.id} className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-ink/5">
-            {it.image_url && <img src={it.image_url} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" />}
+            {it.image_url && <img src={cloudinaryThumb(it.image_url, 200, 'eco')} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" />}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold">{it.product_name}</p>
               <p className="text-xs text-ink/50">{it.variant_name ?? ''} · × {it.quantity}</p>
