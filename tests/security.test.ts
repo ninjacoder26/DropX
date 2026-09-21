@@ -91,6 +91,14 @@ describe('security invariants', () => {
     expect(fix).toContain("('profit_margin', '20')");
   });
 
+  it('distance delivery prices from zones, rejects instant', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/015_distance_delivery.sql'), 'utf8');
+    expect(fix).toContain('delivery_zones');
+    expect(fix).toContain('delivery_fee');
+    expect(fix).toContain('Instant delivery is coming soon');
+    expect(fix).toContain('Skeleton parent row FIRST');
+  });
+
   it('brand + specs columns exist with a full backfill', () => {
     const cols = readFileSync(join(root, 'supabase/migrations/016_brand_specs.sql'), 'utf8');
     expect(cols).toContain('brand');

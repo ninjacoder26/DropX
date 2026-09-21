@@ -407,7 +407,7 @@ export default function HomePage() {
         {/* ── Perks ── */}
         <section className="texture-ink grid gap-3 rounded-3xl bg-ink p-6 text-paper sm:grid-cols-3 md:p-8">
           {[
-            { icon: Truck, title: 'Valley delivery', body: '1–3 days inside Kathmandu Valley. Free standard shipping over NPR 2,999.' },
+            { icon: Truck, title: 'Valley delivery', body: 'Rs 10/km standard · Rs 20/km express, measured from Imadol. Free standard shipping over NPR 2,999.' },
             { icon: ShieldCheck, title: 'Pay your way', body: 'Cash on Delivery — pay in cash at your door.' },
             { icon: RefreshCcw, title: '7-day exchanges', body: 'Wrong size? Exchange within 7 days, no interrogation.' },
           ].map((p) => (

@@ -33,7 +33,7 @@ export default function TermsPage() {
           <p>We accept <strong>Cash on Delivery only</strong> — you pay in cash when your order arrives. We take no online card or wallet payments on this website.</p>
         </Section>
         <Section title="5. Delivery">
-          <p>We currently deliver inside <strong>Kathmandu Valley only</strong> (Kathmandu, Lalitpur and Bhaktapur), within 1–3 business days. Standard shipping is NPR 99, express NPR 199, and standard shipping is free on orders over NPR 2,999. Orders from outside the Valley are confirmed by phone before dispatch. Risk passes to you on delivery; please inspect items on arrival.</p>
+          <p>We currently deliver inside <strong>Kathmandu Valley only</strong> (Kathmandu, Lalitpur and Bhaktapur), priced by road distance from our Imadol hub — <strong>Rs 10/km standard (3–5 days)</strong>, <strong>Rs 20/km express (1–3 days)</strong>. Standard shipping is free on orders over NPR 2,999. Instant delivery (within 6 hours) is coming soon. Orders from outside the Valley are confirmed by phone before dispatch. Risk passes to you on delivery; please inspect items on arrival.</p>
         </Section>
         <Section title="6. Exchanges & returns">
           <p>Unworn items with tags attached can be exchanged for a different size within <strong>7 days of delivery</strong>. Exchanges are subject to stock availability. Items worn, washed, altered or damaged after delivery cannot be exchanged. To start an exchange, contact dropx.nepal@gmail.com with your order number.</p>

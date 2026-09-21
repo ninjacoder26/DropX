@@ -62,6 +62,8 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/012_restore_drops.sql` *(repairs deleted drops — rerun-safe)*
    - `supabase/migrations/013_margin.sql` *(real cost prices + default 20% margin)*
    - `supabase/migrations/014_place_order_fix.sql` *(FK-safe order flow, COD-only)*
+   - `supabase/migrations/015_distance_delivery.sql` *(Imadol zones + rates + zone-priced orders)*
+   - `supabase/migrations/016_brand_specs.sql` *(brand + specs columns)*
    - `supabase/migrations/016_brand_specs.sql` *(brand + specs columns)*
    - `supabase/migrations/017_product_specs.sql` *(generated brand/specs backfill — run last)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
@@ -88,15 +90,19 @@ The anon key is designed to be public; **Row Level Security** is what protects y
 1. Create account at <https://cloudinary.com> → note your **Cloud name**.
 2. **Settings → Upload → Upload presets → Add**: mode **Unsigned**, folder `dropx/products` → preset name goes in `src/config.ts`.
 3. Admin uploads then work directly from the dashboard (validated: JPG/PNG/WebP/AVIF ≤ 8 MB).
-4. For production hardening: verify the Supabase JWT + admin role inside `api/cloudinary-sign.ts` and switch to signed uploads; set `CLOUDINARY_API_KEY/SECRET/CLOUD_NAME` as **server-only** env vars (see §6). Deletions call `api/cloudinary-delete.ts` (server secret, never in the browser).
+4. For production hardening: verify the Supabase JWT + admin role inside `api/cloudinary-sign.ts` and switch to signed uploads; set `CLOUDINARY_API_KEY/SECRET/CLOUD_NAME` as **server-only** env vars (see §7). Deletions call `api/cloudinary-delete.ts` (server secret, never in the browser).
 
 **Bandwidth diet (already wired):** uploads are pre-compressed in-browser to ≤1600px WebP before leaving the device (`src/lib/image.ts`); delivery uses `f_auto` + sized widths everywhere, `q_auto:eco` for grids/tiles/thumbs and full quality only for hero/gallery views; admin tables and cart thumbs load 100–200px renditions, never full files. Belt-and-braces: in your upload preset, set an **Incoming transformation** of `w_1600,c_limit/f_auto,q_auto` so even non-dashboard uploads stay lean.
 
 ## 5. Payments — Cash on Delivery only
 
-There is no online payment integration and no bank-transfer flow: the courier collects cash at the door and an admin marks the order `paid` in the dashboard. `place_order()` (migration `014`) rejects any other payment method server-side.
+There is no online payment integration and no bank-transfer flow: the courier collects cash at the door and an admin marks the order `paid` in the dashboard. `place_order()` (migration `015`) rejects any other payment method server-side.
 
-## 6. Server environment (`.env` — secrets only)
+## 6. Delivery — distance-based from Imadol
+
+Standard is Rs 10/km (3–5 days, free over NPR 2,999), express Rs 20/km (1–3 days), across 58 guided Valley areas. Instant (within 6 hours) is fenced off as coming soon in both UI and SQL. Rates live in Admin → Settings (`delivery_rate_standard`, `delivery_rate_express`); road distances live in `delivery_zones` (migration `015`) and are mirrored in `src/lib/delivery.ts` for instant checkout quotes.
+
+## 7. Server environment (`.env` — secrets only)
 
 Copy `.env.example` to `.env` locally (never commit `.env`). Only these server-side keys exist:
 
@@ -105,14 +111,14 @@ Copy `.env.example` to `.env` locally (never commit `.env`). Only these server-s
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `/api/*` automation (bypasses RLS — never expose) |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | signing uploads, deleting assets |
 
-## 7. Deploy to Vercel
+## 8. Deploy to Vercel
 
 1. Push this folder to GitHub.
 2. Vercel → **New Project** → import repo. Framework preset: **Vite**. Build: `npm run build`, Output: `dist`.
-3. **Environment Variables** (Production + Preview): only the §6 server keys that you use (Cloudinary delete/sign, if enabled). Client values are already in `src/config.ts`, so preview deployments need zero client configuration.
+3. **Environment Variables** (Production + Preview): only the §7 server keys that you use (Cloudinary delete/sign, if enabled). Client values are already in `src/config.ts`, so preview deployments need zero client configuration.
 4. `vercel.json` already handles SPA rewrites + asset caching. Preview deployments work per-PR automatically.
 
-## 8. Testing
+## 9. Testing
 
 ```bash
 npm test        # vitest: drops, pricing, offline payments, security invariants
@@ -136,7 +142,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 016 brand/specs · 017 specs backfill
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md
@@ -156,6 +162,6 @@ DropX/
 | Supabase URL + anon key | `src/config.ts` — §1/§2 |
 | Google OAuth client | Supabase dashboard — §3 |
 | Cloudinary cloud + preset | `src/config.ts` — §4 |
-| Server secrets (if using `/api`) | `.env` / Vercel — §6 |
+| Server secrets (if using `/api`) | `.env` / Vercel — §7 |
 
 © 2026 DropX.

@@ -311,7 +311,9 @@ export default function ProductPage() {
               <dl className="grid grid-cols-1 gap-px border-t border-ink/10 bg-ink/10 text-xs sm:grid-cols-2">
                 {[
                   ...((product.brand ?? '') !== '' ? [['Brand', product.brand] as [string, string]] : []),
-                  ...Object.entries(product.specs ?? {}).filter(([, v]) => v != null && String(v).trim() !== ''),
+                  // Brand already has its own row above — never repeat it from specs.
+                  ...Object.entries(product.specs ?? {})
+                    .filter(([k, v]) => k.toLowerCase() !== 'brand' && v != null && String(v).trim() !== ''),
                 ].map(([k, v]) => (
                   <div key={k} className="bg-white px-5 py-3">
                     <dt className="font-bold uppercase tracking-wider text-ink/40">{specLabel(k)}</dt>
