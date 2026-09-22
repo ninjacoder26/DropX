@@ -94,4 +94,17 @@ describe('maintenance gate', () => {
     expect(screen.getByText('shop content')).toBeInTheDocument();
     expect(screen.queryByText(/tuning/)).toBeNull();
   });
+
+  it('honors custom copy and a zero-second timer', () => {
+    render(
+      <MemoryRouter>
+        <MaintenancePage
+          onContinue={() => undefined}
+          overrides={{ maintenanceTitle: 'Back in a flash', maintenanceCountdown: 0 }}
+        />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Back in a flash')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^continue anyway$/i })).toBeEnabled();
+  });
 });

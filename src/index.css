@@ -153,6 +153,67 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 32px rgba(16, 16, 16, 0.25);
 }
 
+/* ── Admin dark mode (scoped: .admin-dark wraps the dashboard only) ── */
+/* Unlayered descendant rules intentionally override Tailwind utilities here
+ * so the whole admin flips with one class. Storefront is never affected. */
+.admin-dark {
+  color-scheme: dark;
+}
+.admin-dark .bg-white {
+  background-color: #191919;
+}
+.admin-dark .bg-paper {
+  background-color: #101010;
+}
+.admin-dark .bg-ink {
+  background-color: #2e2e2e;
+}
+.admin-dark .bg-ink\/10 {
+  background-color: rgb(247 245 240 / 0.1);
+}
+.admin-dark .text-ink {
+  color: #f7f5f0;
+}
+.admin-dark .text-ink\/60 {
+  color: rgb(247 245 240 / 0.65);
+}
+.admin-dark .text-ink\/50 {
+  color: rgb(247 245 240 / 0.55);
+}
+.admin-dark .text-ink\/40 {
+  color: rgb(247 245 240 / 0.45);
+}
+.admin-dark .border-ink\/10 {
+  border-color: rgb(247 245 240 / 0.12);
+}
+.admin-dark .border-ink\/15 {
+  border-color: rgb(247 245 240 / 0.16);
+}
+.admin-dark .border-ink\/5 {
+  border-color: rgb(247 245 240 / 0.07);
+}
+.admin-dark .ring-ink\/5 {
+  --tw-ring-color: rgb(247 245 240 / 0.07);
+}
+.admin-dark .ring-ink\/10 {
+  --tw-ring-color: rgb(247 245 240 / 0.12);
+}
+.admin-dark .bg-ember\/10 {
+  background-color: rgb(240 100 39 / 0.18);
+}
+.admin-dark .bg-ember\/5 {
+  background-color: rgb(240 100 39 / 0.12);
+}
+.admin-dark .border-ember\/30 {
+  border-color: rgb(240 100 39 / 0.4);
+}
+.admin-dark .hover\:bg-ink\/5:hover {
+  background-color: rgb(247 245 240 / 0.08);
+}
+.admin-dark .hover\:bg-ink\/10:hover {
+  background-color: rgb(247 245 240 / 0.14);
+}
+
 /* ── Smartphone comfort ─────────────────────────────────────── */
 /* 16px+ fields stop iOS auto-zoom on focus; keep desktop sizes intact. */
 @media (max-width: 640px) {

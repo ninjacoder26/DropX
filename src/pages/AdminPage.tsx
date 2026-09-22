@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import {
-  BarChart3, ClipboardList, Flame, LayoutDashboard, Menu, Package,
-  ScrollText, Settings as SettingsIcon, Star, Tags, Truck, Users, X, Zap,
+  BarChart3, ClipboardList, Flame, LayoutDashboard, Menu, Moon, Package,
+  ScrollText, Settings as SettingsIcon, Star, Sun, Tags, Truck, Users, X, Zap,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useAdminTheme } from '../lib/adminTheme';
 import AdminDelivery from './AdminDelivery';
 import AdminDemand from './AdminDemand';
 import { supabase } from '../lib/supabase';
@@ -42,6 +43,7 @@ function log(action: string, entity: string, entity_id?: string, meta: object = 
 
 export default function AdminPage() {
   const [drawer, setDrawer] = useState(false);
+  const { theme, toggle } = useAdminTheme();
   usePageTitle('Admin Dashboard');
 
   const nav = (
@@ -67,7 +69,7 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="bg-paper lg:grid lg:grid-cols-[250px_minmax(0,1fr)]">
+    <div className={clsx('bg-paper lg:grid lg:grid-cols-[250px_minmax(0,1fr)]', theme === 'dark' && 'admin-dark')}>
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-ink/10 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:p-5">
         <Link to="/" className="flex items-center gap-2 px-2">
@@ -110,7 +112,15 @@ export default function AdminPage() {
           <p className="text-xs font-semibold text-ink/50">
             RLS-enforced · every write is audited
           </p>
-          <Link to="/" className="ml-auto rounded-full border border-ink/15 bg-white px-4 py-1.5 text-xs font-bold lg:hidden">
+          <button
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            className="ml-auto rounded-full border border-ink/15 bg-white p-2 transition hover:border-ink/40"
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+          <Link to="/" className="rounded-full border border-ink/15 bg-white px-4 py-1.5 text-xs font-bold lg:hidden">
             Storefront
           </Link>
         </div>
@@ -1300,6 +1310,14 @@ function Settings() {
     profit_margin: '',
     delivery_rate_standard: '',
     delivery_rate_express: '',
+    maintenance_enabled: '',
+    maintenance_frequency: '',
+    maintenance_countdown: '',
+    maintenance_title: '',
+    maintenance_message: '',
+    maintenance_button: '',
+    maintenance_particles: '',
+    maintenance_contact: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1318,6 +1336,14 @@ function Settings() {
         profit_margin: get('profit_margin'),
         delivery_rate_standard: get('delivery_rate_standard'),
         delivery_rate_express: get('delivery_rate_express'),
+        maintenance_enabled: get('maintenance_enabled'),
+        maintenance_frequency: get('maintenance_frequency'),
+        maintenance_countdown: get('maintenance_countdown'),
+        maintenance_title: get('maintenance_title'),
+        maintenance_message: get('maintenance_message'),
+        maintenance_button: get('maintenance_button'),
+        maintenance_particles: get('maintenance_particles') || '1',
+        maintenance_contact: get('maintenance_contact') || '1',
       });
       setLoading(false);
     });
@@ -1350,18 +1376,36 @@ function Settings() {
         return;
       }
     }
+    if (form.maintenance_countdown.trim() !== '') {
+      const c = Number(form.maintenance_countdown);
+      if (Number.isNaN(c) || c < 0 || c > 60) {
+        setMsg('Countdown must be 0–60 seconds (0 = button active immediately).');
+        return;
+      }
+    }
+    if (form.maintenance_frequency.trim() !== '' && !['always', 'once'].includes(form.maintenance_frequency.trim())) {
+      setMsg('Frequency must be “always” or “once”.');
+      return;
+    }
     if (!form.support_email.includes('@')) {
       setMsg('Support email looks invalid.');
       return;
     }
     setSaving(true);
-    const entries = Object.entries(form).filter(([, v]) => v.trim() !== '');
+    const BOOLEANS = ['maintenance_enabled', 'maintenance_particles', 'maintenance_contact'];
+    const entries = Object.entries(form)
+      .filter(([k, v]) => !BOOLEANS.includes(k) && v.trim() !== '')
+      .map(([key, value]) => ({ key, value: value.trim() }));
+    // Toggles always persist explicitly ('1'/'0') so unchecking sticks.
+    for (const k of BOOLEANS) {
+      entries.push({ key: k, value: form[k as keyof typeof form].trim() === '1' ? '1' : '0' });
+    }
     const { error } = await supabase
       .from('store_settings')
-      .upsert(entries.map(([key, value]) => ({ key, value: value.trim() })), { onConflict: 'key' });
+      .upsert(entries, { onConflict: 'key' });
     if (error) setMsg(error.message);
     else {
-      log('settings.update', 'store_settings', undefined, Object.fromEntries(entries));
+      log('settings.update', 'store_settings', undefined, Object.fromEntries(entries.map((e) => [e.key, e.value])));
       setMsg('Settings saved — the storefront and checkout pricing update immediately.');
     }
     setSaving(false);
@@ -1471,6 +1515,74 @@ function Settings() {
             <Button onClick={applyMargin} disabled={applying || saving} variant="dark" className="mt-3">
               {applying ? 'Repricing…' : `Apply +${marginNum()}% to all products`}
             </Button>
+          </div>
+
+          <div className="rounded-2xl border border-ink/10 bg-paper p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-display font-extrabold">Maintenance page</h3>
+              <button
+                onClick={() => setForm({ ...form, maintenance_enabled: form.maintenance_enabled === '1' ? '0' : '1' })}
+                aria-pressed={form.maintenance_enabled === '1'}
+                aria-label="Toggle maintenance mode"
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${form.maintenance_enabled === '1' ? 'bg-ember' : 'bg-ink/15'}`}
+              >
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${form.maintenance_enabled === '1' ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-ink/60">
+              Brand and theme stay fixed — everything below is editable. Takes effect on save (no code changes).
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Field label="Show to visitors">
+                <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Maintenance frequency">
+                  {(['once', 'always'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      role="radio"
+                      aria-checked={(form.maintenance_frequency || 'once') === f}
+                      onClick={() => setForm({ ...form, maintenance_frequency: f })}
+                      title={f === 'once' ? 'Remember Continue for the browser session' : 'Block again on every fresh page load'}
+                      className={`rounded-xl border px-3 py-2 text-xs font-bold capitalize transition ${
+                        (form.maintenance_frequency || 'once') === f ? 'border-ink bg-ink text-paper' : 'border-ink/15 bg-white hover:border-ink/40'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Button timer (seconds, 0–60)">
+                <Input type="number" min={0} max={60} value={form.maintenance_countdown} onChange={(e) => setForm({ ...form, maintenance_countdown: e.target.value })} placeholder="6" />
+              </Field>
+            </div>
+            <div className="mt-3 space-y-3">
+              <Field label="Headline (blank = default)">
+                <Input value={form.maintenance_title} onChange={(e) => setForm({ ...form, maintenance_title: e.target.value })} placeholder="We're tuning the Drop." />
+              </Field>
+              <Field label="Message (blank = default)">
+                <textarea value={form.maintenance_message} onChange={(e) => setForm({ ...form, maintenance_message: e.target.value })} rows={2} placeholder="DropX is getting a quick tune-up…" className="w-full rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-sm" />
+              </Field>
+              <Field label="Button label (blank = Continue Anyway)">
+                <Input value={form.maintenance_button} onChange={(e) => setForm({ ...form, maintenance_button: e.target.value })} placeholder="Continue Anyway" />
+              </Field>
+              <div className="flex flex-wrap gap-4 text-sm">
+                {([
+                  ['maintenance_particles', 'Animated particles'],
+                  ['maintenance_contact', 'Support email line'],
+                ] as const).map(([k, label]) => (
+                  <label key={k} className="flex items-center gap-2 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={form[k] === '' ? true : form[k] === '1'}
+                      onChange={(e) => setForm({ ...form, [k]: e.target.checked ? '1' : '0' })}
+                      className="h-4 w-4 accent-[#F06427]"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </Card>

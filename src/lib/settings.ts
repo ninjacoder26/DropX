@@ -14,6 +14,16 @@ export interface StoreSettings {
   /** Rs per km from Imadol. Defaults: standard 10, express 20. */
   deliveryRateStandard: number;
   deliveryRateExpress: number;
+  /** Maintenance page (Admin → Settings). Brand/theme stay fixed. */
+  maintenanceEnabled: boolean;
+  /** 'once' = bypass remembered for the session; 'always' = re-block on reload. */
+  maintenanceFrequency: 'always' | 'once';
+  maintenanceCountdown: number;
+  maintenanceTitle: string;
+  maintenanceMessage: string;
+  maintenanceButton: string;
+  maintenanceParticles: boolean;
+  maintenanceContact: boolean;
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
@@ -25,6 +35,14 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   profitMargin: 20,
   deliveryRateStandard: 10,
   deliveryRateExpress: 20,
+  maintenanceEnabled: false,
+  maintenanceFrequency: 'once',
+  maintenanceCountdown: 6,
+  maintenanceTitle: '',
+  maintenanceMessage: '',
+  maintenanceButton: '',
+  maintenanceParticles: true,
+  maintenanceContact: true,
 };
 
 const num = (v: string | undefined, fallback: number): number => {
@@ -33,6 +51,9 @@ const num = (v: string | undefined, fallback: number): number => {
 };
 
 const clampMargin = (m: number): number => Math.min(100, Math.max(0, m));
+
+const truthy = (v: string | undefined): boolean =>
+  v !== undefined && ['1', 'true', 'yes', 'on'].includes(v.trim().toLowerCase());
 
 /** Storefront selling price from a real cost + margin %. Whole rupees. */
 export function sellingFromCost(cost: number, marginPct: number): number {
@@ -56,6 +77,14 @@ export function mapSettings(rows: { key: string; value: string }[]): StoreSettin
     profitMargin: clampMargin(num(get('profit_margin'), DEFAULT_SETTINGS.profitMargin)),
     deliveryRateStandard: num(get('delivery_rate_standard'), DEFAULT_SETTINGS.deliveryRateStandard),
     deliveryRateExpress: num(get('delivery_rate_express'), DEFAULT_SETTINGS.deliveryRateExpress),
+    maintenanceEnabled: truthy(get('maintenance_enabled')),
+    maintenanceFrequency: get('maintenance_frequency') === 'always' ? 'always' : 'once',
+    maintenanceCountdown: Math.min(60, Math.max(0, Math.round(num(get('maintenance_countdown'), DEFAULT_SETTINGS.maintenanceCountdown)))),
+    maintenanceTitle: get('maintenance_title')?.trim() ?? '',
+    maintenanceMessage: get('maintenance_message')?.trim() ?? '',
+    maintenanceButton: get('maintenance_button')?.trim() ?? '',
+    maintenanceParticles: get('maintenance_particles') == null ? true : truthy(get('maintenance_particles')),
+    maintenanceContact: get('maintenance_contact') == null ? true : truthy(get('maintenance_contact')),
   };
 }
 

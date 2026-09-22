@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Construction } from 'lucide-react';
-import { useStoreSettings } from '../lib/settings';
+import { useStoreSettings, type StoreSettings } from '../lib/settings';
 import {
   hasMaintenanceBypass,
   isMaintenanceMode,
   setMaintenanceBypass,
 } from '../lib/maintenance';
 
-const COUNTDOWN_SECONDS = 6;
+const FALLBACK_COUNTDOWN = 6;
 
 /** Lightweight ember/paper particle drift. Skipped entirely for reduced motion. */
 function Particles() {
@@ -105,24 +105,53 @@ function CountdownRing({ remaining, total }: { remaining: number; total: number 
   );
 }
 
-export function MaintenancePage({ onContinue }: { onContinue?: () => void }) {
-  const { supportEmail } = useStoreSettings();
-  const [remaining, setRemaining] = useState(COUNTDOWN_SECONDS);
+export type MaintenanceCopy = Pick<
+  StoreSettings,
+  | 'maintenanceTitle' | 'maintenanceMessage' | 'maintenanceButton'
+  | 'maintenanceCountdown' | 'maintenanceParticles' | 'maintenanceContact'
+  | 'supportEmail'
+>;
+
+export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => void; overrides?: Partial<MaintenanceCopy> }) {
+  // Everything except brand/theme comes from Admin → Settings (with the
+  // same defaults as a fresh install, so the page works offline too).
+  // `overrides` exists for previews/tests; production always uses settings.
+  const settings = useStoreSettings();
+  const s: MaintenanceCopy & { supportEmail: string } = {
+    maintenanceTitle: settings.maintenanceTitle,
+    maintenanceMessage: settings.maintenanceMessage,
+    maintenanceButton: settings.maintenanceButton,
+    maintenanceCountdown: settings.maintenanceCountdown,
+    maintenanceParticles: settings.maintenanceParticles,
+    maintenanceContact: settings.maintenanceContact,
+    supportEmail: settings.supportEmail,
+    ...overrides,
+  };
+  const total = Math.min(60, Math.max(0, Math.round(s.maintenanceCountdown ?? FALLBACK_COUNTDOWN)));
+  const title = s.maintenanceTitle || '';
+  const message =
+    s.maintenanceMessage ||
+    'DropX is getting a quick tune-up — new heat, fresh fixes, better everything. We\u2019ll be back to full volume in a few minutes.';
+  const buttonLabel = s.maintenanceButton || 'Continue Anyway';
+  const { supportEmail } = settings;
+  const [remaining, setRemaining] = useState(total);
 
   useEffect(() => {
+    setRemaining(total);
+    if (total <= 0) return;
     const start = Date.now();
     const timer = setInterval(() => {
-      const left = Math.max(0, Math.ceil((COUNTDOWN_SECONDS * 1000 - (Date.now() - start)) / 1000));
+      const left = Math.max(0, Math.ceil((total * 1000 - (Date.now() - start)) / 1000));
       setRemaining((prev) => (prev === left ? prev : left));
     }, 200);
     return () => clearInterval(timer);
-  }, []);
+  }, [total]);
 
   const ready = remaining <= 0;
 
   return (
     <div className="texture-ink relative flex min-h-screen flex-col overflow-hidden bg-ink text-paper">
-      <Particles />
+      {s.maintenanceParticles && <Particles />}
       <div
         aria-hidden
         className="pointer-events-none absolute -left-24 top-1/4 h-96 w-96 rounded-full bg-ember/20 blur-3xl"
@@ -138,17 +167,22 @@ export function MaintenancePage({ onContinue }: { onContinue?: () => void }) {
           Under maintenance
         </p>
         <h1 className="reveal reveal-1 mt-6 font-display text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl">
-          We&rsquo;re tuning
-          <br />
-          the <span className="font-accent font-normal tracking-normal text-ember">Drop.</span>
+          {title ? (
+            <span className="whitespace-pre-line">{title}</span>
+          ) : (
+            <>
+              We&rsquo;re tuning
+              <br />
+              the <span className="font-accent font-normal tracking-normal text-ember">Drop.</span>
+            </>
+          )}
         </h1>
-        <p className="reveal reveal-2 mt-5 max-w-md text-[15px] leading-relaxed text-paper/70">
-          DropX is getting a quick tune-up — new heat, fresh fixes, better everything.
-          We&rsquo;ll be back to full volume in a few minutes.
+        <p className="reveal reveal-2 mt-5 max-w-md whitespace-pre-line text-[15px] leading-relaxed text-paper/70">
+          {message}
         </p>
 
         <div className="reveal reveal-3 mt-8 flex flex-col items-center gap-4">
-          <CountdownRing remaining={remaining} total={COUNTDOWN_SECONDS} />
+          <CountdownRing remaining={remaining} total={Math.max(total, 1)} />
           <p className="sr-only" role="status">
             {ready ? 'You may continue to the site.' : `Continue available in ${remaining} seconds.`}
           </p>
@@ -166,9 +200,9 @@ export function MaintenancePage({ onContinue }: { onContinue?: () => void }) {
             }`}
           >
             {ready ? (
-              <>Continue Anyway <ArrowRight size={16} /></>
+              <>{buttonLabel} <ArrowRight size={16} /></>
             ) : (
-              <>Continue Anyway ({remaining}s)</>
+              <>{buttonLabel} ({remaining}s)</>
             )}
           </button>
           <p className="text-[11px] text-paper/40">
@@ -177,9 +211,11 @@ export function MaintenancePage({ onContinue }: { onContinue?: () => void }) {
         </div>
       </div>
 
-      <p className="relative z-[2] px-4 pb-6 text-center text-[11px] text-paper/40">
-        Questions? {supportEmail}
-      </p>
+      {s.maintenanceContact && (
+        <p className="relative z-[2] px-4 pb-6 text-center text-[11px] text-paper/40">
+          Questions? {s.supportEmail}
+        </p>
+      )}
     </div>
   );
 }
@@ -187,22 +223,30 @@ export function MaintenancePage({ onContinue }: { onContinue?: () => void }) {
 /**
  * Blocks customer routes while maintenance is on. Admin routes and
  * opted-in sessions pass straight through — nothing else changes.
+ *
+ * Source of truth: the code flag (emergency) OR Admin → Settings.
+ * Frequency 'once' remembers Continue for the browser session;
+ * 'always' re-blocks on every fresh page load.
  */
 export function MaintenanceGate({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const [bypass, setBypass] = useState(() => hasMaintenanceBypass());
+  const settings = useStoreSettings();
+  const [passed, setPassed] = useState(false);
 
-  if (!isMaintenanceMode() || pathname.startsWith('/admin')) {
+  const on = isMaintenanceMode() || settings.maintenanceEnabled;
+  if (!on || pathname.startsWith('/admin')) {
     return <>{children}</>;
   }
-  if (bypass) {
+  const bypassed =
+    passed || (settings.maintenanceFrequency !== 'always' && hasMaintenanceBypass());
+  if (bypassed) {
     return <>{children}</>;
   }
   return (
     <MaintenancePage
       onContinue={() => {
         setMaintenanceBypass();
-        setBypass(true);
+        setPassed(true);
       }}
     />
   );
