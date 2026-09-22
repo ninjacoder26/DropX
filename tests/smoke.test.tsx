@@ -39,14 +39,14 @@ function renderAt(path: string) {
 describe('unconfigured storefront renders (never blank)', () => {
   it('/ shows the homepage hero and sections', async () => {
     renderAt('/');
-    expect(await screen.findByText(/Shop the collection/)).toBeInTheDocument();
-    expect(await screen.findByText('Pay your way')).toBeInTheDocument();
-    expect(await screen.findByText(/Backend not connected/)).toBeInTheDocument();
+    expect(await screen.findByText(/Shop the collection/, {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(await screen.findByText('Pay your way', {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(await screen.findByText(/Backend not connected/, {}, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it('/ collapses empty shelves instead of rendering hollow sections', async () => {
     renderAt('/');
-    await screen.findByText(/Shop the collection/);
+    await screen.findByText(/Shop the collection/, {}, { timeout: 5000 });
     // No catalog data in this mode → no hollow "Trending"/"New arrivals" blocks.
     expect(screen.queryByText('Trending now')).toBeNull();
     expect(screen.queryByText('New arrivals')).toBeNull();

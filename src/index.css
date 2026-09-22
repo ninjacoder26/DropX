@@ -123,6 +123,25 @@ body {
   .marquee { animation: none; }
   .reveal { animation: none; }
   .install-banner { animation: none; }
+  .tick-pop { animation: none; }
+  .pulse-ready { animation: none; }
+}
+
+/* Countdown tick pop + ready-button glow (maintenance page) */
+@keyframes dropx-tick {
+  0% { transform: scale(0.65); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.tick-pop {
+  display: inline-block;
+  animation: dropx-tick 0.3s ease both;
+}
+@keyframes dropx-pulse-soft {
+  0%, 100% { box-shadow: 5px 5px 0 #101010, 0 0 0 0 rgba(240, 100, 39, 0.55); }
+  50% { box-shadow: 5px 5px 0 #101010, 0 0 0 12px rgba(240, 100, 39, 0); }
+}
+.pulse-ready {
+  animation: dropx-pulse-soft 2s ease-in-out infinite;
 }
 
 /* PWA install banner: slides in once, never jarring */

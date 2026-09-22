@@ -99,7 +99,7 @@ function CountdownRing({ remaining, total }: { remaining: number; total: number 
           strokeDashoffset={C * (1 - progress)}
         />
       </svg>
-      <span className="font-display text-xl font-black tabular-nums">
+      <span key={remaining} className="tick-pop font-display text-xl font-black tabular-nums">
         {remaining}
       </span>
     </span>
@@ -158,14 +158,6 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
   return (
     <div className="texture-ink relative flex min-h-screen flex-col overflow-hidden bg-ink text-paper">
       {s.maintenanceParticles && <Particles />}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 top-1/4 h-96 w-96 rounded-full bg-ember/20 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-ember/10 blur-3xl"
-      />
 
       <div className="relative z-[2] mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
         <p className="reveal inline-flex items-center gap-2 rounded-full border border-paper/20 bg-paper/5 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-paper/80">
@@ -198,10 +190,10 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
               enter();
             }}
             disabled={!ready}
-            className={`shadow-sticker inline-flex items-center gap-2 rounded-full border-2 px-7 py-3.5 text-sm font-bold transition active:scale-[0.98] ${
+            className={`inline-flex items-center gap-2 rounded-full border-2 px-7 py-3.5 text-sm font-bold transition active:scale-[0.98] ${
               ready
-                ? 'border-paper/80 bg-ember text-white hover:bg-ember-dark'
-                : 'cursor-not-allowed border-paper/20 bg-paper/10 text-paper/50'
+                ? 'pulse-ready border-paper/80 bg-ember text-white hover:bg-ember-dark'
+                : 'shadow-sticker cursor-not-allowed border-paper/20 bg-paper/10 text-paper/50'
             }`}
           >
             {ready ? (
@@ -210,17 +202,29 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
               <>{buttonLabel} ({remaining}s)</>
             )}
           </button>
-          {isAdmin && (
-            <button
-              onClick={enter}
-              className="inline-flex items-center gap-1.5 rounded-full border border-paper/25 px-5 py-2 text-xs font-bold text-paper/80 transition hover:border-paper/60 hover:text-paper"
-            >
-              <ShieldCheck size={13} className="text-ember" /> Enter site as admin
-            </button>
-          )}
-          <p className="text-[11px] text-paper/40">
-            Admins are never blocked — <Link to="/admin" className="font-bold text-paper/60 underline underline-offset-2 hover:text-paper">open dashboard</Link>
-          </p>
+          <div className="flex items-center gap-4 text-[11px]">
+            {isAdmin && (
+              <button
+                onClick={enter}
+                className="inline-flex items-center gap-1.5 rounded-full border border-paper/25 px-4 py-1.5 font-bold text-paper/80 transition hover:border-paper/60 hover:text-paper"
+              >
+                <ShieldCheck size={13} className="text-ember" /> Enter site as admin
+              </button>
+            )}
+            <Link to="/admin" className="font-bold text-paper/40 underline underline-offset-2 hover:text-paper">
+              open dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-[2] overflow-hidden border-t border-paper/10 py-2.5" aria-hidden>
+        <div className="marquee flex gap-8 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.3em] text-paper/40">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i} className="flex items-center gap-8">
+              Back soon <span className="text-ember">✦</span> Wear the drop <span className="text-ember">✦</span>
+            </span>
+          ))}
         </div>
       </div>
 
