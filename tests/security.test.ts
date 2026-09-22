@@ -103,6 +103,20 @@ describe('security invariants', () => {
     expect(fix).toContain("('profit_margin', '20')");
   });
 
+  it('image reports never auto-delete and keep claimants private', () => {
+    const sql = readFileSync(join(root, 'supabase/migrations/023_image_requests.sql'), 'utf8');
+    expect(sql).toContain('image_requests');
+    expect(sql).toContain('image_request_notes');
+    expect(sql).toContain('is_hidden');
+    expect(sql).toContain('contact_email ~*');
+    expect(sql).toContain('trg_image_requests_rate');
+    expect(sql).not.toMatch(/delete\s+from\s+public\.products/i);
+    // Claimant rows are readable by owner + admin only — never the public.
+    expect(sql).toContain('for select using (user_id = auth.uid() or public.is_admin())');
+    // Internal notes are a separate admin-only table.
+    expect(sql).toContain('for all using (public.is_admin())');
+  });
+
   it('manual price overrides survive reprices', () => {
     const fix = readFileSync(join(root, 'supabase/migrations/022_custom_price.sql'), 'utf8');
     expect(fix).toContain('use_custom_price');

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import {
-  BarChart3, ClipboardList, Flame, LayoutDashboard, Menu, Moon, Package,
+  BarChart3, Bell, ClipboardList, Flame, Images, LayoutDashboard, Menu, Moon, Package,
   ScrollText, Settings as SettingsIcon, Star, Sun, Tags, Truck, Users, X, Zap,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -9,6 +9,7 @@ import { useAdminTheme } from '../lib/adminTheme';
 import { logAdminAction as log } from '../lib/admin';
 import AdminDelivery from './AdminDelivery';
 import AdminDemand from './AdminDemand';
+import AdminImageRequests from './AdminImageRequests';
 import { supabase } from '../lib/supabase';
 import type { Category, Drop, Order, Product, ProductVariant, Profile, Review } from '../types';
 import { dropState } from '../types';
@@ -31,6 +32,7 @@ const TABS = [
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/drops', label: 'Drops', icon: Zap },
   { to: '/admin/reviews', label: 'Reviews', icon: Star },
+  { to: '/admin/image-requests', label: 'Images', icon: Images },
   { to: '/admin/demand', label: 'Demand', icon: Flame },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
@@ -40,7 +42,49 @@ const TABS = [
 export default function AdminPage() {
   const [drawer, setDrawer] = useState(false);
   const { theme, toggle } = useAdminTheme();
+  const [pendingReports, setPendingReports] = useState(0);
+  const [reportToast, setReportToast] = useState(false);
   usePageTitle('Admin Dashboard');
+
+  // Live pending-report badge + subtle toast on new submissions.
+  // (Requires the table in the supabase_realtime publication; the 60s
+  // refetch below keeps the count honest even without it.)
+  useEffect(() => {
+    let live = true;
+    let toastTimer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = async () => {
+      const { count } = await supabase
+        .from('image_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (live) setPendingReports(count ?? 0);
+    };
+    void refresh();
+    const channel = supabase
+      .channel('admin-image-requests')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'image_requests' },
+        (payload) => {
+          void refresh();
+          if (payload.eventType === 'INSERT' && live) {
+            setReportToast(true);
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+              if (live) setReportToast(false);
+            }, 6000);
+          }
+        }
+      )
+      .subscribe();
+    const interval = setInterval(refresh, 60_000);
+    return () => {
+      live = false;
+      if (toastTimer) clearTimeout(toastTimer);
+      clearInterval(interval);
+      supabase.removeChannel(channel).catch(() => undefined);
+    };
+  }, []);
 
   const nav = (
     <nav className="space-y-1" aria-label="Admin sections">
@@ -58,7 +102,12 @@ export default function AdminPage() {
           }
         >
           <t.icon size={17} />
-          {t.label}
+          <span className="flex-1">{t.label}</span>
+          {t.to === '/admin/image-requests' && pendingReports > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1.5 text-[10px] font-bold text-white">
+              {pendingReports > 99 ? '99+' : pendingReports}
+            </span>
+          )}
         </NavLink>
       ))}
     </nav>
@@ -108,6 +157,18 @@ export default function AdminPage() {
           <p className="text-xs font-semibold text-ink/50">
             RLS-enforced · every write is audited
           </p>
+          <Link
+            to="/admin/image-requests"
+            aria-label={`Image reports${pendingReports > 0 ? `, ${pendingReports} pending` : ''}`}
+            className="relative rounded-full border border-ink/15 bg-white p-2 transition hover:border-ink/40"
+          >
+            <Bell size={15} />
+            {pendingReports > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ember px-1 text-[9px] font-bold text-white">
+                {pendingReports > 99 ? '99+' : pendingReports}
+              </span>
+            )}
+          </Link>
           <button
             onClick={toggle}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -130,6 +191,7 @@ export default function AdminPage() {
             <Route path="customers" element={<Customers />} />
             <Route path="drops" element={<Drops />} />
           <Route path="reviews" element={<ReviewsMod />} />
+          <Route path="image-requests" element={<AdminImageRequests />} />
           <Route path="demand" element={<AdminDemand />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<Settings />} />
@@ -137,6 +199,24 @@ export default function AdminPage() {
           </Routes>
         </div>
       </div>
+      {reportToast && (
+        <div className="fixed bottom-4 right-4 z-50 w-72 rounded-2xl bg-ink p-4 text-paper shadow-pop" role="status">
+          <p className="font-display text-sm font-extrabold">New image report</p>
+          <p className="mt-0.5 text-xs text-paper/70">A brand just disputed a product photo.</p>
+          <div className="mt-2 flex gap-2">
+            <Link
+              to="/admin/image-requests"
+              onClick={() => setReportToast(false)}
+              className="rounded-full bg-ember px-4 py-1.5 text-xs font-bold text-white"
+            >
+              Review
+            </Link>
+            <button onClick={() => setReportToast(false)} className="rounded-full px-3 py-1.5 text-xs font-bold text-paper/60 hover:text-paper">
+              Later
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

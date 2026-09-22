@@ -62,6 +62,7 @@ export interface ProductImage {
   height: number | null;
   sort_order: number;
   is_primary: boolean;
+  is_hidden?: boolean;
 }
 
 export interface Profile {
@@ -212,4 +213,29 @@ export interface ProductRequest {
   created_at: string;
   /** Admin-only aggregate, present on grouped rows. */
   request_count?: number;
+}
+
+export type ImageRequestStatus = 'pending' | 'reviewed' | 'resolved' | 'rejected';
+
+export interface ImageRequest {
+  id: string;
+  user_id: string | null;
+  session_id: string;
+  brand_name: string;
+  contact_email: string;
+  product_id: string;
+  image_url: string;
+  product_url: string;
+  reason: string;
+  status: ImageRequestStatus;
+  created_at: string;
+  product_name?: string;
+}
+
+export interface ImageRequestNote {
+  id: string;
+  request_id: string;
+  admin_id: string | null;
+  note: string;
+  created_at: string;
 }

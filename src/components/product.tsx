@@ -11,9 +11,12 @@ import { logRecClick } from '../lib/analytics';
 import { Badge } from './ui';
 
 export function primaryImage(p: Product, width = 700): string {
-  const imgs = [...(p.images ?? [])].sort(
-    (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
-  );
+  // Hidden (disputed) images never surface on the storefront.
+  const imgs = [...(p.images ?? [])]
+    .filter((im) => !im.is_hidden)
+    .sort(
+      (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
+    );
   if (imgs[0]) return cloudinaryThumb(imgs[0].secure_url, width);
   // Studio-light placeholder (soft daylight sweep, 1:1 — not a fake product photo).
   // Real shots uploaded in admin replace this automatically.
@@ -35,9 +38,11 @@ export function primaryImage(p: Product, width = 700): string {
 
 /** Raw (untransformed) primary URL — used to build responsive srcsets. */
 function rawPrimary(p: Product): string | null {
-  const imgs = [...(p.images ?? [])].sort(
-    (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
-  );
+  const imgs = [...(p.images ?? [])]
+    .filter((im) => !im.is_hidden)
+    .sort(
+      (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
+    );
   return imgs[0]?.secure_url ?? null;
 }
 

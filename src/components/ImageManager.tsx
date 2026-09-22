@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, ImagePlus, Star, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Star, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isCloudinaryConfigured, uploadToCloudinary, validateImageFile } from '../lib/cloudinary';
 import type { ProductImage } from '../types';
@@ -125,10 +125,20 @@ export function ImageManager({ productId }: { productId: string }) {
         <ul className="mt-3 grid grid-cols-3 gap-2">
           {images.map((im) => (
             <li key={im.id} className="group relative overflow-hidden rounded-xl bg-paper-dark ring-1 ring-ink/10">
-              <img src={im.secure_url} alt={im.alt_text} className="aspect-square w-full object-cover" loading="lazy" />
-              {im.is_primary && (
+              <img
+                src={im.secure_url}
+                alt={im.alt_text}
+                loading="lazy"
+                className={`aspect-square w-full object-cover ${im.is_hidden ? 'opacity-40 grayscale' : ''}`}
+              />
+              {im.is_primary && !im.is_hidden && (
                 <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-ember px-2 py-0.5 text-[10px] font-bold text-white">
                   <Star size={9} /> PRIMARY
+                </span>
+              )}
+              {im.is_hidden && (
+                <span className="absolute left-1 top-1 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold text-paper">
+                  HIDDEN — under dispute
                 </span>
               )}
               <div className="absolute inset-x-1 bottom-1 flex justify-center gap-1 opacity-0 transition group-hover:opacity-100">
@@ -137,6 +147,16 @@ export function ImageManager({ productId }: { productId: string }) {
                 {!im.is_primary && (
                   <button onClick={() => void setPrimary(im.id)} className="rounded-full bg-white p-1.5 shadow" aria-label="Set primary"><Star size={12} /></button>
                 )}
+                <button
+                  onClick={() => {
+                    supabase.from('product_images').update({ is_hidden: !im.is_hidden }).eq('id', im.id).then(() => void load());
+                  }}
+                  className="rounded-full bg-white p-1.5 shadow"
+                  aria-label={im.is_hidden ? 'Unhide image' : 'Hide image from storefront'}
+                  title={im.is_hidden ? 'Unhide image' : 'Hide image from storefront'}
+                >
+                  {im.is_hidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                </button>
                 <button onClick={() => void remove(im)} className="rounded-full bg-red-600 p-1.5 text-white shadow" aria-label="Delete image"><Trash2 size={12} /></button>
               </div>
             </li>

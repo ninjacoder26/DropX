@@ -16,6 +16,7 @@ Offline payments only — Cash on Delivery. No online payment providers, no fake
 - **Legal & auth flow** — Terms of Service + Privacy Policy pages, consent checkbox at checkout, and login/register that return you to where you were going (`?next=/checkout`) with your guest bag merged on sign-in.
 - **Discovery** — fixed 24-tag vocabulary (max 3 per product, no free-text tags), tag filter chips on shop, `#tag` links on product pages, and a gradual-slope recommendation engine: your viewed tags/categories steer a "Recommended for you" shelf (max 6), always mixed with fresh trending picks so one view never hijacks it.
 - **Demand intelligence** — missing-product requests with per-customer dedupe ("you're #N waiting"), throttled event tracking (views/searches/wishlists/carts/rec-clicks, session-scoped, no cross-customer exposure), an admin Demand heatmap (top searches incl. zero-result, request queue with sourcing workflow, category heat bars, sortable product heat with conversion), and reasoned 60/40 recommendations surfaced on home, product, cart, and category shelves.
+- **Image rights requests** — discreet per-product report menu (brand, contact, image picker, reason), per-customer dedupe, admin Image Requests center with pending badges, realtime new-report bell, private internal notes, and temporary photo hiding (never auto-deletes products). Run `023_image_requests.sql`, then enable the table in Database → Replication for live notifications.
 - **Mobile + PWA** — thumb-friendly bottom tab bar, sticky add-to-bag bar on product pages, 16px fields (no iOS auto-zoom), installable app (`manifest.webmanifest`, icons, offline service worker) with a gentle first-open install banner that auto-dismisses after 30 seconds and never nags again.
 - **Maintenance mode** — Admin → Settings controls everything except brand/theme: on/off, show-once-per-session vs always-reblock, button timer (0–60s), headline/message/button copy, particles, contact line. `src/config.ts` (`maintenanceMode`) remains as an emergency force-on. `/admin` is never blocked; visitors Continue Anyway once and browse normally; `/maintenance` + footer Status link return to it.
 - **Guided Valley addresses** — district → area → street picker (Kathmandu / Lalitpur / Bhaktapur, 58 areas), saved-address selection at checkout, address book with delete, scroll restoration on every route, product sharing via Web Share API.
@@ -71,7 +72,8 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/019_delivery_plans.sql` *(plan base fees, switches, per-product scope)*
    - `supabase/migrations/020_demand.sql` *(events, requests, popularity + co-view RPCs)*
    - `supabase/migrations/021_hardening.sql` *(RLS gaps, idempotency, rate limits, indexes)*
-   - `supabase/migrations/022_custom_price.sql` *(manual selling-price override — run last)*
+   - `supabase/migrations/022_custom_price.sql` *(manual selling-price override)*
+   - `supabase/migrations/023_image_requests.sql` *(rights-holder reports + photo hiding — run last)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -148,7 +150,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · … · 018 checkout profile · 019 plans · 020 demand · 021 hardening · 022 custom price
+├── supabase/migrations/      # 001 schema · … · 018 checkout profile · 019 plans · 020 demand · 021 hardening · 022 custom price · 023 image rights
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md

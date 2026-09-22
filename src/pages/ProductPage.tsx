@@ -13,6 +13,7 @@ import { useAuth } from '../store/AuthContext';
 import { useRecentlyViewed, useWishlist } from '../hooks/useShop';
 import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
 import { Badge, Button, EmptyState, Skeleton } from '../components/ui';
+import { ReportProduct } from '../components/ReportProduct';
 import { useStoreSettings } from '../lib/settings';
 import { ProductGrid, primaryImage, specLabel, srcSetFor } from '../components/product';
 
@@ -73,9 +74,11 @@ export default function ProductPage() {
 
   const images = useMemo(() => {
     if (!product?.images?.length) return [];
-    return [...product.images].sort(
-      (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
-    );
+    return [...product.images]
+      .filter((im) => !im.is_hidden)
+      .sort(
+        (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
+      );
   }, [product]);
 
   const unit = product ? Number(product.base_price) + Number(variant?.price_adjustment ?? 0) : 0;
@@ -251,13 +254,14 @@ export default function ProductPage() {
               <ShoppingBag size={16} /> {added ? 'Added to bag!' : out ? 'Sold out' : 'Add to bag'}
             </Button>
             <button
-              onClick={() => void toggle(product.id)}
+              onClick={() => void toggle(product.id, product.category_id ?? null)}
               aria-pressed={wished}
               aria-label="Toggle wishlist"
               className={clsx('rounded-full border p-3', wished ? 'border-ember bg-ember text-white' : 'border-ink/15 bg-white')}
             >
               <Heart size={17} fill={wished ? 'currentColor' : 'none'} />
             </button>
+            <ReportProduct product={product} />
             <button
               onClick={() => {
                 const url = window.location.href;
