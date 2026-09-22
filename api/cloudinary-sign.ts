@@ -40,7 +40,17 @@ export async function POST(req: Request) {
     if (!(await isAdminRequest(req))) {
       return json(401, { error: 'Admin sign-in required.' });
     }
-    const { folder = 'dropx/products' } = (await req.json().catch(() => ({}))) as { folder?: string };
+    let body: unknown = {};
+    try {
+      body = await req.json();
+    } catch {
+      return json(400, { error: 'Invalid JSON body.' });
+    }
+    const folder = (body as { folder?: unknown }).folder ?? 'dropx/products';
+    // Lock signing to our own upload namespace — never sign arbitrary folders.
+    if (typeof folder !== 'string' || !/^dropx\/[A-Za-z0-9_-]{1,40}$/.test(folder)) {
+      return json(400, { error: 'Invalid folder.' });
+    }
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;

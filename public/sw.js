@@ -41,6 +41,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Same-origin bundles + product imagery: cache first, update in background.
+  // Capped so image browsing can't fill device storage unboundedly.
   const cacheable =
     url.origin === self.location.origin ||
     url.hostname === 'res.cloudinary.com';
@@ -51,7 +52,9 @@ self.addEventListener('fetch', (event) => {
         .then((res) => {
           if (res.ok) {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
+            caches.open(CACHE).then((c) =>
+              c.put(req, copy).then(() => trimCache(c, 150))
+            );
           }
           return res;
         })
@@ -60,3 +63,11 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+async function trimCache(cache, maxEntries) {
+  const keys = await cache.keys();
+  if (keys.length > maxEntries) {
+    await cache.delete(keys[0]);
+    return trimCache(cache, maxEntries);
+  }
+}

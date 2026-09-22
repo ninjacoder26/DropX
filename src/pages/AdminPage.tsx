@@ -742,6 +742,10 @@ function Categories() {
                 return;
               }
               const slug = (form.slug.trim() || name).toLowerCase().replace(/\s+/g, '-');
+              if (form.image_url.trim() !== '' && !form.image_url.trim().startsWith('https://')) {
+                setMsg('Tile image must be an https:// URL (or uploaded above).');
+                return;
+              }
               supabase.from('categories').insert({ name, slug, description: form.description, image_url: form.image_url || null, sort_order: items.length })
                 .then(({ error }) => {
                   if (error) setMsg(error.message);
@@ -1008,6 +1012,10 @@ function Drops() {
   const save = async () => {
     if (!form.title.trim() || !form.slug.trim()) {
       setMsg('Title and slug are required.');
+      return;
+    }
+    if (form.artwork_url.trim() !== '' && !form.artwork_url.trim().startsWith('https://')) {
+      setMsg('Artwork must be an https:// URL (or uploaded via Cloudinary above).');
       return;
     }
     if (new Date(form.ends_at) <= new Date(form.starts_at)) {

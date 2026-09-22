@@ -39,8 +39,17 @@ export async function POST(req: Request) {
     if (!(await isAdminRequest(req))) {
       return json(401, { error: 'Admin sign-in required.' });
     }
-    const { public_id } = (await req.json()) as { public_id?: string };
-    if (!public_id) return json(400, { error: 'public_id is required.' });
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return json(400, { error: 'Invalid JSON body.' });
+    }
+    const public_id = (body as { public_id?: unknown }).public_id;
+    // Only our own namespaced assets, bounded length — never arbitrary ids.
+    if (typeof public_id !== 'string' || public_id.length > 200 || !/^[A-Za-z0-9_/\-]+$/.test(public_id)) {
+      return json(400, { error: 'Invalid public_id.' });
+    }
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;

@@ -42,6 +42,15 @@ export default function CheckoutPage() {
   // Set when the order succeeds so the empty-cart redirect below doesn't
   // fire after we clear the cart on the way to the success page.
   const placedRef = useRef(false);
+  // One key per checkout visit: timeout retries reuse it, so the server
+  // returns the original order instead of charging stock twice.
+  const idempotencyKey = useRef<string>('');
+  if (!idempotencyKey.current) {
+    idempotencyKey.current =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
 
   useEffect(() => {
     if (lines.length === 0 && !placedRef.current) nav('/cart', { replace: true });
@@ -200,6 +209,7 @@ export default function CheckoutPage() {
         p_shipping_method: method,
         p_notes: notes,
         p_payment_provider: 'cod',
+        p_idempotency_key: idempotencyKey.current,
         })
       );
       if (rpcError) throw new Error(rpcError.message);
