@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveCheckoutPrefill } from '../src/lib/checkoutProfile';
+import { isMissingColumnError, NEEDS_MIGRATION_MSG, resolveCheckoutPrefill } from '../src/lib/checkoutProfile';
 import type { Address } from '../src/types';
 
 const addr = (over: Partial<Address> = {}): Address => ({
@@ -59,5 +59,12 @@ describe('checkout prefill priority', () => {
   it('rejects unexpected shipping methods', () => {
     const out = resolveCheckoutPrefill(prof({ preferred_shipping: 'drone' }), []);
     expect(out.method).toBe('standard');
+  });
+
+  it('recognizes a missing 018 migration from error text', () => {
+    expect(isMissingColumnError({ message: 'column "checkout_area" of relation "profiles" does not exist' })).toBe(true);
+    expect(isMissingColumnError({ message: 'permission denied' })).toBe(false);
+    expect(isMissingColumnError(null)).toBe(false);
+    expect(NEEDS_MIGRATION_MSG).toContain('018_checkout_profile');
   });
 });

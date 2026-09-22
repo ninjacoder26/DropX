@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   const [addr, setAddr] = useState<Addr>(EMPTY);
   const [saved, setSaved] = useState<Address[]>([]);
   const [selectedId, setSelectedId] = useState<string>('new');
+  const [prefilled, setPrefilled] = useState(false);
   const [method, setMethod] = useState<'standard' | 'express'>('standard');
   const [notes, setNotes] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -83,6 +84,7 @@ export default function CheckoutPage() {
         list
       );
       setSelectedId(pre.addressId ?? 'new');
+      setPrefilled(pre.source === 'profile');
       setAddr({
         full_name: pre.full_name,
         phone: pre.phone,
@@ -244,6 +246,11 @@ export default function CheckoutPage() {
             <p className="mt-1 rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold text-ink/70">
               We currently deliver inside Kathmandu Valley only (Kathmandu, Lalitpur, Bhaktapur).
             </p>
+            {prefilled && (
+              <p className="mt-2 rounded-xl bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 ring-1 ring-green-200">
+                Prefilled from your last order — edit anything if it changed.
+              </p>
+            )}
             {saved.length > 0 && (
               <div className="mt-4 grid gap-2" role="radiogroup" aria-label="Choose delivery address">
                 {saved.map((a) => (

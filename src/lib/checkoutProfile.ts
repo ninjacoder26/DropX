@@ -80,3 +80,16 @@ export function resolveCheckoutPrefill(
     addressId: 'new',
   };
 }
+
+/**
+ * Detects "run migration 018" situations: the query failed because the
+ * checkout_* columns don't exist yet. Surfaces as a helpful message
+ * instead of a cryptic PostgREST error.
+ */
+export function isMissingColumnError(error: { message?: string } | null | undefined): boolean {
+  const msg = error?.message ?? '';
+  return /checkout_(name|phone|district|area|street|postal)|preferred_shipping/i.test(msg);
+}
+
+export const NEEDS_MIGRATION_MSG =
+  'Checkout profiles need a database update: run supabase/migrations/018_checkout_profile.sql in the SQL Editor, then try again.';

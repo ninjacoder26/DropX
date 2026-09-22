@@ -6,6 +6,7 @@ import { uploadAvatar } from '../lib/avatar';
 import { useAuth } from '../store/AuthContext';
 import type { Address } from '../types';
 import { districtOfArea, isGuidedComplete } from '../lib/address';
+import { isMissingColumnError, NEEDS_MIGRATION_MSG } from '../lib/checkoutProfile';
 import { AddressForm } from '../components/AddressForm';
 import { Button, Field, Input } from '../components/ui';
 
@@ -216,19 +217,22 @@ function CheckoutDefaultsForm() {
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Fill once when the profile first arrives — never clobber typing afterwards.
+  const syncedRef = useRef(false);
 
-  // Refresh when the profile arrives late (or changes elsewhere).
   useEffect(() => {
+    if (syncedRef.current || !profile) return;
+    syncedRef.current = true;
     setForm({
-      name: profile?.checkout_name ?? '',
-      phone: profile?.checkout_phone ?? '',
-      district: profile?.checkout_district || 'Kathmandu',
-      area: profile?.checkout_area ?? '',
-      street: profile?.checkout_street ?? '',
-      postal: profile?.checkout_postal ?? '',
-      method: (profile?.preferred_shipping === 'express' ? 'express' : 'standard') as 'standard' | 'express',
+      name: profile.checkout_name ?? '',
+      phone: profile.checkout_phone ?? '',
+      district: profile.checkout_district || 'Kathmandu',
+      area: profile.checkout_area ?? '',
+      street: profile.checkout_street ?? '',
+      postal: profile.checkout_postal ?? '',
+      method: (profile.preferred_shipping === 'express' ? 'express' : 'standard') as 'standard' | 'express',
     });
-  }, [profile?.checkout_area, profile?.checkout_street]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile]);
 
   if (!user) return null;
   const complete =
@@ -287,8 +291,9 @@ function CheckoutDefaultsForm() {
               preferred_shipping: form.method,
             }).eq('id', user.id).then(({ error }) => {
               setSaving(false);
-              if (error) setMsg(error.message);
-              else {
+              if (error) {
+                setMsg(isMissingColumnError(error) ? NEEDS_MIGRATION_MSG : error.message);
+              } else {
                 setMsg('Saved — checkout will prefill these next time.');
                 void refreshProfile();
               }
