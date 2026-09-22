@@ -190,8 +190,20 @@ body {
 .admin-dark .bg-ink\/10 {
   background-color: rgb(247 245 240 / 0.1);
 }
+.admin-dark .bg-ink\/15 {
+  background-color: rgb(247 245 240 / 0.16);
+}
+.admin-dark .bg-ink\/5 {
+  background-color: rgb(247 245 240 / 0.07);
+}
+.admin-dark .bg-paper\/90 {
+  background-color: rgb(16 16 16 / 0.85);
+}
 .admin-dark .text-ink {
   color: #f7f5f0;
+}
+.admin-dark .text-ink\/70 {
+  color: rgb(247 245 240 / 0.78);
 }
 .admin-dark .text-ink\/60 {
   color: rgb(247 245 240 / 0.65);
@@ -202,6 +214,15 @@ body {
 .admin-dark .text-ink\/40 {
   color: rgb(247 245 240 / 0.45);
 }
+.admin-dark .text-ink\/30 {
+  color: rgb(247 245 240 / 0.4);
+}
+.admin-dark .border-ink {
+  border-color: #f7f5f0;
+}
+.admin-dark .border-ink\/40 {
+  border-color: rgb(247 245 240 / 0.4);
+}
 .admin-dark .border-ink\/10 {
   border-color: rgb(247 245 240 / 0.12);
 }
@@ -210,6 +231,9 @@ body {
 }
 .admin-dark .border-ink\/5 {
   border-color: rgb(247 245 240 / 0.07);
+}
+.admin-dark .ring-ink\/30 {
+  --tw-ring-color: rgb(247 245 240 / 0.3);
 }
 .admin-dark .ring-ink\/5 {
   --tw-ring-color: rgb(247 245 240 / 0.07);

@@ -64,12 +64,16 @@ function MaintenanceRoute() {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+  // The admin has its own shell (sidebar + topbar + drawer) — rendering the
+  // storefront navbar/footer on top doubled every navigation control.
+  const isAdminRoute = pathname.startsWith('/admin');
   return (
     <div className="flex min-h-screen flex-col pb-16 lg:pb-0">
       <ScrollToTop />
       <InstallBanner />
       <MaintenanceGate>
-        <Navbar />
+        {!isAdminRoute && <Navbar />}
         <main className="flex-1">
           <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>}>
             <Routes>
@@ -98,7 +102,7 @@ export default function App() {
           </Routes>
         </Suspense>
       </main>
-      <Footer />
+      {!isAdminRoute && <Footer />}
       <MobileNav />
       </MaintenanceGate>
     </div>

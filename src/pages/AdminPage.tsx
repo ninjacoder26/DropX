@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAdminTheme } from '../lib/adminTheme';
+import { logAdminAction as log } from '../lib/admin';
 import AdminDelivery from './AdminDelivery';
 import AdminDemand from './AdminDemand';
 import { supabase } from '../lib/supabase';
@@ -35,11 +36,6 @@ const TABS = [
   { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
   { to: '/admin/logs', label: 'Activity', icon: ScrollText },
 ];
-
-function log(action: string, entity: string, entity_id?: string, meta: object = {}) {
-  // Best-effort audit trail; failures never block the admin action.
-  supabase.from('admin_logs').insert({ action, entity, entity_id, meta }).then(() => undefined);
-}
 
 export default function AdminPage() {
   const [drawer, setDrawer] = useState(false);

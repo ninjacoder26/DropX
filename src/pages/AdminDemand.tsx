@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { logAdminAction as log } from '../lib/admin';
 import { fetchPopularity, type PopularityRow } from '../lib/recommend';
 import type { Category, Product, ProductRequest } from '../types';
 import { formatNPR } from '../lib/shop';
@@ -9,10 +10,6 @@ type SortKey = 'score' | 'views' | 'purchases' | 'conversion';
 
 const WINDOW_30 = new Date(Date.now() - 30 * 864e5).toISOString();
 const WINDOW_7 = new Date(Date.now() - 7 * 864e5).toISOString();
-
-function log(action: string, entity: string, entity_id?: string, meta: object = {}) {
-  supabase.from('admin_logs').insert({ action, entity, entity_id, meta }).then(() => undefined);
-}
 
 export default function AdminDemand() {
   const [searches, setSearches] = useState<{ query: string; meta: { results?: number } }[]>([]);

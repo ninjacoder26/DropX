@@ -2,13 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Truck } from 'lucide-react';
 import { clsx } from 'clsx';
 import { supabase } from '../lib/supabase';
+import { logAdminAction as log } from '../lib/admin';
 import type { DeliveryPlan, PlanScope, Product } from '../types';
 import { formatNPR } from '../lib/shop';
 import { Button, Card, Field, Input, Skeleton } from '../components/ui';
-
-function log(action: string, entity: string, entity_id?: string, meta: object = {}) {
-  supabase.from('admin_logs').insert({ action, entity, entity_id, meta }).then(() => undefined);
-}
 
 interface PlanForm {
   label: string;
