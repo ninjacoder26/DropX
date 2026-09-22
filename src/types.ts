@@ -161,7 +161,20 @@ export interface Review {
 export type DropKind = 'monthly' | 'mega';
 export type DropState = 'upcoming' | 'active' | 'ended';
 
-export interface Drop {
+export type PlanScope = 'all' | 'include' | 'exclude';
+
+export interface DeliveryPlan {
+  key: string;
+  label: string;
+  eta: string;
+  base_fee: number;
+  rate_per_km: number;
+  is_active: boolean;
+  scope: PlanScope;
+  sort_order: number;
+  /** Product ids in scope (meaning depends on `scope`). */
+  products: string[];
+}export interface Drop {
   id: string;
   kind: DropKind;
   title: string;

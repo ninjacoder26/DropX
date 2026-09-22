@@ -1,29 +1,18 @@
-import type { StoreSettings } from './settings';
+import { useEffect, useState } from 'react';
+import { supabase, isSupabaseConfigured } from './supabase';
+import { useStoreSettings, type StoreSettings } from './settings';
+import type { DeliveryPlan } from '../types';
 
 /**
- * Place-dependent delivery, measured from the DropX hub in Imadol.
- * - Standard: Rs 10/km, 3–5 days (free over the configured threshold)
- * - Express:  Rs 20/km, 1–3 days
- * - Instant:  within 6 hours — COMING SOON (not orderable yet)
- * Distances are road-km approximations; rates come from Admin → Settings.
+ * Plan-based delivery, measured from the DropX hub in Imadol.
+ * Plans come from the `delivery_plans` table (Admin → Delivery): each has
+ * its own base fee + Rs/km rate, an on/off switch, and a product scope.
+ * Instant ships paused (coming soon) until an admin activates it.
  */
 
 export const HUB_NAME = 'Imadol';
 
 export type DeliveryMethod = 'standard' | 'express' | 'instant';
-
-export interface DeliveryMethodInfo {
-  method: DeliveryMethod;
-  label: string;
-  eta: string;
-  comingSoon?: boolean;
-}
-
-export const DELIVERY_METHODS: DeliveryMethodInfo[] = [
-  { method: 'standard', label: 'Standard', eta: '3–5 days' },
-  { method: 'express', label: 'Express', eta: '1–3 days' },
-  { method: 'instant', label: 'Instant', eta: 'within 6 hours', comingSoon: true },
-];
 
 /** Road km from Imadol. Covers every guided area (see lib/address.ts). */
 export const AREA_KM: Record<string, number> = {
@@ -50,25 +39,110 @@ export function kmOfArea(area: string): number | null {
 }
 
 export interface DeliveryQuote {
-  method: DeliveryMethod;
+  method: string;
   km: number | null;
   fee: number | null; // null = pick an area first
   free: boolean;
 }
 
-/** Client-side quote mirroring the server computation in 015. */
+/** Legacy fallback when delivery_plans hasn't been migrated yet. */
+function legacyPlans(s: StoreSettings): DeliveryPlan[] {
+  return [
+    { key: 'standard', label: 'Standard', eta: '3–5 days', base_fee: 0, rate_per_km: s.deliveryRateStandard, is_active: true, scope: 'all', sort_order: 1, products: [] },
+    { key: 'express', label: 'Express', eta: '1–3 days', base_fee: 0, rate_per_km: s.deliveryRateExpress, is_active: true, scope: 'all', sort_order: 2, products: [] },
+    { key: 'instant', label: 'Instant', eta: 'within 6 hours', base_fee: 0, rate_per_km: 30, is_active: false, scope: 'all', sort_order: 3, products: [] },
+  ];
+}
+
+let plansCache: DeliveryPlan[] | null = null;
+
+export async function fetchDeliveryPlans(s: StoreSettings): Promise<DeliveryPlan[]> {
+  if (plansCache) return plansCache;
+  if (!isSupabaseConfigured) return legacyPlans(s);
+  try {
+    const [{ data: plans }, { data: links }] = await Promise.all([
+      supabase.from('delivery_plans').select('*').order('sort_order'),
+      supabase.from('delivery_plan_products').select('plan_key,product_id'),
+    ]);
+    if (!plans || plans.length === 0) return legacyPlans(s);
+    const byPlan = new Map<string, string[]>();
+    for (const l of (links ?? []) as { plan_key: string; product_id: string }[]) {
+      const arr = byPlan.get(l.plan_key) ?? [];
+      arr.push(l.product_id);
+      byPlan.set(l.plan_key, arr);
+    }
+    plansCache = (plans as unknown as Omit<DeliveryPlan, 'products'>[]).map((p) => ({
+      ...p,
+      base_fee: Number(p.base_fee),
+      rate_per_km: Number(p.rate_per_km),
+      products: byPlan.get(p.key) ?? [],
+    }));
+    return plansCache;
+  } catch {
+    return legacyPlans(s);
+  }
+}
+
+/** Reactive plans — live values when they land, legacy behavior meanwhile. */
+export function useDeliveryPlans(): DeliveryPlan[] {
+  const settings = useStoreSettings();
+  const [plans, setPlans] = useState<DeliveryPlan[]>(() => plansCache ?? legacyPlans(settings));
+  useEffect(() => {
+    let live = true;
+    fetchDeliveryPlans(settings).then((p) => {
+      if (live) setPlans(p);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return plans;
+}
+
+/** Does this plan serve a bag containing exactly these product ids? */
+export function planAppliesToCart(
+  plan: Pick<DeliveryPlan, 'is_active' | 'scope' | 'products'>,
+  productIds: string[]
+): { ok: boolean; reason: 'paused' | 'not-covered' | null } {
+  if (!plan.is_active) return { ok: false, reason: 'paused' };
+  if (plan.scope === 'all') return { ok: true, reason: null };
+  const set = new Set(plan.products);
+  const covered =
+    plan.scope === 'include'
+      ? productIds.every((id) => set.has(id))
+      : productIds.every((id) => !set.has(id));
+  return covered ? { ok: true, reason: null } : { ok: false, reason: 'not-covered' };
+}
+
+/** Client-side quote mirroring the server computation in 019. */
+export function quoteWithPlan(
+  plan: DeliveryPlan,
+  area: string,
+  subtotal: number,
+  s: StoreSettings
+): DeliveryQuote {
+  const km = area.trim() ? kmOfArea(area) : null;
+  if (km === null) return { method: plan.key, km, fee: null, free: false };
+  if (plan.key === 'standard' && subtotal >= s.freeShippingThreshold) {
+    return { method: plan.key, km, fee: 0, free: true };
+  }
+  return { method: plan.key, km, fee: Math.round(Number(plan.base_fee) + km * Number(plan.rate_per_km)), free: false };
+}
+
+/** Backwards-compatible single-method quote (legacy rates, all-products). */
 export function deliveryQuote(
   method: DeliveryMethod,
   area: string,
   subtotal: number,
   s: StoreSettings
 ): DeliveryQuote {
-  if (method === 'instant') return { method, km: null, fee: null, free: false };
-  const km = area.trim() ? kmOfArea(area) : null;
-  if (km === null) return { method, km, fee: null, free: false };
-  const rate = method === 'express' ? s.deliveryRateExpress : s.deliveryRateStandard;
-  if (method === 'standard' && subtotal >= s.freeShippingThreshold) {
-    return { method, km, fee: 0, free: true };
-  }
-  return { method, km, fee: Math.round(km * rate), free: false };
+  const plan = legacyPlans(s).find((p) => p.key === method)!;
+  return quoteWithPlan(plan, area, subtotal, s);
 }
+
+export const DELIVERY_METHODS = [
+  { method: 'standard', label: 'Standard', eta: '3–5 days' },
+  { method: 'express', label: 'Express', eta: '1–3 days' },
+  { method: 'instant', label: 'Instant', eta: 'within 6 hours', comingSoon: true },
+] as const;

@@ -111,6 +111,15 @@ describe('security invariants', () => {
     expect(fix).toContain('Skeleton parent row FIRST');
   });
 
+  it('plan engine scopes products and prices base + distance', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/019_delivery_plans.sql'), 'utf8');
+    expect(fix).toContain('delivery_plans');
+    expect(fix).toContain('delivery_plan_products');
+    expect(fix).toContain('delivery_plan_applies');
+    expect(fix).toContain("scope in ('all', 'include', 'exclude')");
+    expect(fix).toContain('round(v_base + v_km * v_rate)');
+  });
+
   it('brand + specs columns exist with a full backfill', () => {
     const cols = readFileSync(join(root, 'supabase/migrations/016_brand_specs.sql'), 'utf8');
     expect(cols).toContain('brand');

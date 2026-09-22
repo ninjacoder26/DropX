@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
@@ -6,7 +6,7 @@ import { useCart } from '../store/CartContext';
 import { formatNPR } from '../lib/shop';
 import { districtOfArea, isGuidedComplete } from '../lib/address';
 import { resolveCheckoutPrefill } from '../lib/checkoutProfile';
-import { DELIVERY_METHODS, HUB_NAME, deliveryQuote, type DeliveryMethod } from '../lib/delivery';
+import { HUB_NAME, planAppliesToCart, quoteWithPlan, useDeliveryPlans } from '../lib/delivery';
 import { AddressForm } from '../components/AddressForm';
 import type { Address } from '../types';
 import { useStoreSettings } from '../lib/settings';
@@ -33,7 +33,7 @@ export default function CheckoutPage() {
   const [saved, setSaved] = useState<Address[]>([]);
   const [selectedId, setSelectedId] = useState<string>('new');
   const [prefilled, setPrefilled] = useState(false);
-  const [method, setMethod] = useState<'standard' | 'express'>('standard');
+  const [method, setMethod] = useState<string>('standard');
   const [notes, setNotes] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
@@ -118,8 +118,23 @@ export default function CheckoutPage() {
   };
 
   const settings = useStoreSettings();
-  const quote = deliveryQuote(method, addr.area, subtotal, settings);
-  const shippingFee = quote.fee ?? 0;
+  const plans = useDeliveryPlans();
+  const cartIds = useMemo(() => lines.map((l) => l.product.id), [lines]);
+  // A plan serves the bag only if it is live AND covers every item in it.
+  const applicable = useMemo(
+    () => plans.filter((p) => p.is_active && planAppliesToCart(p, cartIds).ok),
+    [plans, cartIds]
+  );
+  const selected = plans.find((p) => p.key === method && p.is_active) ?? applicable[0] ?? null;
+
+  // If the cart changes under a method that no longer covers it, move on.
+  useEffect(() => {
+    if (selected == null && applicable.length > 0) setMethod(applicable[0].key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applicable.map((p) => p.key).join('|')]);
+
+  const quote = selected ? quoteWithPlan(selected, addr.area, subtotal, settings) : null;
+  const shippingFee = quote?.fee ?? 0;
   const total = subtotal + shippingFee;
 
   const valid =
@@ -309,45 +324,57 @@ export default function CheckoutPage() {
           </section>
 
           <section className="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
-            <h2 className="font-display text-lg font-extrabold">Shipping method</h2>
+            <h2 className="font-display text-lg font-extrabold">Delivery method</h2>
             <p className="mt-1 text-xs text-ink/60">
               Measured from our hub in {HUB_NAME}
-              {quote.km !== null ? <> · <strong className="text-ink">{addr.area} is ~{quote.km} km away</strong></> : ' — pick your area above for an exact fee'}.
+              {quote && quote.km !== null ? <> · <strong className="text-ink">{addr.area} is ~{quote.km} km away</strong></> : ' — pick your area above for an exact fee'}.
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {DELIVERY_METHODS.map((d) => {
-                const disabled = !!d.comingSoon;
-                const q = disabled ? null : deliveryQuote(d.method, addr.area, subtotal, settings);
-                const selected = !disabled && method === d.method;
-                return (
-                  <button
-                    key={d.method}
-                    disabled={disabled}
-                    onClick={() => setMethod(d.method as 'standard' | 'express')}
-                    aria-pressed={selected}
-                    className={`relative rounded-2xl border p-4 text-left transition ${
-                      selected ? 'border-ember bg-ember/5' : 'border-ink/15 hover:border-ink/40'
-                    } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
-                  >
-                    {disabled && (
-                      <span className="absolute right-3 top-3 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-paper">
-                        Soon
-                      </span>
-                    )}
-                    <p className="font-bold capitalize">{d.label}</p>
-                    <p className="text-xs text-ink/50">{d.eta}</p>
-                    <p className="mt-1.5 text-sm font-bold text-ember">
-                      {disabled
-                        ? '—'
-                        : q && q.fee !== null
-                          ? q.free
-                            ? 'FREE'
-                            : formatNPR(q.fee)
-                          : `Rs ${d.method === 'express' ? settings.deliveryRateExpress : settings.deliveryRateStandard}/km`}
-                    </p>
-                  </button>
-                );
-              })}
+              {plans
+                .filter((p) => p.is_active || p.key === 'instant')
+                .map((p) => {
+                  const live = p.is_active;
+                  const covers = planAppliesToCart(p, cartIds);
+                  const disabled = !live || !covers.ok;
+                  const q = disabled ? null : quoteWithPlan(p, addr.area, subtotal, settings);
+                  const isSelected = selected?.key === p.key;
+                  return (
+                    <button
+                      key={p.key}
+                      disabled={disabled}
+                      onClick={() => setMethod(p.key)}
+                      aria-pressed={isSelected}
+                      className={`relative rounded-2xl border p-4 text-left transition ${
+                        isSelected ? 'border-ember bg-ember/5' : 'border-ink/15 hover:border-ink/40'
+                      } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
+                    >
+                      {!live && (
+                        <span className="absolute right-3 top-3 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-paper">
+                          {p.key === 'instant' ? 'Soon' : 'Paused'}
+                        </span>
+                      )}
+                      {live && !covers.ok && (
+                        <span className="absolute right-3 top-3 rounded-full bg-ink/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/60">
+                          Not for all items
+                        </span>
+                      )}
+                      <p className="font-bold capitalize">{p.label}</p>
+                      <p className="text-xs text-ink/50">{p.eta}</p>
+                      <p className="mt-1 text-[11px] text-ink/50">
+                        {Number(p.base_fee) > 0 ? `Rs ${formatNPR(Number(p.base_fee)).replace('NPR ', '')} base + ` : ''}Rs {p.rate_per_km}/km
+                      </p>
+                      <p className="mt-1 text-sm font-bold text-ember">
+                        {disabled
+                          ? '—'
+                          : q && q.fee !== null
+                            ? q.free
+                              ? 'FREE'
+                              : formatNPR(q.fee)
+                            : `Rs ${p.rate_per_km}/km`}
+                      </p>
+                    </button>
+                  );
+                })}
             </div>
           </section>
 

@@ -64,9 +64,9 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/014_place_order_fix.sql` *(FK-safe order flow, COD-only)*
    - `supabase/migrations/015_distance_delivery.sql` *(Imadol zones + rates + zone-priced orders)*
    - `supabase/migrations/016_brand_specs.sql` *(brand + specs columns)*
-   - `supabase/migrations/016_brand_specs.sql` *(brand + specs columns)*
-   - `supabase/migrations/017_product_specs.sql` *(generated brand/specs backfill — run last)*
+   - `supabase/migrations/017_product_specs.sql` *(generated brand/specs backfill)*
    - `supabase/migrations/018_checkout_profile.sql` *(remembered checkout details)*
+   - `supabase/migrations/019_delivery_plans.sql` *(plan base fees, switches, per-product scope — run last)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -99,9 +99,9 @@ The anon key is designed to be public; **Row Level Security** is what protects y
 
 There is no online payment integration and no bank-transfer flow: the courier collects cash at the door and an admin marks the order `paid` in the dashboard. `place_order()` (migration `015`) rejects any other payment method server-side.
 
-## 6. Delivery — distance-based from Imadol
+## 6. Delivery — plans, base fees, distance rates, instant soon
 
-Standard is Rs 10/km (3–5 days, free over NPR 2,999), express Rs 20/km (1–3 days), across 58 guided Valley areas. Instant (within 6 hours) is fenced off as coming soon in both UI and SQL. Rates live in Admin → Settings (`delivery_rate_standard`, `delivery_rate_express`); road distances live in `delivery_zones` (migration `015`) and are mirrored in `src/lib/delivery.ts` for instant checkout quotes.
+Each plan (standard / express / instant) has its own **base fee + Rs/km from Imadol**, an on/off switch, and a product scope (**all**, **only selected**, **all except selected**) — all in Admin → Delivery, no code. A plan serves a bag only if it covers every item (enforced server-side). Standard is Rs 10/km (3–5 days, free over NPR 2,999), express Rs 20/km (1–3 days). Instant (within 6 hours) ships paused as a coming-soon teaser until activated. Rates also live in Admin → Settings; road distances live in `delivery_zones` (migration `015`/`019`) and are mirrored in `src/lib/delivery.ts` for instant checkout quotes.
 
 ## 7. Server environment (`.env` — secrets only)
 
@@ -143,7 +143,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill · 018 checkout profile
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill · 018 checkout profile · 019 delivery plans
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md

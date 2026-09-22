@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import {
   BarChart3, ClipboardList, LayoutDashboard, Menu, Package,
-  ScrollText, Settings as SettingsIcon, Star, Tags, Users, X, Zap,
+  ScrollText, Settings as SettingsIcon, Star, Tags, Truck, Users, X, Zap,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import AdminDelivery from './AdminDelivery';
 import { supabase } from '../lib/supabase';
 import type { Category, Drop, Order, Product, ProductVariant, Profile, Review } from '../types';
 import { dropState } from '../types';
@@ -23,6 +24,7 @@ const TABS = [
   { to: '/admin/products', label: 'Products', icon: Package },
   { to: '/admin/categories', label: 'Categories', icon: Tags },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
+  { to: '/admin/delivery', label: 'Delivery', icon: Truck },
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/drops', label: 'Drops', icon: Zap },
   { to: '/admin/reviews', label: 'Reviews', icon: Star },
@@ -116,6 +118,7 @@ export default function AdminPage() {
             <Route path="products" element={<Products />} />
             <Route path="categories" element={<Categories />} />
             <Route path="orders" element={<Orders />} />
+          <Route path="delivery" element={<AdminDelivery />} />
             <Route path="customers" element={<Customers />} />
             <Route path="drops" element={<Drops />} />
           <Route path="reviews" element={<ReviewsMod />} />
