@@ -30,7 +30,7 @@ function DropHero({ drop, mega }: { drop: Drop; mega?: boolean }) {
           </span>
         </div>
         <div className="flex flex-col justify-center p-7 md:p-10">
-          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-ember">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: drop.theme_color || '#F06427' }}>
             <CalendarClock size={13} />
             {live && `Live · ends ${new Date(drop.ends_at).toLocaleDateString('en-NP', { month: 'short', day: 'numeric' })}`}
             {state === 'upcoming' && `Opens ${new Date(drop.starts_at).toLocaleDateString('en-NP', { month: 'long', day: 'numeric' })}`}

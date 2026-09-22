@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, costFromSelling, mapSettings, sellingFromCost, shippingFeeFor } from '../src/lib/settings';
+import { DEFAULT_SETTINGS, costFromSelling, mapSettings, sellingFromCost } from '../src/lib/settings';
+import { quoteWithPlan } from '../src/lib/delivery';
+import type { DeliveryPlan } from '../src/types';
+
+const stdPlan: DeliveryPlan = {
+  key: 'standard', label: 'Standard', eta: '3–5 days',
+  base_fee: 0, rate_per_km: 10, is_active: true, scope: 'all', sort_order: 1, products: [],
+};
 
 describe('store settings', () => {
   it('falls back to defaults on empty rows', () => {
@@ -20,10 +27,10 @@ describe('store settings', () => {
   });
 
   it('computes shipping from live settings', () => {
-    const s = { ...DEFAULT_SETTINGS, freeShippingThreshold: 5000, shippingStandard: 120, shippingExpress: 250 };
-    expect(shippingFeeFor('standard', 5000, s)).toBe(0);
-    expect(shippingFeeFor('standard', 4999, s)).toBe(120);
-    expect(shippingFeeFor('express', 99999, s)).toBe(250);
+    const s = { ...DEFAULT_SETTINGS, freeShippingThreshold: 5000 };
+    expect(quoteWithPlan(stdPlan, 'Thamel', 5000, s)).toMatchObject({ fee: 0, free: true });
+    expect(quoteWithPlan(stdPlan, 'Thamel', 4999, s)).toMatchObject({ fee: 80, free: false });
+    expect(quoteWithPlan({ ...stdPlan, key: 'express' }, 'Thamel', 99999, s).free).toBe(false);
   });
 
   it('defaults the profit margin to 20% and clamps 0–100', () => {

@@ -119,11 +119,6 @@ export async function fetchDrops(kind?: 'monthly' | 'mega', status?: DropState |
   return drops;
 }
 
-export async function fetchDropBySlug(slug: string): Promise<Drop | null> {
-  const drops = await fetchDrops();
-  return drops.find((d) => d.slug === slug) ?? null;
-}
-
 /** Recently-viewed support: fetch specific products by id, newest-first. */
 export async function fetchProductsByIds(ids: string[]): Promise<Product[]> {
   if (!isSupabaseConfigured || ids.length === 0) return [];

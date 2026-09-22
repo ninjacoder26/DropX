@@ -63,7 +63,7 @@ function DropSpotlight({ drop, mega }: { drop: Drop; mega?: boolean }) {
           </span>
         </div>
         <div className="flex flex-col justify-center p-7 md:p-10">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-ember">
+          <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: drop.theme_color || '#F06427' }}>
             Live now · ends {new Date(drop.ends_at).toLocaleDateString('en-NP', { month: 'short', day: 'numeric' })}
           </p>
           <h2 className="mt-2 font-display text-3xl font-black leading-tight md:text-4xl">{drop.title}</h2>

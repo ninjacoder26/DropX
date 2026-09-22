@@ -117,12 +117,3 @@ export function useStoreSettings(): StoreSettings {
   }, []);
   return settings;
 }
-
-export function shippingFeeFor(
-  method: 'standard' | 'express',
-  subtotal: number,
-  s: StoreSettings
-): number {
-  if (method === 'standard' && subtotal >= s.freeShippingThreshold) return 0;
-  return method === 'express' ? s.shippingExpress : s.shippingStandard;
-}

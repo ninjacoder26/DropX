@@ -129,20 +129,3 @@ export function quoteWithPlan(
   }
   return { method: plan.key, km, fee: Math.round(Number(plan.base_fee) + km * Number(plan.rate_per_km)), free: false };
 }
-
-/** Backwards-compatible single-method quote (legacy rates, all-products). */
-export function deliveryQuote(
-  method: DeliveryMethod,
-  area: string,
-  subtotal: number,
-  s: StoreSettings
-): DeliveryQuote {
-  const plan = legacyPlans(s).find((p) => p.key === method)!;
-  return quoteWithPlan(plan, area, subtotal, s);
-}
-
-export const DELIVERY_METHODS = [
-  { method: 'standard', label: 'Standard', eta: '3–5 days' },
-  { method: 'express', label: 'Express', eta: '1–3 days' },
-  { method: 'instant', label: 'Instant', eta: 'within 6 hours', comingSoon: true },
-] as const;

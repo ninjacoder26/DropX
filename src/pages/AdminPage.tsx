@@ -859,8 +859,8 @@ function Orders() {
   const load = async () => {
     setLoading(true);
     let q = supabase.from('orders').select('*, items:order_items(*)').order('placed_at', { ascending: false }).limit(100);
-    if (filter && filter !== 'all-pay') q = q.eq('status', filter);
-    if (filter === 'all-pay') q = supabase.from('orders').select('*, items:order_items(*)').eq('payment_status', 'pending_verification').order('placed_at', { ascending: false }).limit(100);
+    if (filter && filter !== 'unpaid') q = q.eq('status', filter);
+    if (filter === 'unpaid') q = q.eq('payment_status', 'unpaid').neq('status', 'cancelled');
     const { data } = await q;
     setItems((data ?? []) as unknown as Order[]);
     setLoading(false);
@@ -909,13 +909,13 @@ function Orders() {
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order №, name, phone…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search orders" />
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        {['', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'all-pay'].map((s) => (
+        {['', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'unpaid'].map((s) => (
           <button
             key={s || 'all'}
             onClick={() => setFilter(s)}
             className={`rounded-full px-3.5 py-1.5 text-xs font-bold ${filter === s ? 'bg-ink text-paper' : 'bg-white ring-1 ring-ink/10'}`}
           >
-            {s === '' ? 'All' : s === 'all-pay' ? 'Needs payment check' : s}
+            {s === '' ? 'All' : s === 'unpaid' ? 'Unpaid' : s}
           </button>
         ))}
         <button onClick={() => void load()} className="ml-auto rounded-full bg-white px-3.5 py-1.5 text-xs font-bold ring-1 ring-ink/10">Refresh</button>
@@ -1146,6 +1146,12 @@ function Drops() {
               </div>
             </Field>
             <Field label="Hero label"><Input value={form.hero_label} onChange={(e) => setForm({ ...form, hero_label: e.target.value })} placeholder="DROP OF THE MONTH" /></Field>
+            <Field label="Accent color">
+              <span className="flex items-center gap-2">
+                <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(form.theme_color) ? form.theme_color : '#F06427'} onChange={(e) => setForm({ ...form, theme_color: e.target.value })} className="h-10 w-12 cursor-pointer rounded-lg border border-ink/15 bg-white p-1" aria-label="Drop accent color" />
+                <span className="text-xs font-bold" style={{ color: form.theme_color || '#F06427' }}>Live preview</span>
+              </span>
+            </Field>
             <Field label="Starts at"><Input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} /></Field>
             <Field label="Ends at"><Input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} /></Field>
           </div>
@@ -1341,8 +1347,6 @@ function Settings() {
     announcement: '',
     support_email: '',
     free_shipping_threshold: '',
-    shipping_standard: '',
-    shipping_express: '',
     profit_margin: '',
     delivery_rate_standard: '',
     delivery_rate_express: '',
@@ -1367,8 +1371,6 @@ function Settings() {
         announcement: get('announcement'),
         support_email: get('support_email'),
         free_shipping_threshold: get('free_shipping_threshold'),
-        shipping_standard: get('shipping_standard'),
-        shipping_express: get('shipping_express'),
         profit_margin: get('profit_margin'),
         delivery_rate_standard: get('delivery_rate_standard'),
         delivery_rate_express: get('delivery_rate_express'),
@@ -1394,8 +1396,6 @@ function Settings() {
     setMsg(null);
     const nums: Record<string, string> = {
       free_shipping_threshold: form.free_shipping_threshold,
-      shipping_standard: form.shipping_standard,
-      shipping_express: form.shipping_express,
       delivery_rate_standard: form.delivery_rate_standard,
       delivery_rate_express: form.delivery_rate_express,
     };
@@ -1510,12 +1510,11 @@ function Settings() {
             <Field label="Free shipping over (NPR)">
               <Input type="number" min={0} value={form.free_shipping_threshold} onChange={(e) => setForm({ ...form, free_shipping_threshold: e.target.value })} />
             </Field>
-            <Field label="Standard fee (NPR)">
-              <Input type="number" min={0} value={form.shipping_standard} onChange={(e) => setForm({ ...form, shipping_standard: e.target.value })} />
-            </Field>
-            <Field label="Express fee (NPR)">
-              <Input type="number" min={0} value={form.shipping_express} onChange={(e) => setForm({ ...form, shipping_express: e.target.value })} />
-            </Field>
+            <div className="sm:col-span-2">
+              <p className="rounded-xl bg-paper px-3 py-2.5 text-xs text-ink/60">
+                Per-order fees now come from <strong>Admin → Delivery</strong> plans (base + Rs/km).
+              </p>
+            </div>
           </div>
           <div className="rounded-2xl border border-ink/10 bg-paper p-4">
             <h3 className="font-display font-extrabold">Distance rates from Imadol (Rs/km)</h3>

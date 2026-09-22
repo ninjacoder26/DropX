@@ -59,54 +59,6 @@ export function pickRecommendations(
   return [...scored, ...filler].slice(0, max);
 }
 
-/** Reactive hook: needs view history + a candidate pool from the catalog. */
-export function useRecommendations(max = MAX_RECOMMENDATIONS): {
-  items: Product[];
-  loading: boolean;
-} {  const { ids, views } = useRecentlyViewed();
-  const [items, setItems] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let live = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const [seenProducts, pool] = await Promise.all([
-          fetchProductsByIds(ids),
-          fetchProducts({ limit: 60 }),
-        ]);
-        if (!live) return;
-        const byId = new Map(seenProducts.map((p) => [p.id, p]));
-        const viewed: ViewedItem[] = ids
-          .map((id, i) => {
-            const p = byId.get(id);
-            if (!p) return null;
-            return {
-              id,
-              tags: p.tags ?? [],
-              categorySlug: p.category?.slug ?? null,
-              views: views[id] ?? 1,
-              recencyRank: i,
-            };
-          })
-          .filter((v): v is ViewedItem => v !== null);
-        setItems(pickRecommendations(viewed, pool, max));
-      } catch {
-        if (live) setItems([]);
-      } finally {
-        if (live) setLoading(false);
-      }
-    })();
-    return () => {
-      live = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids.join('|'), max]);
-
-  return { items, loading };
-}
-
 /* ═══════════════════ v2: reasoned 60/40 blending ═══════════════════ */
 
 export interface PopularityRow {
