@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, Construction } from 'lucide-react';
+import { ArrowRight, Construction, ShieldCheck } from 'lucide-react';
 import { useStoreSettings, type StoreSettings } from '../lib/settings';
+import { useAuth } from '../store/AuthContext';
 import {
   hasMaintenanceBypass,
   isMaintenanceMode,
@@ -117,6 +118,7 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
   // same defaults as a fresh install, so the page works offline too).
   // `overrides` exists for previews/tests; production always uses settings.
   const settings = useStoreSettings();
+  const { isAdmin } = useAuth();
   const s: MaintenanceCopy & { supportEmail: string } = {
     maintenanceTitle: settings.maintenanceTitle,
     maintenanceMessage: settings.maintenanceMessage,
@@ -148,6 +150,10 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
   }, [total]);
 
   const ready = remaining <= 0;
+  const enter = () => {
+    setMaintenanceBypass();
+    onContinue?.();
+  };
 
   return (
     <div className="texture-ink relative flex min-h-screen flex-col overflow-hidden bg-ink text-paper">
@@ -189,8 +195,7 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
           <button
             onClick={() => {
               if (!ready) return;
-              setMaintenanceBypass();
-              onContinue?.();
+              enter();
             }}
             disabled={!ready}
             className={`shadow-sticker inline-flex items-center gap-2 rounded-full border-2 px-7 py-3.5 text-sm font-bold transition active:scale-[0.98] ${
@@ -205,6 +210,14 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
               <>{buttonLabel} ({remaining}s)</>
             )}
           </button>
+          {isAdmin && (
+            <button
+              onClick={enter}
+              className="inline-flex items-center gap-1.5 rounded-full border border-paper/25 px-5 py-2 text-xs font-bold text-paper/80 transition hover:border-paper/60 hover:text-paper"
+            >
+              <ShieldCheck size={13} className="text-ember" /> Enter site as admin
+            </button>
+          )}
           <p className="text-[11px] text-paper/40">
             Admins are never blocked — <Link to="/admin" className="font-bold text-paper/60 underline underline-offset-2 hover:text-paper">open dashboard</Link>
           </p>

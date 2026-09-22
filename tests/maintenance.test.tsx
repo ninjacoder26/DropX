@@ -16,12 +16,15 @@ vi.mock('../src/config', () => ({
 }));
 
 import { MaintenanceGate, MaintenancePage } from '../src/components/MaintenancePage';
+import { AuthProvider } from '../src/store/AuthContext';
 import { clearMaintenanceBypass, setMaintenanceBypass } from '../src/lib/maintenance';
 
 function renderPage(onContinue = () => undefined) {
   return render(
     <MemoryRouter>
-      <MaintenancePage onContinue={onContinue} />
+      <AuthProvider>
+        <MaintenancePage onContinue={onContinue} />
+      </AuthProvider>
     </MemoryRouter>
   );
 }
@@ -41,6 +44,8 @@ describe('maintenance page', () => {
     expect(screen.getByText(/tuning/)).toBeInTheDocument();
     const btn = screen.getByRole('button', { name: /continue anyway/i });
     expect(btn).toBeDisabled();
+    // Admin bypass stays invisible to regular visitors.
+    expect(screen.queryByRole('button', { name: /enter site as admin/i })).toBeNull();
   });
 
   it('counts down 6s, then unlocks and remembers the choice', () => {
@@ -72,9 +77,11 @@ describe('maintenance gate', () => {
   function renderGate(path: string) {
     return render(
       <MemoryRouter initialEntries={[path]}>
-        <MaintenanceGate>
-          <p>shop content</p>
-        </MaintenanceGate>
+        <AuthProvider>
+          <MaintenanceGate>
+            <p>shop content</p>
+          </MaintenanceGate>
+        </AuthProvider>
       </MemoryRouter>
     );
   }
@@ -98,10 +105,12 @@ describe('maintenance gate', () => {
   it('honors custom copy and a zero-second timer', () => {
     render(
       <MemoryRouter>
-        <MaintenancePage
-          onContinue={() => undefined}
-          overrides={{ maintenanceTitle: 'Back in a flash', maintenanceCountdown: 0 }}
-        />
+        <AuthProvider>
+          <MaintenancePage
+            onContinue={() => undefined}
+            overrides={{ maintenanceTitle: 'Back in a flash', maintenanceCountdown: 0 }}
+          />
+        </AuthProvider>
       </MemoryRouter>
     );
     expect(screen.getByText('Back in a flash')).toBeInTheDocument();

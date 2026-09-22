@@ -126,6 +126,8 @@ export function CategoryArt({ slug, className }: { slug: string; className?: str
     <svg viewBox="0 0 400 300" className={className} role="img" aria-hidden preserveAspectRatio="xMidYMid slice">
       <rect width={400} height={300} fill="#1C1C1C" />
       <Dots />
+      {/* Signature ember halo — one consistent light source across all tiles. */}
+      <circle cx={200} cy={150} r={118} fill="#F06427" opacity={0.16} />
       <Scene />
     </svg>
   );

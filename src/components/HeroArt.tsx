@@ -24,14 +24,10 @@ export function HeroArt({ className }: { className?: string }) {
       {/* stars */}
       <g fill="#F7F5F0">
         <circle cx={90} cy={60} r={3} opacity={0.8} />
-        <circle cx={180} cy={110} r={2.2} opacity={0.5} />
         <circle cx={270} cy={50} r={2.6} opacity={0.7} />
-        <circle cx={370} cy={95} r={2} opacity={0.45} />
         <circle cx={470} cy={55} r={3} opacity={0.75} />
-        <circle cx={560} cy={105} r={2.2} opacity={0.5} />
         <circle cx={660} cy={60} r={2.6} opacity={0.7} />
         <circle cx={740} cy={120} r={2} opacity={0.45} />
-        <circle cx={40} cy={150} r={2.2} opacity={0.5} />
         <circle cx={620} cy={160} r={2.4} opacity={0.55} />
       </g>
 

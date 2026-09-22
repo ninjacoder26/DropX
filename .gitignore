@@ -5,5 +5,9 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# Local secret stores must never be committed (see en.txt incident)
+en.txt
+*.pem
+*.key
 .DS_Store
 coverage
