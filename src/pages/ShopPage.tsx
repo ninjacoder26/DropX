@@ -4,9 +4,13 @@ import { SlidersHorizontal } from 'lucide-react';
 import { clsx } from 'clsx';
 import { fetchCategories, fetchProducts } from '../lib/catalog';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { logSearch } from '../lib/analytics';
+import { useAuth } from '../store/AuthContext';
 import { SetupNotice } from '../components/layout';
 import type { Category, Product } from '../types';
 import { ProductGrid, GRID_COMFORTABLE } from '../components/product';
+import { RequestProduct } from '../components/RequestProduct';
+import { fetchPopularity, type PopularityRow } from '../lib/recommend';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { EmptyState, ErrorState, Input, Skeleton } from '../components/ui';
 
@@ -14,6 +18,7 @@ type Sort = 'new' | 'price-asc' | 'price-desc' | 'popular';
 
 export default function ShopPage() {
   const [params, setParams] = useSearchParams();
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +32,10 @@ export default function ShopPage() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [localQ, setLocalQ] = useState(q);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [popMap, setPopMap] = useState<Map<string, PopularityRow>>(new Map());
+  useEffect(() => {
+    fetchPopularity().then(setPopMap).catch(() => undefined);
+  }, []);
   const title = q ? `Results for “${q}”` : category ? cats.find((c) => c.slug === category)?.name ?? 'Shop' : 'Shop all';
   usePageTitle(title);
 
@@ -50,6 +59,7 @@ export default function ShopPage() {
         ]);
         setProducts(p);
         setCats(c);
+        if (q.trim()) logSearch(user?.id ?? null, q, p.length, category || undefined);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load products.');
       } finally {
@@ -209,14 +219,34 @@ export default function ShopPage() {
           ) : error ? (
             <ErrorState message={error} onRetry={() => window.location.reload()} />
           ) : filtered.length === 0 ? (
-            <EmptyState
-              title="No products found"
-              body="Try a different search, category, or price range."
-              action={<button onClick={() => { setParams({}); setMaxPrice(10000); setInStockOnly(false); }} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper">Clear filters</button>}
-            />
+            <div className="space-y-4">
+              <EmptyState
+                title={q ? `Nothing found for “${q}”` : 'No products found'}
+                body="Try a different search, category, or price range."
+                action={<button onClick={() => { setParams({}); setMaxPrice(10000); setInStockOnly(false); }} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper">Clear filters</button>}
+              />
+              {q.trim() && <RequestProduct query={q} categorySlug={category || undefined} />}
+            </div>
           ) : (
             <ProductGrid products={filtered} density="comfortable" />
           )}
+          {(() => {
+            const cat = category ? cats.find((c) => c.slug === category) : undefined;
+            if (!cat || filtered.length === 0) return null;
+            const popular = [...filtered]
+              .filter((p) => (popMap.get(p.id)?.score ?? 0) > 0)
+              .sort((a, b) => (popMap.get(b.id)?.score ?? 0) - (popMap.get(a.id)?.score ?? 0))
+              .slice(0, 4);
+            if (popular.length < 2) return null;
+            const reasons = new Map(popular.map((p) => [p.id, `Popular in ${cat.name}`] as const));
+            return (
+              <section className="mt-12">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Crowd favorites</p>
+                <h2 className="mt-1 font-display text-2xl font-black tracking-tight">Popular in {cat.name}</h2>
+                <div className="mt-5"><ProductGrid products={popular} density="comfortable" reasons={reasons} recSource="shop-popular" /></div>
+              </section>
+            );
+          })()}
         </div>
       </div>
     </div>

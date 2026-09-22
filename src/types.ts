@@ -198,3 +198,17 @@ export function dropState(d: Pick<Drop, 'starts_at' | 'ends_at'>, now = new Date
   if (t > e) return 'ended';
   return 'active';
 }
+
+export type RequestStatus = 'pending' | 'sourced' | 'rejected';
+
+export interface ProductRequest {
+  id: string;
+  user_id: string | null;
+  session_id: string;
+  query: string;
+  category_slug: string | null;
+  status: RequestStatus;
+  created_at: string;
+  /** Admin-only aggregate, present on grouped rows. */
+  request_count?: number;
+}

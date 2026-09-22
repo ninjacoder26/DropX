@@ -6,12 +6,16 @@ import { useStoreSettings } from '../lib/settings';
 import { Button } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { EmptyState } from '../components/ui';
-import { primaryImage } from '../components/product';
+import { primaryImage, ProductGrid } from '../components/product';
+import { useSmartRecommendations } from '../lib/recommend';
 
 export default function CartPage() {
   const { lines, subtotal, setQty, remove, count } = useCart();
   const { freeShippingThreshold } = useStoreSettings();
   usePageTitle('Your Bag');
+  // Hook first (unconditional) — renders nothing when the bag is empty.
+  const { items: pairings } = useSmartRecommendations({ kind: 'cart', lines }, 4);
+  const pairingReasons = new Map(pairings.map((r) => [r.product.id, r.reason] as const));
   const progress = Math.min(1, subtotal / freeShippingThreshold);
 
   if (lines.length === 0) {
@@ -99,6 +103,14 @@ export default function CartPage() {
           </Link>
         </aside>
       </div>
+
+      {pairings.length > 0 && (
+        <section className="mt-12">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Complete the bag</p>
+          <h2 className="mt-1 font-display text-2xl font-black tracking-tight">Pairs well with</h2>
+          <div className="mt-5"><ProductGrid products={pairings.map((r) => r.product)} reasons={pairingReasons} recSource="cart-pairing" /></div>
+        </section>
+      )}
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { clsx } from 'clsx';
 import type { Product } from '../types';
 import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
 import { useWishlist } from '../hooks/useShop';
+import { useAuth } from '../store/AuthContext';
 import { useCart } from '../store/CartContext';
+import { logRecClick } from '../lib/analytics';
 import { Badge } from './ui';
 
 export function primaryImage(p: Product, width = 700): string {
@@ -66,8 +68,9 @@ export function stockOf(p: Product): number {
   return (p.variants ?? []).reduce((s, v) => s + (v.is_active ? v.stock : 0), 0);
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, reason, recSource }: { product: Product; reason?: string; recSource?: string }) {
   const { has, toggle } = useWishlist();
+  const { user } = useAuth();
   const { add } = useCart();
   const [added, setAdded] = useState(false);
   const wished = has(product.id);
@@ -76,11 +79,14 @@ export function ProductCard({ product }: { product: Product }) {
   const out = buyable.length === 0 && (product.variants?.length ?? 0) > 0;
   const quickVariant = buyable.length === 1 ? buyable[0] : null;
   const raw = rawPrimary(product);
+  const trackClick = () => {
+    if (recSource) logRecClick(user?.id ?? null, product.id, recSource, product.category_id);
+  };
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5 transition duration-300 hover:-translate-y-1 hover:shadow-pop">
       <div className="relative">
-        <Link to={`/product/${product.slug}`} aria-label={product.name} className="relative block">
+        <Link to={`/product/${product.slug}`} aria-label={product.name} className="relative block" onClick={trackClick}>
           <div className="relative aspect-square overflow-hidden bg-paper-dark">
           <img
             src={primaryImage(product)}
@@ -106,7 +112,7 @@ export function ProductCard({ product }: { product: Product }) {
         </Link>
       </div>
       <button
-        onClick={() => void toggle(product.id)}
+        onClick={() => void toggle(product.id, product.category_id ?? null)}
         aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
         aria-pressed={wished}
         className={clsx(
@@ -117,9 +123,12 @@ export function ProductCard({ product }: { product: Product }) {
         <Heart size={16} fill={wished ? 'currentColor' : 'none'} />
       </button>
       <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-        <Link to={`/product/${product.slug}`} className="block font-display text-[15px] font-bold leading-snug hover:text-ember">
+        <Link to={`/product/${product.slug}`} onClick={trackClick} className="block font-display text-[15px] font-bold leading-snug hover:text-ember">
           <span className="clamp-2">{product.name}</span>
         </Link>
+        {reason && (
+          <p className="mt-0.5 truncate text-[11px] font-semibold text-ember">{reason}</p>
+        )}
         <div className="mt-1 flex items-center gap-1 text-xs text-ink/60">
           <Star size={13} className="fill-ember text-ember" />
           <span className="font-semibold text-ink">{Number(product.rating_avg).toFixed(1)}</span>
@@ -166,13 +175,13 @@ export const GRID_COMFORTABLE =
 export const GRID_RAIL =
   'no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0';
 
-export function ProductGrid({ products, density = 'compact' }: { products: Product[]; density?: 'compact' | 'comfortable' }) {
+export function ProductGrid({ products, density = 'compact', reasons, recSource }: { products: Product[]; density?: 'compact' | 'comfortable'; reasons?: Map<string, string>; recSource?: string }) {
   // Phones: strict 2 columns. Beyond that auto-fit: rows always stretch
   // edge to edge, however many items remain.
   return (
     <div className={density === 'comfortable' ? GRID_COMFORTABLE : GRID_COMPACT}>
       {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
+        <ProductCard key={p.id} product={p} reason={reasons?.get(p.id)} recSource={reasons?.has(p.id) ? recSource ?? 'shelf' : undefined} />
       ))}
     </div>
   );

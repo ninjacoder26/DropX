@@ -103,6 +103,19 @@ describe('security invariants', () => {
     expect(fix).toContain("('profit_margin', '20')");
   });
 
+  it('demand layer tracks events without exposing who did what', () => {
+    const sql = readFileSync(join(root, 'supabase/migrations/020_demand.sql'), 'utf8');
+    expect(sql).toContain('product_events');
+    expect(sql).toContain('product_requests');
+    expect(sql).toContain('product_popularity');
+    expect(sql).toContain('related_by_session');
+    expect(sql).toContain('uq_requests_user_query');
+    // The popularity aggregate must not output user/session columns
+    // (related_by_session groups BY session internally but returns counts).
+    const popFn = sql.slice(sql.indexOf('product_popularity()'), sql.indexOf('related_by_session'));
+    expect(popFn).not.toMatch(/user_id|session_id/);
+  });
+
   it('distance delivery prices from zones, rejects instant', () => {
     const fix = readFileSync(join(root, 'supabase/migrations/015_distance_delivery.sql'), 'utf8');
     expect(fix).toContain('delivery_zones');

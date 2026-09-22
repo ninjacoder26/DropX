@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, Truck, ShieldCheck, RefreshCcw, History } from 'lucide-react';
 import { fetchCategories, fetchDrops, fetchProducts, fetchProductsByIds } from '../lib/catalog';
-import { useRecommendations } from '../lib/recommend';
+import { useSmartRecommendations } from '../lib/recommend';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { cloudinaryThumb } from '../lib/shop';
 import type { Category, Drop, Product } from '../types';
@@ -98,7 +98,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { ids: recentIds } = useRecentlyViewed();
-  const { items: recommended } = useRecommendations(6);
+  const { items: recommended } = useSmartRecommendations({ kind: 'browse' }, 6);
+  const recommendedReasons = new Map(recommended.map((r) => [r.product.id, r.reason] as const));
   usePageTitle('Wear the Drop');
 
   useEffect(() => {
@@ -390,7 +391,7 @@ export default function HomePage() {
               </div>
               <Link to="/shop" className="shrink-0 text-sm font-bold text-ember hover:underline">View all</Link>
             </div>
-            <div className="mt-5"><ProductGrid products={recommended.slice(0, 6)} /></div>
+            <div className="mt-5"><ProductGrid products={recommended.map((r) => r.product).slice(0, 6)} reasons={recommendedReasons} recSource="home-recommended" /></div>
           </section>
         )}
 

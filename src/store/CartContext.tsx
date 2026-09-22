@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { logCartAdd } from '../lib/analytics';
 import { safeGet, safeRemove, safeSet } from '../lib/storage';
 import { useAuth } from './AuthContext';
 import type { CartLine, Product, ProductVariant } from '../types';
@@ -124,9 +125,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
             },
           ];
       setItems(next);
+      logCartAdd(user?.id ?? null, product.id, product.category_id, qty);
       await syncServer(next);
     },
-    [syncServer, setItems]
+    [syncServer, setItems, user]
   );
 
   const setQty = useCallback(

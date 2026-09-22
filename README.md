@@ -15,6 +15,7 @@ Offline payments only — Cash on Delivery. No online payment providers, no fake
 - **Uploads** — product/category/drop artwork → **Cloudinary** (validated, auto-optimized delivery with responsive `srcset`s); profile avatars → **Supabase Storage** (`dropx-assets` bucket, owner-only writes). No secrets ever touch the browser.
 - **Legal & auth flow** — Terms of Service + Privacy Policy pages, consent checkbox at checkout, and login/register that return you to where you were going (`?next=/checkout`) with your guest bag merged on sign-in.
 - **Discovery** — fixed 24-tag vocabulary (max 3 per product, no free-text tags), tag filter chips on shop, `#tag` links on product pages, and a gradual-slope recommendation engine: your viewed tags/categories steer a "Recommended for you" shelf (max 6), always mixed with fresh trending picks so one view never hijacks it.
+- **Demand intelligence** — missing-product requests with per-customer dedupe ("you're #N waiting"), throttled event tracking (views/searches/wishlists/carts/rec-clicks, session-scoped, no cross-customer exposure), an admin Demand heatmap (top searches incl. zero-result, request queue with sourcing workflow, category heat bars, sortable product heat with conversion), and reasoned 60/40 recommendations surfaced on home, product, cart, and category shelves.
 - **Mobile + PWA** — thumb-friendly bottom tab bar, sticky add-to-bag bar on product pages, 16px fields (no iOS auto-zoom), installable app (`manifest.webmanifest`, icons, offline service worker) with a gentle first-open install banner that auto-dismisses after 30 seconds and never nags again.
 - **Guided Valley addresses** — district → area → street picker (Kathmandu / Lalitpur / Bhaktapur, 58 areas), saved-address selection at checkout, address book with delete, scroll restoration on every route, product sharing via Web Share API.
 - **Quality** — responsive from phones to desktops, keyboard-accessible, lazy images with responsive `srcset`s, prioritized hero (LCP) image, split vendor bundles for long-term caching, SEO meta, error boundary + boot guard (never a blank page), reusable components, Vitest suite (`npm test`).
@@ -66,7 +67,9 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/016_brand_specs.sql` *(brand + specs columns)*
    - `supabase/migrations/017_product_specs.sql` *(generated brand/specs backfill)*
    - `supabase/migrations/018_checkout_profile.sql` *(remembered checkout details)*
-   - `supabase/migrations/019_delivery_plans.sql` *(plan base fees, switches, per-product scope — run last)*
+   - `supabase/migrations/019_delivery_plans.sql` *(plan base fees, switches, per-product scope)*
+   - `supabase/migrations/020_demand.sql` *(events, requests, popularity + co-view RPCs — run last)*
+   - `supabase/migrations/020_demand.sql` *(events, requests, popularity + co-view RPCs — run last)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -143,7 +146,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill · 018 checkout profile · 019 delivery plans
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill · 018 checkout profile · 019 plans · 020 demand · 019 delivery plans
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { logWishlistAdd } from '../lib/analytics';
 import { safeGet, safeSet } from '../lib/storage';
 import { useAuth } from '../store/AuthContext';
 
@@ -24,9 +25,10 @@ export function useWishlist() {
   }, [ids, user]);
 
   const toggle = useCallback(
-    async (productId: string) => {
+    async (productId: string, categoryId?: string | null) => {
       const has = ids.includes(productId);
       setIds((prev) => (has ? prev.filter((x) => x !== productId) : [...prev, productId]));
+      if (!has) logWishlistAdd(user?.id ?? null, productId, categoryId ?? null);
       if (user && isSupabaseConfigured) {
         if (has) await supabase.from('wishlists').delete().eq('user_id', user.id).eq('product_id', productId);
         else await supabase.from('wishlists').insert({ user_id: user.id, product_id: productId });

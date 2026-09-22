@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import {
-  BarChart3, ClipboardList, LayoutDashboard, Menu, Package,
+  BarChart3, ClipboardList, Flame, LayoutDashboard, Menu, Package,
   ScrollText, Settings as SettingsIcon, Star, Tags, Truck, Users, X, Zap,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import AdminDelivery from './AdminDelivery';
+import AdminDemand from './AdminDemand';
 import { supabase } from '../lib/supabase';
 import type { Category, Drop, Order, Product, ProductVariant, Profile, Review } from '../types';
 import { dropState } from '../types';
@@ -28,6 +29,7 @@ const TABS = [
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/drops', label: 'Drops', icon: Zap },
   { to: '/admin/reviews', label: 'Reviews', icon: Star },
+  { to: '/admin/demand', label: 'Demand', icon: Flame },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
   { to: '/admin/logs', label: 'Activity', icon: ScrollText },
@@ -122,6 +124,7 @@ export default function AdminPage() {
             <Route path="customers" element={<Customers />} />
             <Route path="drops" element={<Drops />} />
           <Route path="reviews" element={<ReviewsMod />} />
+          <Route path="demand" element={<AdminDemand />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<Settings />} />
           <Route path="logs" element={<Logs />} />

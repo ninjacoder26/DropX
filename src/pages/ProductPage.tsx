@@ -4,7 +4,8 @@ import { Check, Heart, Minus, Plus, Share2, ShieldCheck, ShoppingBag, Star, Truc
 import { clsx } from 'clsx';
 import { fetchProductBySlug } from '../lib/catalog';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { useRecommendations } from '../lib/recommend';
+import { useSmartRecommendations } from '../lib/recommend';
+import { logView } from '../lib/analytics';
 import { usePageTitle } from '../hooks/usePageTitle';
 import type { Product, ProductVariant, Review } from '../types';
 import { useCart } from '../store/CartContext';
@@ -18,7 +19,11 @@ import { ProductGrid, primaryImage, specLabel, srcSetFor } from '../components/p
 export default function ProductPage() {
   const { slug = '' } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
-  const { items: recommended } = useRecommendations(6);
+  const { items: recommended } = useSmartRecommendations(
+    product ? { kind: 'product', product } : { kind: 'browse' },
+    6
+  );
+  const recommendedReasons = new Map(recommended.map((r) => [r.product.id, r.reason] as const));
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -46,6 +51,7 @@ export default function ProductPage() {
       }
       setProduct(p);
       push(p.id);
+      logView(user?.id ?? null, p.id, p.category_id);
       const active = (p.variants ?? []).filter((v) => v.is_active);
       setVariant(active.find((v) => v.stock > 0) ?? active[0] ?? null);
       setQty(1);
@@ -350,11 +356,11 @@ export default function ProductPage() {
       </section>
 
       {/* Recommended — engine blends your viewed tags/categories with fresh picks */}
-      {recommended.filter((r) => r.id !== product.id).length > 0 && (
+      {recommended.filter((r) => r.product.id !== (product?.id ?? '')).length > 0 && (
         <section className="mt-14">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Picked for you</p>
           <h2 className="mt-1 font-display text-2xl font-black">Recommended</h2>
-          <div className="mt-5"><ProductGrid products={recommended.filter((r) => r.id !== product.id).slice(0, 6)} /></div>
+          <div className="mt-5"><ProductGrid products={recommended.filter((r) => r.product.id !== (product?.id ?? '')).map((r) => r.product).slice(0, 6)} reasons={recommendedReasons} recSource="product-related" /></div>
         </section>
       )}
 
