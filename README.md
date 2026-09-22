@@ -146,7 +146,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill · 018 checkout profile · 019 plans · 020 demand · 019 delivery plans
+├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill · 018 checkout profile · 019 plans · 020 demand · 021 hardening
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md
@@ -155,8 +155,10 @@ DropX/
 ## Security notes
 
 - RLS on every table; customers can only read/write their own rows. Admin writes require `is_admin()`.
-- `place_order()` is `SECURITY DEFINER`: validates the payment method, re-reads prices, locks variant rows (`FOR UPDATE`), checks stock, decrements atomically, snapshots prices into `order_items`, clears cart.
+- `place_order()` is `SECURITY DEFINER`: validates the payment method, re-reads prices, locks variant rows (`FOR UPDATE`), checks stock, decrements atomically, snapshots prices into `order_items`, clears cart. Customers have **no direct INSERT** on orders/items at all — every order flows through the function.
+- Checkout retries are idempotent (per-visit key): a retried order returns the original instead of double-charging stock. Order numbers regenerate on the rare concurrent collision.
 - `payment_status → paid` only via `mark_order_paid()` (admin/service-role + verified reference). Customers have **no UPDATE policy** on orders.
+- Response headers include HSTS, `nosniff`, `DENY` framing, and a tight CSP (see `vercel.json`). Event/request writes are per-session rate-limited in the database.
 - Secrets live in the server `.env` / Vercel dashboard only. `.env.example` contains placeholders, never credentials. No `VITE_*` variables exist anywhere.
 
 ## What still needs your values

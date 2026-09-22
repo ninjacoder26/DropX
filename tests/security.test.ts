@@ -149,6 +149,27 @@ describe('security invariants', () => {
     expect(fix).not.toContain('bank_transfer');
   });
 
+  it('021 closes direct order writes, rate-limits events, and idempotizes checkout', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/021_hardening.sql'), 'utf8');
+    expect(fix).toContain('drop policy if exists "owner insert own orders"');
+    expect(fix).toContain('drop policy if exists "owner insert own order items"');
+    expect(fix).toContain('trg_events_rate');
+    expect(fix).toContain('trg_requests_rate');
+    expect(fix).toContain('idempotency_key');
+    expect(fix).toContain('idx_orders_placed');
+    expect(fix).toContain('public read images of live products');
+    const checkout = readFileSync(join(root, 'src/pages/CheckoutPage.tsx'), 'utf8');
+    expect(checkout).toContain('p_idempotency_key');
+  });
+
+  it('server endpoints validate their inputs', () => {
+    const sign = readFileSync(join(root, 'api/cloudinary-sign.ts'), 'utf8');
+    expect(sign).toContain('dropx/');
+    const del = readFileSync(join(root, 'api/cloudinary-delete.ts'), 'utf8');
+    expect(del).toContain('Invalid public_id');
+    expect(del).toContain('Invalid JSON body');
+  });
+
   it('no dynamic SQL anywhere — injection has nowhere to land', () => {
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
