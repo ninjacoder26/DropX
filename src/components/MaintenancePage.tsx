@@ -79,28 +79,62 @@ function Particles() {
   );
 }
 
-function CountdownRing({ remaining, total }: { remaining: number; total: number }) {
-  const R = 26;
+function CountdownButton({
+  remaining,
+  total,
+  buttonLabel,
+  onEnter,
+}: {
+  remaining: number;
+  total: number;
+  buttonLabel: string;
+  onEnter: () => void;
+}) {
+  const ready = remaining <= 0;
+  const R = 52;
   const C = 2 * Math.PI * R;
-  const progress = remaining / total;
+  const progress = total <= 0 ? 1 : remaining / total;
   return (
-    <span className="relative flex h-16 w-16 items-center justify-center" aria-hidden="true">
-      <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full -rotate-90">
-        <circle cx={32} cy={32} r={R} fill="none" strokeWidth={5} className="stroke-paper/15" />
-        <circle
-          cx={32}
-          cy={32}
-          r={R}
-          fill="none"
-          strokeWidth={5}
-          strokeLinecap="round"
-          className="stroke-ember transition-[stroke-dashoffset] duration-200"
-          strokeDasharray={C}
-          strokeDashoffset={C * (1 - progress)}
-        />
-      </svg>
-      <span key={remaining} className="tick-pop font-display text-xl font-black tabular-nums">
-        {remaining}
+    <span className="flex flex-col items-center gap-3">
+      <button
+        onClick={() => {
+          if (ready) onEnter();
+        }}
+        disabled={!ready}
+        aria-label={ready ? buttonLabel : `${buttonLabel}, available in ${remaining} seconds`}
+        className={`relative flex h-28 w-28 items-center justify-center rounded-full border-2 transition active:scale-[0.97] ${
+          ready
+            ? 'pulse-ready cursor-pointer border-paper/80 bg-ember text-white hover:bg-ember-dark'
+            : 'cursor-not-allowed border-paper/20 bg-paper/10 text-paper/60'
+        }`}
+      >
+        <svg viewBox="0 0 120 120" aria-hidden="true" className="absolute inset-0 h-full w-full -rotate-90">
+          <circle cx={60} cy={60} r={R} fill="none" strokeWidth={6} className="stroke-paper/15" />
+          <circle
+            cx={60}
+            cy={60}
+            r={R}
+            fill="none"
+            strokeWidth={6}
+            strokeLinecap="round"
+            className="stroke-ember transition-[stroke-dashoffset] duration-200"
+            strokeDasharray={C}
+            strokeDashoffset={C * (1 - progress)}
+          />
+        </svg>
+        {ready ? (
+          <ArrowRight size={30} />
+        ) : (
+          <span key={remaining} className="tick-pop font-display text-3xl font-black tabular-nums">
+            {remaining}
+          </span>
+        )}
+      </button>
+      <span className="text-xs font-bold uppercase tracking-[0.2em] text-paper/60">
+        {ready ? buttonLabel : `Unlocks in ${remaining}s`}
+      </span>
+      <span className="sr-only" role="status">
+        {ready ? 'You may continue to the site.' : `Continue available in ${remaining} seconds.`}
       </span>
     </span>
   );
@@ -135,8 +169,11 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
     s.maintenanceMessage ||
     'DropX is getting a quick tune-up — new heat, fresh fixes, better everything. We\u2019ll be back to full volume in a few minutes.';
   const buttonLabel = s.maintenanceButton || 'Continue Anyway';
-  const { supportEmail } = settings;
   const [remaining, setRemaining] = useState(total);
+  const enter = () => {
+    setMaintenanceBypass();
+    onContinue?.();
+  };
 
   useEffect(() => {
     setRemaining(total);
@@ -148,12 +185,6 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
     }, 200);
     return () => clearInterval(timer);
   }, [total]);
-
-  const ready = remaining <= 0;
-  const enter = () => {
-    setMaintenanceBypass();
-    onContinue?.();
-  };
 
   return (
     <div className="texture-ink relative flex min-h-screen flex-col overflow-hidden bg-ink text-paper">
@@ -180,28 +211,7 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
         </p>
 
         <div className="reveal reveal-3 mt-8 flex flex-col items-center gap-4">
-          <CountdownRing remaining={remaining} total={Math.max(total, 1)} />
-          <p className="sr-only" role="status">
-            {ready ? 'You may continue to the site.' : `Continue available in ${remaining} seconds.`}
-          </p>
-          <button
-            onClick={() => {
-              if (!ready) return;
-              enter();
-            }}
-            disabled={!ready}
-            className={`inline-flex items-center gap-2 rounded-full border-2 px-7 py-3.5 text-sm font-bold transition active:scale-[0.98] ${
-              ready
-                ? 'pulse-ready border-paper/80 bg-ember text-white hover:bg-ember-dark'
-                : 'shadow-sticker cursor-not-allowed border-paper/20 bg-paper/10 text-paper/50'
-            }`}
-          >
-            {ready ? (
-              <>{buttonLabel} <ArrowRight size={16} /></>
-            ) : (
-              <>{buttonLabel} ({remaining}s)</>
-            )}
-          </button>
+          <CountdownButton remaining={remaining} total={Math.max(total, 1)} buttonLabel={buttonLabel} onEnter={enter} />
           <div className="flex items-center gap-4 text-[11px]">
             {isAdmin && (
               <button

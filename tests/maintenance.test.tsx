@@ -39,16 +39,20 @@ afterEach(() => {
 });
 
 describe('maintenance page', () => {
-  it('shows the DropX message with a locked continue button', () => {
+  it('shows one locked countdown-button with remaining seconds', () => {
     renderPage();
     expect(screen.getByText(/tuning/)).toBeInTheDocument();
-    const btn = screen.getByRole('button', { name: /continue anyway/i });
+    const btn = screen.getByRole('button', { name: /continue anyway, available in 6 seconds/i });
     expect(btn).toBeDisabled();
     // Admin bypass stays invisible to regular visitors.
     expect(screen.queryByRole('button', { name: /enter site as admin/i })).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(3_000);
+    });
+    expect(screen.getByRole('button', { name: /continue anyway, available in 3 seconds/i })).toBeDisabled();
   });
 
-  it('counts down 6s, then unlocks and remembers the choice', () => {
+  it('counts down 6s, then unlocks one control and remembers the choice', () => {
     let continued = false;
     renderPage(() => {
       continued = true;
@@ -56,20 +60,10 @@ describe('maintenance page', () => {
     act(() => {
       vi.advanceTimersByTime(6_000);
     });
-    const btn = screen.getByRole('button', { name: /continue anyway/i });
+    const btn = screen.getByRole('button', { name: /^continue anyway$/i });
     expect(btn).toBeEnabled();
-    expect(btn.textContent).not.toMatch(/\(/);
     fireEvent.click(btn);
     expect(continued).toBe(true);
-  });
-
-  it('shows remaining seconds while locked', () => {
-    renderPage();
-    expect(screen.getByRole('button', { name: /\(6s\)/ })).toBeInTheDocument();
-    act(() => {
-      vi.advanceTimersByTime(3_000);
-    });
-    expect(screen.getByRole('button', { name: /\(3s\)/ })).toBeInTheDocument();
   });
 });
 
