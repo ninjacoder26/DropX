@@ -147,17 +147,16 @@ export function Navbar() {
 export function Footer() {
   const { supportEmail } = useStoreSettings();
   return (
-    <footer className="texture-ink mt-16 bg-ink text-paper">
-      <div className="dx-full grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+    <footer className="texture-ink mt-12 bg-ink text-paper">
+      <div className="dx-full grid gap-8 py-8 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
         <div>
-          <p className="font-display text-2xl font-black">
+          <p className="font-display text-xl font-black">
             Drop<span className="text-ember">X</span>
           </p>
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-paper/60">
-            Nepal-focused stationery, tech, fashion & lifestyle. Designed in Kathmandu,
-            delivered inside the Valley — cash on delivery, no fuss.
+          <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-paper/60">
+            Stationery, tech, fashion & lifestyle — delivered inside the Valley, cash on delivery.
           </p>
-          <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-paper/5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-paper/60 ring-1 ring-paper/10">
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper/5 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-paper/60 ring-1 ring-paper/10">
             <span className="h-1.5 w-1.5 rounded-full bg-ember" /> All prices in NPR
           </p>
         </div>
@@ -198,7 +197,7 @@ export function Footer() {
           <p>© 2026 DropX. All rights reserved.</p>
           <p className="ml-auto">Prices in NPR, no hidden charges. <Link to="/maintenance" className="underline underline-offset-2 hover:text-paper">Status</Link></p>
         </div>
-        <p aria-hidden className="select-none overflow-hidden whitespace-nowrap text-center font-display text-[18vw] font-black leading-[0.8] text-paper/[0.04] lg:text-[12rem]">
+        <p aria-hidden className="select-none overflow-hidden whitespace-nowrap text-center font-display text-6xl font-black leading-[0.85] text-paper/[0.05] md:text-7xl">
           DROPX
         </p>
       </div>

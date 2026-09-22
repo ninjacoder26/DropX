@@ -103,6 +103,11 @@ describe('security invariants', () => {
     expect(fix).toContain("('profit_margin', '20')");
   });
 
+  it('manual price overrides survive reprices', () => {
+    const fix = readFileSync(join(root, 'supabase/migrations/022_custom_price.sql'), 'utf8');
+    expect(fix).toContain('use_custom_price');
+  });
+
   it('demand layer tracks events without exposing who did what', () => {
     const sql = readFileSync(join(root, 'supabase/migrations/020_demand.sql'), 'utf8');
     expect(sql).toContain('product_events');

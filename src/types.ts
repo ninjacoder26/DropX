@@ -20,6 +20,7 @@ export interface Product {
   base_price: number;
   compare_at_price: number | null;
   cost_price: number;
+  use_custom_price: boolean;
   currency: string;
   is_active: boolean;
   is_featured: boolean;

@@ -278,6 +278,14 @@ export function useSmartRecommendations(
       setLoading(true);
       try {
         const ctx: RecContext = JSON.parse(contextKey);
+        // Empty bag + no history = nothing to pair: skip all network.
+        if (ctx.kind === 'cart' && ctx.lines.length === 0 && ids.length === 0) {
+          if (live) {
+            setItems([]);
+            setLoading(false);
+          }
+          return;
+        }
         const [seenProducts, pool, popularity, drops] = await Promise.all([
           fetchProductsByIds(ids),
           fetchProducts({ limit: 80 }),

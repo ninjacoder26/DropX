@@ -11,7 +11,7 @@ Offline payments only — Cash on Delivery. No online payment providers, no fake
 - **Signature drops** — *Drop of the Month* (`kind='monthly'`) and *Mega Drop of the Year* (`kind='mega'`), fully managed in admin (title, slug, description, artwork upload, theme, dates, curated products + badges, publish flag). The storefront only surfaces drops that are published (enabled) **and** inside their date window: live drops are shoppable, upcoming ones are teaser previews, ended ones retire to a collapsible archive. States derive from `starts_at`/`ends_at` — nothing hardcoded, no fake countdowns.
 - **Auth** — email/password + Google OAuth, email verification, password recovery (`/forgot-password` → `/reset-password`), session handling, `customer` / `admin` / `superadmin` roles enforced by **RLS + server functions**, never by hidden routes alone.
 - **Checkout** — addresses, shipping methods (free standard over NPR 2,999), Terms/Privacy consent gate. Totals, stock and the COD-only rule are enforced in `place_order()` — client prices are ignored. Orders stay `unpaid` until the courier collects cash, then an admin marks them `paid` via `mark_order_paid()`. Order snapshots preserve product names/prices.
-- **Admin** (`/admin`) — sidebar dashboard with overview queues (unpaid orders, pending reviews, low stock), products + variants/inventory with thumbnail grid and **CSV import/export**, Cloudinary image manager (upload/preview/reorder/primary/delete) plus one-click artwork upload for categories and drops, categories with image tiles, orders (status workflow + verified-paid transition + search), customers (roles), drops, review moderation, analytics, **Settings** (announcement bar, support email, shipping fees/threshold, **profit margin with one-click repricing**), activity logs. Every admin write is audited to `admin_logs`.
+- **Admin** (`/admin`) — sidebar dashboard with overview queues (unpaid orders, pending reviews, low stock), products + variants/inventory with thumbnail grid and **CSV import/export**, Cloudinary image manager (upload/preview/reorder/primary/delete) plus one-click artwork upload for categories and drops, categories with image tiles, orders (status workflow + verified-paid transition + search), customers (roles), drops, review moderation, analytics, **Settings** (announcement bar, support email, shipping fees/threshold, **profit margin with one-click repricing** (hand-priced items keep their price)), activity logs. Every admin write is audited to `admin_logs`.
 - **Uploads** — product/category/drop artwork → **Cloudinary** (validated, auto-optimized delivery with responsive `srcset`s); profile avatars → **Supabase Storage** (`dropx-assets` bucket, owner-only writes). No secrets ever touch the browser.
 - **Legal & auth flow** — Terms of Service + Privacy Policy pages, consent checkbox at checkout, and login/register that return you to where you were going (`?next=/checkout`) with your guest bag merged on sign-in.
 - **Discovery** — fixed 24-tag vocabulary (max 3 per product, no free-text tags), tag filter chips on shop, `#tag` links on product pages, and a gradual-slope recommendation engine: your viewed tags/categories steer a "Recommended for you" shelf (max 6), always mixed with fresh trending picks so one view never hijacks it.
@@ -69,8 +69,9 @@ The anon key is designed to be public; **Row Level Security** is what protects y
    - `supabase/migrations/017_product_specs.sql` *(generated brand/specs backfill)*
    - `supabase/migrations/018_checkout_profile.sql` *(remembered checkout details)*
    - `supabase/migrations/019_delivery_plans.sql` *(plan base fees, switches, per-product scope)*
-   - `supabase/migrations/020_demand.sql` *(events, requests, popularity + co-view RPCs — run last)*
-   - `supabase/migrations/020_demand.sql` *(events, requests, popularity + co-view RPCs — run last)*
+   - `supabase/migrations/020_demand.sql` *(events, requests, popularity + co-view RPCs)*
+   - `supabase/migrations/021_hardening.sql` *(RLS gaps, idempotency, rate limits, indexes)*
+   - `supabase/migrations/022_custom_price.sql` *(manual selling-price override — run last)*
 3. **Authentication → Providers → Google**: enable and add your Client ID/Secret (see Google OAuth below). Add Site URL + Redirect URLs:
    - `http://localhost:5173/account`
    - `http://localhost:5173/reset-password`
@@ -147,7 +148,7 @@ DropX/
 │   ├── hooks/useShop.ts      # wishlist, recently-viewed
 │   ├── components/           # layout, product cards (quick-add, srcsets), ui kit, ImageManager, CloudinaryUpload, ErrorBoundary
 │   └── pages/                # storefront + Terms/Privacy + ResetPassword + AdminPage (sidebar, 9 sections)
-├── supabase/migrations/      # 001 schema · 002 RLS · 003 functions · 004 seed · 005 storage · 006 settings · 007 tags · 008 catalog · 009 sold · 010 limits · 011 retire demos · 012 restore drops · 013 margin · 014 order fix · 015 delivery · 016 brand/specs · 017 specs backfill · 018 checkout profile · 019 plans · 020 demand · 021 hardening
+├── supabase/migrations/      # 001 schema · … · 018 checkout profile · 019 plans · 020 demand · 021 hardening · 022 custom price
 ├── tests/                    # vitest suite (incl. render smoke tests + CSV)
 ├── vercel.json .env.example  # server secrets placeholders only — never committed values
 └── README.md

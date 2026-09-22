@@ -263,12 +263,13 @@ function Overview() {
 }
 
 /* ─── Products ─── */
-const EMPTY_PRODUCT = { name: '', slug: '', brand: '', description: '', category_id: '', cost_price: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
+const EMPTY_PRODUCT = { name: '', slug: '', brand: '', description: '', category_id: '', cost_price: '', base_override: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
 function Products() {
   const [items, setItems] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [q, setQ] = useState('');
+  const [catFilter, setCatFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_PRODUCT);
@@ -297,8 +298,11 @@ function Products() {
   }, []);
 
   const filtered = useMemo(
-    () => items.filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || p.slug.includes(q.toLowerCase())),
-    [items, q]
+    () => items.filter((p) =>
+      (!q || p.name.toLowerCase().includes(q.toLowerCase()) || p.slug.includes(q.toLowerCase())) &&
+      (!catFilter || (p.category_id ?? '') === catFilter)
+    ),
+    [items, q, catFilter]
   );
 
   const startEdit = async (p?: Product) => {
@@ -313,6 +317,7 @@ function Products() {
       name: p.name, slug: p.slug, brand: p.brand ?? '', description: p.description,
       category_id: p.category_id ?? '',
       cost_price: p.cost_price != null ? String(p.cost_price) : '',
+      base_override: p.use_custom_price ? String(p.base_price) : '',
       compare_at_price: p.compare_at_price ? String(p.compare_at_price) : '',
       tags: (p.tags ?? []).slice(0, MAX_TAGS_PER_PRODUCT),
       is_active: p.is_active, is_featured: p.is_featured, is_trending: p.is_trending, is_new: p.is_new,
@@ -327,6 +332,12 @@ function Products() {
       setMsg('Name, slug and a valid cost price (≥ 0) are required.');
       return;
     }
+    const customRaw = form.base_override.trim();
+    const custom = customRaw === '' ? null : Number(customRaw);
+    if (custom !== null && (Number.isNaN(custom) || custom < 0)) {
+      setMsg('Custom selling price must be a number ≥ 0 (or blank for automatic).');
+      return;
+    }
     setSaving(true);
     setMsg(null);
     const payload = {
@@ -336,7 +347,8 @@ function Products() {
       description: form.description,
       category_id: form.category_id || null,
       cost_price: cost,
-      base_price: sellingFromCost(cost, margin),
+      base_price: custom ?? sellingFromCost(cost, margin),
+      use_custom_price: custom !== null,
       compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
       tags: form.tags.slice(0, MAX_TAGS_PER_PRODUCT),
       is_active: form.is_active, is_featured: form.is_featured,
@@ -423,8 +435,11 @@ function Products() {
           continue;
         }
         // Cost is the source of truth: selling recomputed with the live margin.
+        // An explicit, differing base price is kept as a manual override.
         const cost = r.cost_price ?? costFromSelling(r.base_price, margin);
-        const selling = r.cost_price != null ? sellingFromCost(r.cost_price, margin) : r.base_price;
+        const computed = r.cost_price != null ? sellingFromCost(r.cost_price, margin) : r.base_price;
+        const custom = r.cost_price != null && r.base_price !== computed;
+        const selling = custom ? r.base_price : computed;
         const { error } = await supabase.from('products').insert({
           name: r.name,
           slug: r.slug || `${slugify(r.name)}-${Date.now().toString(36)}`,
@@ -433,6 +448,7 @@ function Products() {
           category_id: (r.category_slug && catBySlug.get(r.category_slug)) || null,
           base_price: selling,
           cost_price: cost,
+          use_custom_price: custom,
           compare_at_price: r.compare_at_price,
           is_active: r.is_active,
           is_featured: r.is_featured,
@@ -460,6 +476,15 @@ function Products() {
     <div>
       <div className="flex flex-wrap items-center gap-2">
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
+        <select
+          value={catFilter}
+          onChange={(e) => setCatFilter(e.target.value)}
+          className="rounded-xl border border-ink/15 bg-white px-3 py-2 text-xs font-bold"
+          aria-label="Filter by category"
+        >
+          <option value="">All categories</option>
+          {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
         <div className="ml-auto flex flex-wrap gap-2">
           <button
             onClick={() => download('dropx-product-template.csv', toCSV([[...PRODUCT_CSV_HEADERS], ['Sample Hoodie', 'sample-hoodie', 'Heavyweight fleece sample', 'fashion-accessories', 1620, 1999, true, true, true, true, 'apparel|winter|accessories', 1350, 'Sample Brand']]))}
@@ -535,9 +560,16 @@ function Products() {
               </Field>
             </div>
             <p className="rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold md:col-span-2">
-              Sells at {formatNPR(sellingFromCost(Number(form.cost_price) || 0, margin))} — real cost +
-              {' '}{margin}% store margin. Saved automatically with the product.
+              Sells at {formatNPR(form.base_override.trim() !== '' && !Number.isNaN(Number(form.base_override)) ? Number(form.base_override) : sellingFromCost(Number(form.cost_price) || 0, margin))} —{' '}
+              {form.base_override.trim() !== ''
+                ? 'your custom price (margin reprices will skip this product).'
+                : `real cost + ${margin}% store margin. Saved automatically with the product.`}
             </p>
+            <div className="md:col-span-2">
+              <Field label="Base (selling) price — optional custom override">
+                <Input type="number" min={0} value={form.base_override} onChange={(e) => setForm({ ...form, base_override: e.target.value })} placeholder={`Blank = automatic (${formatNPR(sellingFromCost(Number(form.cost_price) || 0, margin))})`} />
+              </Field>
+            </div>
             <div className="md:col-span-2">
               <p className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink/60">
                 Tags · {form.tags.length}/{MAX_TAGS_PER_PRODUCT} (fixed list — powers filters & recommendations)
@@ -683,13 +715,17 @@ function Products() {
                   <td className="px-4 py-3">
                     <span className="flex gap-1">
                       {!p.is_active && <Badge tone="red">hidden</Badge>}
+                      {p.use_custom_price && <Badge tone="paper">custom</Badge>}
                       {p.is_trending && <Badge>hot</Badge>}
                       {p.is_new && <Badge tone="ink">new</Badge>}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => void startEdit(p)} className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-bold hover:bg-ink/10">Edit</button>{' '}
-                    <button onClick={() => setConfirmDel(p)} className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">Delete</button>
+                    <span className="inline-flex flex-wrap justify-end gap-1.5">
+                      <a href={`/product/${p.slug}`} target="_blank" rel="noreferrer" className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-bold hover:bg-ink/10">View</a>
+                      <button onClick={() => void startEdit(p)} className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-bold hover:bg-ink/10">Edit</button>{' '}
+                      <button onClick={() => setConfirmDel(p)} className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">Delete</button>
+                    </span>
                   </td>
                 </tr>
               );
@@ -782,6 +818,9 @@ function Categories() {
                 <span className="flex h-10 w-14 items-center justify-center rounded-lg bg-ink/10 font-display text-xs font-black text-ink/40">DX</span>
               )}
               <span className="min-w-0 flex-1"><strong>{c.name}</strong> <span className="text-ink/50">· /{c.slug}</span></span>
+              <a href={`/shop?category=${c.slug}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-ember hover:underline">
+                View
+              </a>
               <button
                 className="text-xs font-bold text-ink/50 hover:text-ink"
                 onClick={() => {
@@ -1164,6 +1203,7 @@ function Drops() {
             <p className="mt-2 font-display text-lg font-extrabold">{d.title}</p>
             <p className="text-xs text-ink/50">{new Date(d.starts_at).toLocaleDateString()} → {new Date(d.ends_at).toLocaleDateString()} · /{d.slug}</p>
             <div className="mt-3 flex gap-2">
+              <a href={`/drops/${d.slug}`} target="_blank" rel="noreferrer" className="rounded-full bg-ink/5 px-3.5 py-1.5 text-xs font-bold">View</a>
               <button onClick={() => void startEdit(d)} className="rounded-full bg-ink/5 px-3.5 py-1.5 text-xs font-bold">Edit</button>
               <button
                 onClick={() => {
@@ -1420,9 +1460,11 @@ function Settings() {
     setMsg(null);
     // supabase-js can't express computed updates, so this is two honest
     // steps: 1) read every cost, 2) write each computed selling price.
+    // Hand-priced products (use_custom_price) are never touched.
     const { data: rows, error: readErr } = await supabase
       .from('products')
-      .select('id,cost_price');
+      .select('id,cost_price')
+      .eq('use_custom_price', false);
     if (readErr) {
       setMsg(readErr.message);
       setApplying(false);
@@ -1448,7 +1490,7 @@ function Settings() {
     setMsg(
       problems.length > 0
         ? `Repriced ${updated} products at +${m}%. ${problems.length} failed: ${problems[0]}`
-        : `Repriced ${updated} products at +${m}% over real cost. Storefront prices update immediately.`
+        : `Repriced ${updated} products at +${m}% over real cost (hand-priced items skipped). Storefront prices update immediately.`
     );
     setApplying(false);
   };

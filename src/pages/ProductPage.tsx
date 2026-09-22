@@ -186,7 +186,7 @@ export default function ProductPage() {
               <span className="text-lg text-ink/40 line-through">{formatNPR(product.compare_at_price)}</span>
             )}
           </div>
-          {(product.cost_price ?? 0) > 0 && (
+          {(product.cost_price ?? 0) > 0 && !product.use_custom_price && (
             <p className="mt-1 text-xs text-ink/50">
               Real price {formatNPR(product.cost_price)} + {profitMargin}% store margin included.
             </p>
