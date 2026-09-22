@@ -28,6 +28,12 @@ export const APP_CONFIG = {
   // (Settings → Upload → Upload presets) scoped to `dropx/products`.
   cloudinaryCloudName: 'vis22j9d',
   cloudinaryUploadPreset: 'dropx',
+
+  // ── Maintenance mode ───────────────────────────────────────
+  // Flip to true to take the storefront offline behind a branded
+  // maintenance page (Admin stays fully accessible). Flip back to false
+  // to reopen. Redeploy after changing (Vercel auto-deploys on push).
+  maintenanceMode: false,
 } as const;
 
 /** False until the two Supabase values above are filled in. */

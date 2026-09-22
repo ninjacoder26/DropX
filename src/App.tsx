@@ -1,8 +1,10 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar, Footer, MobileNav } from './components/layout';
 import { InstallBanner } from './components/InstallBanner';
 import { ScrollToTop } from './components/ScrollToTop';
+import { MaintenanceGate, MaintenancePage } from './components/MaintenancePage';
+import { isMaintenanceMode } from './lib/maintenance';
 import { useAuth } from './store/AuthContext';
 import type { ReactNode } from 'react';
 
@@ -49,15 +51,28 @@ function RequireAdmin({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function MaintenanceRoute() {
+  const nav = useNavigate();
+  if (!isMaintenanceMode()) return <Navigate to="/" replace />;
+  return (
+    <MaintenancePage
+      onContinue={() => {
+        nav('/', { replace: true });
+      }}
+    />
+  );
+}
+
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col pb-16 lg:pb-0">
       <ScrollToTop />
       <InstallBanner />
-      <Navbar />
-      <main className="flex-1">
-        <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>}>
-          <Routes>
+      <MaintenanceGate>
+        <Navbar />
+        <main className="flex-1">
+          <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>}>
+            <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:slug" element={<ProductPage />} />
@@ -77,6 +92,7 @@ export default function App() {
             <Route path="/collections" element={<CollectionsPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/maintenance" element={<MaintenanceRoute />} />
             <Route path="/admin/*" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
@@ -84,6 +100,7 @@ export default function App() {
       </main>
       <Footer />
       <MobileNav />
+      </MaintenanceGate>
     </div>
   );
 }
