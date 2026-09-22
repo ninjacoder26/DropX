@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { oauthRedirectTo, safeNextPath } from '../lib/oauth';
 import type { Profile } from '../types';
 
 interface AuthState {
@@ -76,10 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signInWithGoogle: async (next = '/account') => {
         if (!isSupabaseConfigured) return { error: 'Supabase is not configured yet.' };
-        const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/account';
+        const safeNext = safeNextPath(next);
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: `${window.location.origin}${safeNext}` },
+          options: { redirectTo: oauthRedirectTo(window.location.origin, safeNext) },
         });
         return { error: error?.message ?? null };
       },
