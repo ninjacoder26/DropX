@@ -24,10 +24,8 @@ export function HeroArt({ className }: { className?: string }) {
       {/* stars */}
       <g fill="#F7F5F0">
         <circle cx={90} cy={60} r={3} opacity={0.8} />
-        <circle cx={270} cy={50} r={2.6} opacity={0.7} />
         <circle cx={470} cy={55} r={3} opacity={0.75} />
         <circle cx={660} cy={60} r={2.6} opacity={0.7} />
-        <circle cx={740} cy={120} r={2} opacity={0.45} />
         <circle cx={620} cy={160} r={2.4} opacity={0.55} />
       </g>
 
@@ -38,19 +36,16 @@ export function HeroArt({ className }: { className?: string }) {
       {/* birds */}
       <g stroke="#F7F5F0" strokeWidth={5} strokeLinecap="round" fill="none" opacity={0.85}>
         <path d="M 150 130 q 12 -12 24 0 q 12 -12 24 0" />
-        <path d="M 220 165 q 9 -9 18 0 q 9 -9 18 0" />
         <path d="M 670 170 q 9 -9 18 0 q 9 -9 18 0" />
       </g>
 
       {/* prayer flags */}
       <path d="M 0 28 C 200 60, 420 10, 620 44 L 800 30" fill="none" stroke="#F7F5F0" strokeWidth={3} opacity={0.5} />
       <g opacity={0.95}>
-        <polygon points="120,42 142,45 131,68" fill="#F06427" />
-        <polygon points="210,46 232,44 221,67" fill="#F7F5F0" />
-        <polygon points="300,38 322,34 311,57" fill="#F06427" />
-        <polygon points="392,30 414,28 403,51" fill="#F7F5F0" opacity={0.75} />
-        <polygon points="484,36 506,38 495,61" fill="#F06427" />
-        <polygon points="576,44 598,46 587,69" fill="#F7F5F0" opacity={0.75} />
+        <polygon points="150,44 172,47 161,70" fill="#F06427" />
+        <polygon points="330,36 352,32 341,55" fill="#F7F5F0" />
+        <polygon points="510,38 532,40 521,63" fill="#F06427" />
+        <polygon points="670,46 692,46 681,69" fill="#F7F5F0" opacity={0.75} />
       </g>
 
       {/* far range */}
@@ -65,7 +60,6 @@ export function HeroArt({ className }: { className?: string }) {
       <polygon points="0,390 140,300 260,380 400,310 540,390 680,320 800,380 800,500 0,500" fill="#101010" />
       {/* foreground hill */}
       <path d="M 0 500 L 0 440 C 180 410, 320 460, 520 435 C 640 422, 730 440, 800 430 L 800 500 Z" fill="#F06427" />
-      <path d="M 0 500 L 0 462 C 200 440, 380 478, 560 458 C 660 448, 740 458, 800 450 L 800 500 Z" fill="#101010" opacity={0.55} />
 
       {/* wordmark */}
       <text x={60} y={428} fontFamily="Archivo, Arial" fontWeight={900} fontSize={72} fill="#F7F5F0" letterSpacing={2}>DROP<tspan fill="#F06427">X</tspan></text>
