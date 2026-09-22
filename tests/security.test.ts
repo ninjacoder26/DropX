@@ -35,8 +35,20 @@ describe('security invariants', () => {
     expect(fn).toContain('p_payment_provider');
   });
 
-  it('no client source file reads env vars or embeds online providers', () => {
+  it('no dead fire-and-forget writes (bare `void supabase…` never sends)', () => {
     const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const p = join(dir, e.name);
+        return e.isDirectory() ? walk(p) : [p];
+      });
+    const files = walk(join(root, 'src')).filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'));
+    for (const f of files) {
+      const src = readFileSync(f, 'utf8');
+      expect(src, f).not.toMatch(/void\s+supabase\./);
+    }
+  });
+
+  it('no client source file reads env vars or embeds online providers', () => {    const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
         const p = join(dir, e.name);
         return e.isDirectory() ? walk(p) : [p];

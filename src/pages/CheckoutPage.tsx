@@ -193,7 +193,10 @@ export default function CheckoutPage() {
       // Remember everything for next time: the checkout profile (best-effort,
       // never blocks success) plus an address-book entry for first-timers.
       if (user && isSupabaseConfigured) {
-        void supabase.from('profiles').update({
+        // NOTE: supabase builders are lazy — they only send when awaited or
+        // .then()'d. A bare `void builder` NEVER fires (this silently broke
+        // profile saving before). Fire-and-forget, but actually fired.
+        supabase.from('profiles').update({
           checkout_name: addr.full_name,
           checkout_phone: addr.phone,
           checkout_district: addr.district,
@@ -201,14 +204,17 @@ export default function CheckoutPage() {
           checkout_street: addr.street,
           checkout_postal: addr.postal_code || null,
           preferred_shipping: method,
-        }).eq('id', user.id);
+        }).eq('id', user.id).then(
+          () => undefined,
+          () => undefined
+        );
         supabase
           .from('addresses')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .then(({ count }) => {
             if (count === 0) {
-              void supabase.from('addresses').insert({
+              supabase.from('addresses').insert({
                 user_id: user.id,
                 label: 'Home',
                 full_name: addr.full_name,
@@ -218,7 +224,10 @@ export default function CheckoutPage() {
                 street: addr.street,
                 postal_code: addr.postal_code || null,
                 is_default: true,
-              });
+              }).then(
+                () => undefined,
+                () => undefined
+              );
             }
           });
       }
