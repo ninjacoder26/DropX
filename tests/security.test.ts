@@ -220,6 +220,7 @@ describe('security invariants', () => {
     expect(get('X-Frame-Options')).toBe('DENY');
     expect(get('Content-Security-Policy')).toContain("frame-ancestors 'none'");
     expect(get('Content-Security-Policy')).toContain('https://*.supabase.co');
+    expect(get('Content-Security-Policy')).toContain('wss://*.supabase.co');
     expect(get('Content-Security-Policy')).not.toContain('unsafe-eval');
   });
 });

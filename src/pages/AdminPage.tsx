@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAdminTheme } from '../lib/adminTheme';
+import { isRealtimeAvailable } from '../lib/realtime';
 import { logAdminAction as log } from '../lib/admin';
 import AdminDelivery from './AdminDelivery';
 import AdminDemand from './AdminDemand';
@@ -49,40 +50,59 @@ export default function AdminPage() {
   // Live pending-report badge + subtle toast on new submissions.
   // (Requires the table in the supabase_realtime publication; the 60s
   // refetch below keeps the count honest even without it.)
+  // Realtime can never throw into React: availability-gated, try/caught,
+  // polling-backed. A dead socket degrades to quiet polling, not an Oops page.
   useEffect(() => {
     let live = true;
     let toastTimer: ReturnType<typeof setTimeout> | null = null;
     const refresh = async () => {
-      const { count } = await supabase
-        .from('image_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      if (live) setPendingReports(count ?? 0);
+      try {
+        const { count } = await supabase
+          .from('image_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        if (live) setPendingReports(count ?? 0);
+      } catch {
+        /* polling is best-effort */
+      }
     };
     void refresh();
-    const channel = supabase
-      .channel('admin-image-requests')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'image_requests' },
-        (payload) => {
-          void refresh();
-          if (payload.eventType === 'INSERT' && live) {
-            setReportToast(true);
-            if (toastTimer) clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => {
-              if (live) setReportToast(false);
-            }, 6000);
-          }
-        }
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      if (isRealtimeAvailable()) {
+        channel = supabase
+          .channel('admin-image-requests')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'image_requests' },
+            (payload) => {
+              void refresh();
+              if (payload.eventType === 'INSERT' && live) {
+                setReportToast(true);
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                  if (live) setReportToast(false);
+                }, 6000);
+              }
+            }
+          )
+          .subscribe();
+      }
+    } catch {
+      channel = null;
+    }
     const interval = setInterval(refresh, 60_000);
     return () => {
       live = false;
       if (toastTimer) clearTimeout(toastTimer);
       clearInterval(interval);
-      supabase.removeChannel(channel).catch(() => undefined);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel).catch(() => undefined);
+        } catch {
+          /* ignore */
+        }
+      }
     };
   }, []);
 
