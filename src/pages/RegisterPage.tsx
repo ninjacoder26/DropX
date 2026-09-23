@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { Button, Field, Input } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function RegisterPage() {
   const { signUp } = useAuth();
+  usePageTitle('Join DropX');
   const [params] = useSearchParams();
   const next = params.get('next');
   const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : '/login';

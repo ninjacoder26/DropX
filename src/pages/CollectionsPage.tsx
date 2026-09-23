@@ -4,8 +4,10 @@ import { fetchCategories, fetchProducts } from '../lib/catalog';
 import type { Category, Product } from '../types';
 import { ProductGrid } from '../components/product';
 import { Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function CollectionsPage() {
+  usePageTitle('Collections');
   const [cats, setCats] = useState<Category[]>([]);
   const [byCat, setByCat] = useState<Record<string, Product[]>>({});
   const [loading, setLoading] = useState(true);

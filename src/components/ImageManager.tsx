@@ -39,9 +39,11 @@ export function ImageManager({ productId }: { productId: string }) {
       }
     }
     setBusy(true);
+    const { data: session } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+    const token = session.session?.access_token;
     try {
       for (const f of Array.from(files)) {
-        const up = await uploadToCloudinary(f);
+        const up = await uploadToCloudinary(f, token ?? undefined);
         const { error: dbErr } = await supabase.from('product_images').insert({
           product_id: productId,
           cloudinary_public_id: up.public_id,

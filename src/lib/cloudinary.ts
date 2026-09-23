@@ -1,8 +1,9 @@
 /**
  * Cloudinary integration boundary.
- * - Browser uploads use an UNSIGNED upload preset (no secret in client).
- * - Signed uploads / deletions go through /api/cloudinary-sign + /api/cloudinary-delete
- *   (the server holds CLOUDINARY_API_SECRET from the server-only `.env`).
+ * - Uploads prefer SIGNED flow (server holds CLOUDINARY_API_SECRET, verifies
+ *   the admin JWT, signs per-upload params) and fall back to the UNSIGNED
+ *   preset when the server endpoint is unavailable.
+ * - Deletions always go through /api/cloudinary-delete.
  *   Never put API secrets in client code.
  */
 
@@ -23,6 +24,14 @@ export interface UploadResult {
   format: string;
 }
 
+interface SignedParams {
+  signature: string;
+  timestamp: number;
+  apiKey: string;
+  cloudName: string;
+  folder: string;
+}
+
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
 
 export function validateImageFile(file: File): string | null {
@@ -31,7 +40,56 @@ export function validateImageFile(file: File): string | null {
   return null;
 }
 
-export async function uploadToCloudinary(file: File): Promise<UploadResult> {
+function toResult(json: {
+  public_id: string; secure_url: string; width: number;
+  height: number; bytes: number; format: string;
+}): UploadResult {
+  return {
+    public_id: json.public_id,
+    secure_url: json.secure_url,
+    width: json.width,
+    height: json.height,
+    bytes: json.bytes,
+    format: json.format,
+  };
+}
+
+/** Signed upload via server-issued params. Returns null on any failure. */
+async function trySignedUpload(
+  blob: Blob,
+  filename: string,
+  accessToken: string
+): Promise<UploadResult | null> {
+  try {
+    const signRes = await fetch('/api/cloudinary-sign', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ folder: 'dropx/products' }),
+    });
+    if (!signRes.ok) return null;
+    const signed = (await signRes.json()) as SignedParams;
+    if (!signed?.signature || !signed?.apiKey) return null;
+    const form = new FormData();
+    form.append('file', blob, filename);
+    form.append('api_key', signed.apiKey);
+    form.append('timestamp', String(signed.timestamp));
+    form.append('signature', signed.signature);
+    form.append('folder', signed.folder);
+    const upRes = await fetch(`https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!upRes.ok) return null;
+    return toResult(await upRes.json());
+  } catch {
+    return null;
+  }
+}
+
+export async function uploadToCloudinary(file: File, accessToken?: string): Promise<UploadResult> {
   const err = validateImageFile(file);
   if (err) throw new Error(err);
   if (!cloudName || !preset) {
@@ -39,7 +97,6 @@ export async function uploadToCloudinary(file: File): Promise<UploadResult> {
       'Cloudinary is not configured. Fill in cloudinaryCloudName + cloudinaryUploadPreset in src/config.ts.'
     );
   }
-  const form = new FormData();
   // Pre-compress in-browser (≤1600px WebP): uploads finish faster and every
   // byte saved here is saved again on storage + every future delivery.
   const optimized = await optimizeImageFile(file, { maxDim: 1600, quality: 0.82 });
@@ -48,6 +105,13 @@ export async function uploadToCloudinary(file: File): Promise<UploadResult> {
       `[DropX] image optimized: ${formatBytes(optimized.originalBytes)} → ${formatBytes(optimized.bytes)}`
     );
   }
+  // Prefer the signed flow (no abusable unsigned surface); fall back to the
+  // unsigned preset when the server endpoint isn't reachable.
+  if (accessToken) {
+    const signed = await trySignedUpload(optimized.blob, file.name, accessToken);
+    if (signed) return signed;
+  }
+  const form = new FormData();
   form.append('file', optimized.blob, file.name);
   form.append('upload_preset', preset);
   form.append('folder', 'dropx/products');
@@ -59,13 +123,5 @@ export async function uploadToCloudinary(file: File): Promise<UploadResult> {
     const text = await res.text().catch(() => '');
     throw new Error(`Cloudinary upload failed (${res.status}): ${text.slice(0, 200)}`);
   }
-  const json = await res.json();
-  return {
-    public_id: json.public_id,
-    secure_url: json.secure_url,
-    width: json.width,
-    height: json.height,
-    bytes: json.bytes,
-    format: json.format,
-  };
+  return toResult(await res.json());
 }

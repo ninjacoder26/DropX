@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Check, Heart, Minus, Plus, Share2, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Expand, Heart, Minus, Plus, Share2, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
 import { clsx } from 'clsx';
 import { fetchProductBySlug } from '../lib/catalog';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -31,6 +31,7 @@ export default function ProductPage() {
   const [variant, setVariant] = useState<ProductVariant | null>(null);
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const [added, setAdded] = useState(false);
   const [shared, setShared] = useState(false);
   usePageTitle(product?.name ?? 'Product');
@@ -81,6 +82,17 @@ export default function ProductPage() {
       );
   }, [product]);
 
+  useEffect(() => {
+    if (lightbox === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightbox(null);
+      if (e.key === 'ArrowRight') setLightbox((v) => (v === null ? v : (v + 1) % Math.max(images.length, 1)));
+      if (e.key === 'ArrowLeft') setLightbox((v) => (v === null ? v : (v - 1 + images.length) % Math.max(images.length, 1)));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox, images.length]);
+
   const unit = product ? Number(product.base_price) + Number(variant?.price_adjustment ?? 0) : 0;
   const pct = product ? discountPct(unit, product.compare_at_price ? Number(product.compare_at_price) : null) : null;
   const out = variant ? variant.stock <= 0 : (product?.variants?.length ?? 0) > 0;
@@ -122,14 +134,25 @@ export default function ProductPage() {
       <div className="mt-4 grid gap-8 md:grid-cols-2">
         {/* Gallery */}
         <div>
-          <div className="overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5">
-            <img
-              src={images[imgIdx] ? cloudinaryThumb(images[imgIdx].secure_url, 1000) : primaryImage(product)}
-              srcSet={images[imgIdx] ? srcSetFor(images[imgIdx].secure_url, [600, 1000, 1400]) : undefined}
-              sizes="(max-width: 768px) 100vw, 50vw"
-              alt={images[imgIdx]?.alt_text || product.name}
-              className="aspect-square w-full object-cover"
-            />
+          <div className="relative overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5">
+            <button
+              onClick={() => images.length > 0 && setLightbox(imgIdx)}
+              className="block w-full cursor-zoom-in"
+              aria-label="Enlarge product image"
+            >
+              <img
+                src={images[imgIdx] ? cloudinaryThumb(images[imgIdx].secure_url, 1000) : primaryImage(product)}
+                srcSet={images[imgIdx] ? srcSetFor(images[imgIdx].secure_url, [600, 1000, 1400]) : undefined}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                alt={images[imgIdx]?.alt_text || product.name}
+                className="aspect-square w-full object-cover"
+              />
+            </button>
+            {images.length > 0 && (
+              <span className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-ink/60 px-2.5 py-1 text-[11px] font-bold text-paper backdrop-blur">
+                <Expand size={12} /> Tap to zoom
+              </span>
+            )}
           </div>
           {images.length > 1 && (
             <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto" role="listbox" aria-label="Product images">
@@ -390,6 +413,54 @@ export default function ProductPage() {
           </Button>
         </div>
       </div>
+
+      {/* Fullscreen lightbox */}
+      {lightbox !== null && images[lightbox] && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Product image viewer"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            aria-label="Close viewer"
+            className="absolute right-4 top-4 rounded-full bg-paper p-2.5 text-ink transition hover:bg-white"
+          >
+            ✕
+          </button>
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((lightbox - 1 + images.length) % images.length); }}
+                aria-label="Previous image"
+                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-paper p-2.5 text-ink transition hover:bg-white sm:left-6"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((lightbox + 1) % images.length); }}
+                aria-label="Next image"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-paper p-2.5 text-ink transition hover:bg-white sm:right-6"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+          <img
+            src={cloudinaryThumb(images[lightbox].secure_url, 1400, 'good')}
+            alt={images[lightbox].alt_text || product.name}
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {images.length > 1 && (
+            <p className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-ink/60 px-3 py-1 text-xs font-bold text-paper">
+              {lightbox + 1} / {images.length}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

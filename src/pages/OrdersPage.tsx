@@ -6,11 +6,13 @@ import { useAuth } from '../store/AuthContext';
 import type { Order } from '../types';
 import { formatNPR } from '../lib/shop';
 import { Badge, EmptyState, Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const tone = (s: string) => (s === 'delivered' || s === 'paid' ? 'green' : s === 'cancelled' || s === 'failed' ? 'red' : s === 'pending' || s === 'unpaid' ? 'paper' : 'ember') as 'green' | 'red' | 'paper' | 'ember';
 
 export default function OrdersPage() {
   const { user } = useAuth();
+  usePageTitle('Order History');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 

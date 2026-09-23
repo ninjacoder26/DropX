@@ -9,11 +9,13 @@ import { districtOfArea, isGuidedComplete } from '../lib/address';
 import { isMissingColumnError, NEEDS_MIGRATION_MSG } from '../lib/checkoutProfile';
 import { AddressForm } from '../components/AddressForm';
 import { Button, Field, Input } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const EMPTY_DRAFT = { label: 'Home', full_name: '', phone: '', district: 'Kathmandu', area: '', street: '', postal_code: '' };
 
 export default function AccountPage() {
   const { user, profile, signOut, refreshProfile } = useAuth();
+  usePageTitle('My Account');
   const [name, setName] = useState(profile?.full_name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [addrs, setAddrs] = useState<Address[]>([]);

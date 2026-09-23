@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
 
 export function Button({
@@ -120,13 +121,23 @@ export function Modal({
   title: string;
   children: ReactNode;
 }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-4 sm:items-center" role="dialog" aria-modal="true">
       <div className="glass w-full max-w-md rounded-2xl border border-ink/10 p-6 shadow-pop">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-extrabold">{title}</h3>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-ink/5">
+          <button ref={closeRef} onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-ink/5">
             ✕
           </button>
         </div>

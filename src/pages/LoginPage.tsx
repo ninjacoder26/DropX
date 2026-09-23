@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { Button, Field, Input } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 function safeNext(raw: string | null): string {
   if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
@@ -10,6 +11,7 @@ function safeNext(raw: string | null): string {
 
 export default function LoginPage() {
   const { signIn, signInWithGoogle, user, loading } = useAuth();
+  usePageTitle('Log in');
   const nav = useNavigate();
   const [params] = useSearchParams();
   const next = safeNext(params.get('next'));

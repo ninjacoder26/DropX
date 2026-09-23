@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { ImagePlus, Loader2, X } from 'lucide-react';
 import { isCloudinaryConfigured, uploadToCloudinary } from '../lib/cloudinary';
+import { supabase } from '../lib/supabase';
 import { cloudinaryThumb } from '../lib/shop';
 
 /**
@@ -27,7 +28,8 @@ export function CloudinaryUpload({
     setError(null);
     setBusy(true);
     try {
-      const up = await uploadToCloudinary(file);
+      const { data: session } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+      const up = await uploadToCloudinary(file, session.session?.access_token ?? undefined);
       onChange(up.secure_url);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed.');

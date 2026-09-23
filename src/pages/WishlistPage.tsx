@@ -5,9 +5,11 @@ import type { Product } from '../types';
 import { useWishlist } from '../hooks/useShop';
 import { ProductGrid, GRID_COMPACT } from '../components/product';
 import { EmptyState, Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function WishlistPage() {
   const { ids } = useWishlist();
+  usePageTitle('Wishlist');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -98,7 +98,8 @@ The anon key is designed to be public; **Row Level Security** is what protects y
 1. Create account at <https://cloudinary.com> → note your **Cloud name**.
 2. **Settings → Upload → Upload presets → Add**: mode **Unsigned**, folder `dropx/products` → preset name goes in `src/config.ts`.
 3. Admin uploads then work directly from the dashboard (validated: JPG/PNG/WebP/AVIF ≤ 8 MB).
-4. For production hardening: verify the Supabase JWT + admin role inside `api/cloudinary-sign.ts` and switch to signed uploads; set `CLOUDINARY_API_KEY/SECRET/CLOUD_NAME` as **server-only** env vars (see §7). Deletions call `api/cloudinary-delete.ts` (server secret, never in the browser).
+4. Uploads prefer the **signed flow** (`/api/cloudinary-sign`, admin JWT verified server-side, folder-locked signatures) and fall back to the unsigned preset only when the endpoint is unreachable — lock the preset down in the dashboard (folder `dropx/products`, images only) to minimize abuse surface.
+5. Set `CLOUDINARY_API_KEY/SECRET/CLOUD_NAME` as **server-only** env vars (see §7) to enable signing + deletions. Deletions call `api/cloudinary-delete.ts` (server secret, never in the browser).
 
 **Bandwidth diet (already wired):** uploads are pre-compressed in-browser to ≤1600px WebP before leaving the device (`src/lib/image.ts`); delivery uses `f_auto` + sized widths everywhere, `q_auto:eco` for grids/tiles/thumbs and full quality only for hero/gallery views; admin tables and cart thumbs load 100–200px renditions, never full files. Belt-and-braces: in your upload preset, set an **Incoming transformation** of `w_1600,c_limit/f_auto,q_auto` so even non-dashboard uploads stay lean.
 
