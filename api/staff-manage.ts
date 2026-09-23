@@ -1,30 +1,29 @@
 /**
  * POST /api/staff-manage
- * Create / reset-password / remove staff (subadmin) accounts, plus one-time
- * login codes. The caller must be a SUPERADMIN for everything except redeem:
- * Supabase JWT verified server-side, then the profiles role is checked with
- * the service-role client. Plain admins cannot manage staff — only superadmins.
+ * Create / reset-password / remove staff (subadmin) accounts, plus the
+ * one-time account lookup. The caller must be a SUPERADMIN for everything
+ * except lookup: Supabase JWT verified server-side, then the profiles role
+ * is checked with the service-role client. Plain admins cannot manage
+ * staff — only superadmins.
  *
  * Staff auth uses synthetic unroutable emails (<username>@staff.dropx.internal)
  * so there is no email involved anywhere — staff sign in with username +
  * password at /staff/login. Only the 'subadmin' role can be created here,
  * and only existing subadmins can be reset or removed.
  *
- * One-time codes: create/reset mint an encoded login code (dx1_…) bound to
- * the AES-encrypted password. The code is safe to send over chat and dies on
- * first redeem (or after 7 days); minting a new one kills the old. Redeem is
- * PUBLIC — the 192-bit token itself is the secret.
+ * One-time reveal: create/reset store the AES-encrypted password in
+ * staff_password_vault. The public /get-acc-info page looks it up by the
+ * staff member's full name (lowercased, trimmed, inner spaces collapsed)
+ * and shows it ONCE — the reveal is marked server-side, so a refresh never
+ * shows it again. Resetting re-arms it.
  *
- * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
- *      STAFF_SHARE_KEY (64 hex chars; without it, accounts still work but no
- *      codes are minted — share passwords by hand instead)
+ * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (the vault encryption key is
+ *      derived from the service key — no extra env vars needed)
  */
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
 const STAFF_DOMAIN = 'staff.dropx.internal';
-const SHARE_PREFIX = 'dx1_';
-const SHARE_TTL_DAYS = 7;
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -60,83 +59,114 @@ function cleanUsername(raw: unknown): string | null {
   return u;
 }
 
-/* ── One-time login codes (server-side only; never leaves this file) ── */
+/* ── Password vault (server-side only; never leaves this file) ── */
 
-function shareKey(): Buffer | null {
-  const hex = (process.env.STAFF_SHARE_KEY ?? '').trim();
-  if (!/^[0-9a-fA-F]{64}$/.test(hex)) return null;
-  return Buffer.from(hex, 'hex');
+function vaultKey(): Buffer | null {
+  // Derived from the service-role key already on the server — no extra env
+  // var to configure. Rotating the service key retires stored passwords
+  // (reset them afterwards to re-arm the reveal).
+  const master = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  if (master.length < 16) return null;
+  return createHash('sha256').update(`dropx-staff-vault-v1:${master}`).digest();
 }
 
-function tokenHash(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
+function encryptPassword(password: string): string | null {
+  const key = vaultKey();
+  if (!key) return null;
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const ct = Buffer.concat([cipher.update(password, 'utf8'), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), ct]).toString('base64');
 }
 
-function validTokenFormat(token: unknown): token is string {
-  return typeof token === 'string' && new RegExp(`^${SHARE_PREFIX}[A-Za-z0-9_-]{32}$`).test(token);
+function decryptPassword(enc: string): string | null {
+  const key = vaultKey();
+  if (!key) return null;
+  try {
+    const raw = Buffer.from(enc, 'base64');
+    const decipher = createDecipheriv('aes-256-gcm', key, raw.subarray(0, 12));
+    decipher.setAuthTag(raw.subarray(12, 28));
+    return Buffer.concat([decipher.update(raw.subarray(28)), decipher.final()]).toString('utf8');
+  } catch {
+    return null;
+  }
 }
 
-/** Mint one active code: kills older unused ones, stores AES-GCM ciphertext. */
-async function mintShare(
+/** Same canonical form as normalizeFullName() in src/lib/staff.ts. */
+function canonicalName(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const n = raw.toLowerCase().trim().replace(/\s+/g, ' ');
+  if (!n) return null;
+  return n;
+}
+
+/** Store (or refresh) one staff member's retrievable password. Never throws. */
+async function saveVault(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   svc: any,
   staffUserId: string,
   username: string,
   password: string,
   createdBy: string | null
-): Promise<{ code: string; expiresAt: string } | null> {
-  const key = shareKey();
-  if (!key) return null;
-  const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', key, iv);
-  const ct = Buffer.concat([cipher.update(password, 'utf8'), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  const enc = Buffer.concat([iv, tag, ct]).toString('base64');
-  const code = SHARE_PREFIX + randomBytes(24).toString('base64url');
-  const expiresAt = new Date(Date.now() + SHARE_TTL_DAYS * 864e5).toISOString();
-  await svc.from('staff_login_shares').delete().eq('staff_user_id', staffUserId).is('used_at', null);
-  const { error } = await svc.from('staff_login_shares').insert({
-    token_hash: tokenHash(code),
-    staff_user_id: staffUserId,
-    username,
-    enc_password: enc,
-    expires_at: expiresAt,
-    created_by: createdBy,
-  });
-  if (error) return null;
-  return { code, expiresAt };
+): Promise<boolean> {
+  try {
+    const enc = encryptPassword(password);
+    if (!enc) return false;
+    const { error } = await svc.from('staff_password_vault').upsert(
+      {
+        staff_user_id: staffUserId,
+        username,
+        enc_password: enc,
+        revealed_at: null,
+        updated_at: new Date().toISOString(),
+        created_by: createdBy,
+      },
+      { onConflict: 'staff_user_id' }
+    );
+    return !error;
+  } catch {
+    return false;
+  }
 }
 
-async function redeemShare(
+/** Public one-time reveal by full name. Generic errors — never leaks why. */
+async function lookupVault(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   svc: any,
-  token: string
+  fullName: unknown
 ): Promise<{ status: number; body: unknown }> {
-  if (!validTokenFormat(token)) return { status: 400, body: { error: 'That code does not look right.' } };
-  const key = shareKey();
-  if (!key) return { status: 500, body: { error: 'Login codes are not configured.' } };
-  const { data } = await svc
-    .from('staff_login_shares')
-    .select('username,enc_password,used_at,expires_at')
-    .eq('token_hash', tokenHash(token))
+  const name = canonicalName(fullName);
+  if (!name) return { status: 400, body: { error: 'Type your full name as given to your superadmin.' } };
+  const { data: profiles } = await svc
+    .from('profiles')
+    .select('id,username,full_name')
+    .eq('role', 'subadmin');
+  const norm = (v: string | null) =>
+    (v ?? '').toLowerCase().trim().replace(/\s+/g, ' ');
+  const hits = ((profiles ?? []) as { id: string; username: string; full_name: string | null }[])
+    .filter((p) => norm(p.full_name) === name && (p.username ?? '') !== '');
+  if (hits.length !== 1) {
+    return { status: 404, body: { error: 'No account found for that name — check the spelling with your superadmin.' } };
+  }
+  const staff = hits[0];
+  const { data: vault } = await svc
+    .from('staff_password_vault')
+    .select('enc_password,revealed_at')
+    .eq('staff_user_id', staff.id)
     .single();
-  const row = data as { username: string; enc_password: string; used_at: string | null; expires_at: string } | null;
-  if (!row) return { status: 404, body: { error: 'Code not found — ask your superadmin for a fresh one.' } };
-  if (row.used_at) return { status: 410, body: { error: 'Code already used — ask your superadmin for a fresh one.' } };
-  if (new Date(row.expires_at).getTime() < Date.now()) {
-    return { status: 410, body: { error: 'Code expired — ask your superadmin for a fresh one.' } };
+  const row = vault as { enc_password: string; revealed_at: string | null } | null;
+  if (!row) {
+    return { status: 404, body: { error: 'No login saved for that name — ask your superadmin to reset it.' } };
   }
-  let password: string;
-  try {
-    const raw = Buffer.from(row.enc_password, 'base64');
-    const decipher = createDecipheriv('aes-256-gcm', key, raw.subarray(0, 12));
-    decipher.setAuthTag(raw.subarray(12, 28));
-    password = Buffer.concat([decipher.update(raw.subarray(28)), decipher.final()]).toString('utf8');
-  } catch {
-    return { status: 500, body: { error: 'Code could not be read — ask for a fresh one.' } };
+  if (row.revealed_at) {
+    return { status: 410, body: { error: 'Already shown once — ask your superadmin to reset it for a fresh reveal.' } };
   }
-  await svc.from('staff_login_shares').update({ used_at: new Date().toISOString() }).eq('token_hash', tokenHash(token));
-  return { status: 200, body: { ok: true, username: row.username, password } };
+  const password = decryptPassword(row.enc_password);
+  if (!password) {
+    return { status: 500, body: { error: 'Could not read the saved login — ask your superadmin.' } };
+  }
+  await svc.from('staff_password_vault').update({ revealed_at: new Date().toISOString() }).eq('staff_user_id', staff.id);
+  return { status: 200, body: { ok: true, username: staff.username, password } };
 }
 
 export async function POST(req: Request) {
@@ -147,16 +177,16 @@ export async function POST(req: Request) {
     } catch {
       return json(400, { error: 'Invalid JSON body.' });
     }
-    const b = body as { action?: unknown; username?: unknown; password?: unknown; user_id?: unknown; full_name?: unknown; token?: unknown };
+    const b = body as { action?: unknown; username?: unknown; password?: unknown; user_id?: unknown; full_name?: unknown };
     const url = process.env.SUPABASE_URL as string;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
     if (!url || !serviceKey) return json(500, { error: 'Server credentials missing.' });
     const svc = createClient(url, serviceKey);
 
-    // Redeem is public — the token itself is the secret (logged-out staff
-    // have no session yet). Everything else needs a superadmin.
-    if (b.action === 'redeem') {
-      const { status, body: out } = await redeemShare(svc, b.token as string);
+    // Lookup is public — fullname auth happens via the one-time reveal.
+    // (Logged-out staff have no session yet.) Everything else needs a superadmin.
+    if (b.action === 'lookup') {
+      const { status, body: out } = await lookupVault(svc, b.full_name);
       return json(status, out);
     }
     const callerId = await callerSuperadminId(req);
@@ -197,14 +227,13 @@ export async function POST(req: Request) {
         entity_id: data.user.id,
         meta: { username },
       });
-      const share = await mintShare(svc, data.user.id, username, b.password, callerId);
+      const share = await saveVault(svc, data.user.id, username, b.password, callerId);
       return json(200, {
         ok: true,
         user_id: data.user.id,
         username,
-        share_code: share?.code ?? null,
-        share_expires_at: share?.expiresAt ?? null,
-        share_unavailable: share ? undefined : 'Set STAFF_SHARE_KEY on the server to enable one-time login codes.',
+        vault_ready: share,
+        vault_unavailable: share ? undefined : 'One-time reveal unavailable (run migration 031). Share the password by hand instead.',
       });
     }
 
@@ -225,12 +254,11 @@ export async function POST(req: Request) {
           entity_id: b.user_id,
           meta: { username: t.username ?? null },
         });
-        const share = await mintShare(svc, b.user_id, t.username ?? 'staff', b.password, callerId);
+        const saved = await saveVault(svc, b.user_id, t.username ?? 'staff', b.password, callerId);
         return json(200, {
           ok: true,
-          share_code: share?.code ?? null,
-          share_expires_at: share?.expiresAt ?? null,
-          share_unavailable: share ? undefined : 'Set STAFF_SHARE_KEY on the server to enable one-time login codes.',
+          vault_ready: saved,
+          vault_unavailable: saved ? undefined : 'One-time reveal unavailable (run migration 031). Share the password by hand instead.',
         });
       }
       const { error } = await svc.auth.admin.deleteUser(b.user_id);
@@ -244,7 +272,7 @@ export async function POST(req: Request) {
       return json(200, { ok: true });
     }
 
-    return json(400, { error: 'Unknown action (create, reset, delete).' });
+    return json(400, { error: 'Unknown action (create, reset, delete, lookup).' });
   } catch (e) {
     return json(500, { error: e instanceof Error ? e.message : 'Staff request failed.' });
   }

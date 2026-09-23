@@ -51,7 +51,11 @@ export function isSubAdminRole(role: string | null | undefined): boolean {
   return role === 'subadmin';
 }
 
-/** Loose client-side shape check for one-time login codes (dx1_…). */
-export function isLikelyShareCode(raw: string): boolean {
-  return /^dx1_[A-Za-z0-9_-]{20,}$/.test(raw.trim());
+/**
+ * Canonical full-name form for the one-time account lookup: lowercase,
+ * trimmed on both ends, inner runs of whitespace collapsed to one space —
+ * so "  Rojina   Sharma " matches "rojina sharma".
+ */
+export function normalizeFullName(raw: string): string {
+  return raw.toLowerCase().trim().replace(/\s+/g, ' ');
 }

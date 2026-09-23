@@ -1260,8 +1260,6 @@ function Staff() {
   const [busy, setBusy] = useState(false);
   const [resetId, setResetId] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState('');
-  const [share, setShare] = useState<{ code: string; forUser: string } | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -1284,25 +1282,10 @@ function Staff() {
       body: JSON.stringify(body),
     });
     const out = (await res.json().catch(() => ({}))) as {
-      ok?: boolean; error?: string; share_code?: string | null; share_unavailable?: string;
+      ok?: boolean; error?: string; vault_ready?: boolean; vault_unavailable?: string;
     };
     if (!res.ok || !out.ok) throw new Error(out.error ?? 'Request failed.');
     return out;
-  };
-
-  const copyShare = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = code;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const say = (good: boolean, text: string) => {
@@ -1316,8 +1299,9 @@ function Staff() {
       <Card className="p-5">
         <h3 className="font-display text-base font-extrabold">New staff account</h3>
         <p className="mt-1 text-xs text-ink/60">
-          Username + password only — no email. Staff sign in at <span className="font-bold">/staff/login</span> and can
-          only add or remove product images. Nothing else.
+          Username + password only — no email. The <strong>full name must match</strong> what the staffer
+          will type at <span className="font-bold">/get-acc-info</span>, where they fetch their login once.
+          Staff can only add or remove product images. Nothing else.
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <Field label="Username">
@@ -1326,30 +1310,14 @@ function Staff() {
           <Field label="Password (min 8)">
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
           </Field>
-          <Field label="Display name (optional)">
-            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="e.g. Rojina" maxLength={120} />
+          <Field label="Full name (must match)">
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="e.g. Rojina Sharma" maxLength={120} />
           </Field>
         </div>
         {msg && (
           <p className={`mt-3 rounded-xl px-3 py-2 text-xs font-semibold ring-1 ${ok ? 'bg-green-50 text-green-800 ring-green-200' : 'bg-red-50 text-red-700 ring-red-200'}`} role={ok ? 'status' : 'alert'}>
             {msg}
           </p>
-        )}
-        {share && (
-          <div className="mt-3 rounded-2xl border border-ember/40 bg-ember/5 p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-ember">One-time login code for @{share.forUser}</p>
-            <p className="mt-2 break-all rounded-xl bg-ink px-3 py-2.5 font-mono text-sm text-paper">{share.code}</p>
-            <p className="mt-2 text-xs text-ink/60">
-              Safe to send over chat — it reveals the password <strong>once</strong>, then dies (7-day expiry).
-              Need another? Reset the password to mint a fresh code.
-            </p>
-            <div className="mt-2 flex gap-2">
-              <Button variant="dark" className="!px-4 !py-2 text-xs" onClick={() => void copyShare(share.code)}>
-                {copied ? 'Copied!' : 'Copy code'}
-              </Button>
-              <Button variant="ghost" className="!px-4 !py-2 text-xs" onClick={() => setShare(null)}>Dismiss</Button>
-            </div>
-          </div>
         )}
         <Button
           className="mt-3"
@@ -1365,18 +1333,18 @@ function Staff() {
               say(false, pErr);
               return;
             }
+            if (fullName.trim().length < 2) {
+              say(false, 'Full name is required — staff type it to fetch their login.');
+              return;
+            }
             setBusy(true);
             setMsg(null);
-            setShare(null);
             callApi({ action: 'create', username: username.trim(), password, full_name: fullName.trim() }).then(
               (out) => {
                 const uname = username.trim().toLowerCase();
-                if (out.share_code) {
-                  setShare({ code: out.share_code, forUser: uname });
-                  say(true, `Staff account “${uname}” created — send the one-time code below, not the password.`);
-                } else {
-                  say(true, `Staff account “${uname}” created — share the username + password with them directly.`);
-                }
+                say(true, out.vault_ready
+                  ? `Staff account “${uname}” created — they fetch their login once at /get-acc-info with their full name.`
+                  : `Staff account “${uname}” created. ${out.vault_unavailable ?? 'Share the password by hand.'}`);
                 setUsername('');
                 setPassword('');
                 setFullName('');
@@ -1434,12 +1402,9 @@ function Staff() {
                           }
                           callApi({ action: 'reset', user_id: p.id, password: resetPw }).then(
                             (out) => {
-                              if (out.share_code) {
-                                setShare({ code: out.share_code, forUser: p.username ?? 'staff' });
-                                say(true, `Password reset for @${p.username ?? 'staff'} — send the one-time code below.`);
-                              } else {
-                                say(true, `Password reset for @${p.username ?? 'staff'}.`);
-                              }
+                              say(true, out.vault_ready
+                                ? `Password reset for @${p.username ?? 'staff'} — they can fetch it once at /get-acc-info.`
+                                : `Password reset for @${p.username ?? 'staff'}. ${out.vault_unavailable ?? ''}`);
                               setResetId(null);
                               setResetPw('');
                             },

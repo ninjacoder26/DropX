@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
-import { isLikelyShareCode } from '../lib/staff';
 import { Button, Field, Input } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -15,9 +14,6 @@ export default function StaffLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [showCode, setShowCode] = useState(false);
-  const [code, setCode] = useState('');
-  const [codeBusy, setCodeBusy] = useState(false);
 
   useEffect(() => {
     if (loading || !ready || !user) return;
@@ -55,76 +51,10 @@ export default function StaffLoginPage() {
         </Field>
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
         <Button className="w-full" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</Button>
-        <div className="border-t border-ink/10 pt-4">
-          <button
-            type="button"
-            onClick={() => {
-              setShowCode(!showCode);
-              setError(null);
-            }}
-            className="w-full text-center text-xs font-bold text-ember hover:underline"
-          >
-            {showCode ? 'Hide one-time login code' : 'Have a one-time login code?'}
-          </button>
-          {showCode && (
-            <div className="mt-3 space-y-3 rounded-xl bg-paper p-4">
-              <p className="text-xs text-ink/60">
-                Paste the code your superadmin sent you — it signs you in once, then stops working.
-              </p>
-              <Input
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="dx1_…"
-                autoComplete="off"
-                aria-label="One-time login code"
-                className="font-mono"
-              />
-              <Button
-                variant="dark"
-                className="w-full"
-                disabled={codeBusy}
-                onClick={() => {
-                  const token = code.trim();
-                  if (!isLikelyShareCode(token)) {
-                    setError('That code does not look right — check for missing characters.');
-                    return;
-                  }
-                  setError(null);
-                  setCodeBusy(true);
-                  fetch('/api/staff-manage', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'redeem', token }),
-                  }).then(
-                    async (res) => {
-                      const out = (await res.json().catch(() => ({}))) as {
-                        ok?: boolean; username?: string; password?: string; error?: string;
-                      };
-                      if (!res.ok || !out.ok || !out.username || !out.password) {
-                        setCodeBusy(false);
-                        setError(out.error ?? 'Code did not work — ask for a fresh one.');
-                        return;
-                      }
-                      const { error: err } = await signInSubadmin(out.username, out.password);
-                      setCodeBusy(false);
-                      if (err) setError(`${err} The code is now spent — ask for a fresh one.`);
-                      else nav(next, { replace: true });
-                    },
-                    () => {
-                      setCodeBusy(false);
-                      setError('Could not reach the server. Try again.');
-                    }
-                  );
-                }}
-              >
-                {codeBusy ? 'Redeeming…' : 'Redeem & sign in'}
-              </Button>
-            </div>
-          )}
+        <div className="flex justify-between text-xs font-semibold">
+          <Link to="/get-acc-info" className="text-ember hover:underline">Forgot login details?</Link>
+          <Link to="/login" className="hover:underline">Customer login</Link>
         </div>
-        <p className="text-center text-xs text-ink/50">
-          Customer? <Link to="/login" className="font-bold text-ember">Go to customer login</Link>
-        </p>
       </form>
     </div>
   );

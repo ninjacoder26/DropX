@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  isLikelyShareCode,
   isStaffEmail,
   isSubAdminRole,
+  normalizeFullName,
   normalizeStaffUsername,
   staffEmailForUsername,
   usernameFromStaffEmail,
@@ -42,12 +42,10 @@ describe('staff accounts', () => {
     expect(isSubAdminRole(null)).toBe(false);
   });
 
-  it('recognizes one-time login code shapes', () => {
-    expect(isLikelyShareCode('dx1_abcdefghijklmnopqrstuvwx123456')).toBe(true);
-    expect(isLikelyShareCode('  dx1_abcdefghijklmnopqrstuvwx123456  ')).toBe(true);
-    expect(isLikelyShareCode('hunter2')).toBe(false);
-    expect(isLikelyShareCode('dx1_short')).toBe(false);
-    expect(isLikelyShareCode('')).toBe(false);
+  it('normalizes full names for the one-time lookup', () => {
+    expect(normalizeFullName('  Rojina   SHARMA ')).toBe('rojina sharma');
+    expect(normalizeFullName('Aashish\tSharma\n')).toBe('aashish sharma');
+    expect(normalizeFullName('   ')).toBe('');
   });
 });
 

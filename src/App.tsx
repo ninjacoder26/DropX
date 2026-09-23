@@ -30,6 +30,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const StaffPage = lazy(() => import('./pages/StaffPage'));
 const StaffLoginPage = lazy(() => import('./pages/StaffLoginPage'));
+const GetAccInfoPage = lazy(() => import('./pages/GetAccInfoPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -116,6 +117,7 @@ export default function App() {
             <Route path="/admin/*" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
             <Route path="/staff/login" element={<StaffLoginPage />} />
             <Route path="/staff" element={<RequireStaff><StaffPage /></RequireStaff>} />
+            <Route path="/get-acc-info" element={<GetAccInfoPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
