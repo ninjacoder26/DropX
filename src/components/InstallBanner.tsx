@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Download, Share, X } from 'lucide-react';
 import { safeGet, safeSet } from '../lib/storage';
 
@@ -17,6 +18,7 @@ interface BeforeInstallPromptEvent extends Event {
  * never modal, never re-shows once dismissed.
  */
 export function InstallBanner() {
+  const { pathname } = useLocation();
   const [seen] = useState(() => safeGet<string | null>(SEEN_KEY, null));
   const [signal, setSignal] = useState<'prompt' | 'ios' | null>(null);
   const [visible, setVisible] = useState(false);
@@ -76,6 +78,7 @@ export function InstallBanner() {
   }
 
   if (!visible) return null;
+  if (pathname.startsWith('/admin')) return null;
   const ios = signal === 'ios';
 
   return (

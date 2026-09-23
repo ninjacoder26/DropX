@@ -134,15 +134,20 @@ export default function CheckoutPage() {
     () => plans.filter((p) => p.is_active && planAppliesToCart(p, cartIds).ok),
     [plans, cartIds]
   );
-  const selected = plans.find((p) => p.key === method && p.is_active) ?? applicable[0] ?? null;
+  const selected = plans.find((p) => p.key === method && p.is_active) ?? null;
+  const selectedOk = selected != null && planAppliesToCart(selected, cartIds).ok;
 
-  // If the cart changes under a method that no longer covers it, move on.
+  // Keep the submitted method honest: if the cart changes under a method
+  // that no longer covers it, move to the first one that does.
   useEffect(() => {
-    if (selected == null && applicable.length > 0) setMethod(applicable[0].key);
+    if (!selectedOk && applicable.length > 0) setMethod(applicable[0].key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applicable.map((p) => p.key).join('|')]);
+  }, [applicable.map((p) => p.key).join('|'), method, plans]);
 
-  const quote = selected ? quoteWithPlan(selected, addr.area, subtotal, settings) : null;
+  // Display may preview the fallback for a single render before the
+  // effect above syncs state; submission always uses the synced method.
+  const displayed = selectedOk ? selected : (applicable[0] ?? null);
+  const quote = displayed ? quoteWithPlan(displayed, addr.area, subtotal, settings) : null;
   const shippingFee = quote?.fee ?? 0;
   const total = subtotal + shippingFee;
 
@@ -167,6 +172,10 @@ export default function CheckoutPage() {
     }
     if (!valid) {
       setError('Please complete name, phone, area and street address.');
+      return;
+    }
+    if (!selectedOk) {
+      setError('No delivery method covers everything in your bag right now. Try removing an item.');
       return;
     }
     if (!isSupabaseConfigured || !user) {
@@ -339,6 +348,11 @@ export default function CheckoutPage() {
               Measured from our hub in {HUB_NAME}
               {quote && quote.km !== null ? <> · <strong className="text-ink">{addr.area} is ~{quote.km} km away</strong></> : ' — pick your area above for an exact fee'}.
             </p>
+            {applicable.length === 0 && (
+              <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                No delivery method covers everything in your bag right now. Try removing an item or check back soon.
+              </p>
+            )}
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
               {plans
                 .filter((p) => p.is_active || p.key === 'instant')
@@ -347,7 +361,7 @@ export default function CheckoutPage() {
                   const covers = planAppliesToCart(p, cartIds);
                   const disabled = !live || !covers.ok;
                   const q = disabled ? null : quoteWithPlan(p, addr.area, subtotal, settings);
-                  const isSelected = selected?.key === p.key;
+                  const isSelected = displayed?.key === p.key;
                   return (
                     <button
                       key={p.key}
@@ -424,7 +438,7 @@ export default function CheckoutPage() {
           </ul>
           <dl className="mt-4 space-y-1.5 border-t border-paper/10 pt-4 text-sm">
             <div className="flex justify-between"><dt className="text-paper/60">Subtotal</dt><dd>{formatNPR(subtotal)}</dd></div>
-            <div className="flex justify-between"><dt className="text-paper/60">Shipping</dt><dd>{shippingFee === 0 ? 'FREE' : formatNPR(shippingFee)}</dd></div>
+            <div className="flex justify-between"><dt className="text-paper/60">Shipping</dt><dd>{!displayed ? '—' : shippingFee === 0 ? 'FREE' : formatNPR(shippingFee)}</dd></div>
             <div className="flex justify-between font-display text-lg font-black"><dt>Total</dt><dd>{formatNPR(total)}</dd></div>
           </dl>
           <Button onClick={placeOrder} disabled={placing} className="mt-5 w-full">
