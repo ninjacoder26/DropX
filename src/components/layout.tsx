@@ -195,7 +195,7 @@ export function Footer() {
       <div className="border-t border-paper/10">
         <div className="dx-full flex flex-wrap items-center gap-2 py-4 text-xs text-paper/50">
           <p>© 2026 DropX. All rights reserved.</p>
-          <p className="ml-auto">Prices in NPR, no hidden charges. <Link to="/maintenance" className="underline underline-offset-2 hover:text-paper">Status</Link></p>
+          <p className="ml-auto">Prices in NPR, no hidden charges. <Link to="/maintenance" className="underline underline-offset-2 hover:text-paper">Status</Link>{' · '}<Link to="/staff/login" className="underline underline-offset-2 hover:text-paper">Staff login</Link></p>
         </div>
         <p aria-hidden className="select-none overflow-hidden whitespace-nowrap text-center font-display text-6xl font-black leading-[0.85] text-paper/[0.05] md:text-7xl">
           DROPX

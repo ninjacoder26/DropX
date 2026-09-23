@@ -2,6 +2,22 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import type { Category, Drop, DropState, Product } from '../types';
 import { dropState } from '../types';
 import { TAG_VOCABULARY } from './tags';
+import { cachedFetch, createTTLCache, registerCache, type TTLCache } from './cache';
+
+// Short-TTL read cache: snappy repeat visits, max 60s stale displays.
+// Prices, stock and totals are always re-verified server-side at checkout,
+// so a briefly stale card can never oversell. Admin writes invalidate it.
+const catalogCache = createTTLCache<unknown>(60_000);
+registerCache(catalogCache);
+
+/** Call after any admin catalog write so the dashboard sees it instantly. */
+export function invalidateCatalogCache(): void {
+  catalogCache.clear();
+}
+
+function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
+  return cachedFetch(catalogCache as TTLCache<T>, key, loader);
+}
 
 /**
  * Allowlist-sanitize free text before it touches a query. The Supabase client
@@ -34,6 +50,8 @@ export async function fetchProducts(opts?: {
   limit?: number;
 }): Promise<Product[]> {
   if (!isSupabaseConfigured) return [];
+  const cacheKey = 'products:' + JSON.stringify(opts ?? null);
+  return cached<Product[]>(cacheKey, async () => {
   // A search term that exactly matches a tag (e.g. "audio") also matches
   // tagged products — PostgREST can't ilike inside arrays, so we fetch
   // broadly once and filter client-side in that case.
@@ -69,10 +87,12 @@ export async function fetchProducts(opts?: {
     );
   }
   return rows;
+  });
 }
 
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
   if (!isSupabaseConfigured) return null;
+  return cached<Product | null>(`slug:${slug}`, async () => {
   const { data, error } = await supabase
     .from('products')
     .select(PRODUCT_SELECT)
@@ -81,10 +101,12 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
     .single();
   if (error) return null;
   return data as unknown as Product;
+  });
 }
 
 export async function fetchCategories(): Promise<Category[]> {
   if (!isSupabaseConfigured) return [];
+  return cached<Category[]>('categories', async () => {
   const { data, error } = await supabase
     .from('categories')
     .select('*')
@@ -92,10 +114,12 @@ export async function fetchCategories(): Promise<Category[]> {
     .order('sort_order');
   if (error) throw new Error(error.message);
   return (data ?? []) as Category[];
+  });
 }
 
 export async function fetchDrops(kind?: 'monthly' | 'mega', status?: DropState | 'not-ended'): Promise<Drop[]> {
   if (!isSupabaseConfigured) return [];
+  return cached<Drop[]>(`drops:${kind ?? ''}:${status ?? ''}`, async () => {
   let q = supabase.from('drops').select('*').eq('is_published', true).order('starts_at', { ascending: false });
   if (kind) q = q.eq('kind', kind);
   const { data, error } = await q;
@@ -117,18 +141,22 @@ export async function fetchDrops(kind?: 'monthly' | 'mega', status?: DropState |
       .map((l) => ({ ...l.products, badge: l.badge }));
   }
   return drops;
+  });
 }
 
 /** Recently-viewed support: fetch specific products by id, newest-first. */
 export async function fetchProductsByIds(ids: string[]): Promise<Product[]> {
   if (!isSupabaseConfigured || ids.length === 0) return [];
+  const trimmed = ids.slice(0, 8);
+  return cached<Product[]>(`byids:${trimmed.join(',')}`, async () => {
   const { data, error } = await supabase
     .from('products')
     .select(PRODUCT_SELECT)
-    .in('id', ids.slice(0, 8))
+    .in('id', trimmed)
     .eq('is_active', true);
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as unknown as Product[];
-  const order = new Map(ids.map((id, i) => [id, i]));
+  const order = new Map(trimmed.map((id, i) => [id, i]));
   return rows.sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+  });
 }

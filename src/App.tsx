@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { Navbar, Footer, MobileNav } from './components/layout';
 import { InstallBanner } from './components/InstallBanner';
 import { ScrollToTop } from './components/ScrollToTop';
+import { Skeleton } from './components/ui';
 import { MaintenanceGate, MaintenancePage } from './components/MaintenancePage';
 import { isMaintenanceMode } from './lib/maintenance';
 import { useAuth } from './store/AuthContext';
@@ -27,12 +28,14 @@ const CollectionsPage = lazy(() => import('./pages/CollectionsPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const StaffPage = lazy(() => import('./pages/StaffPage'));
+const StaffLoginPage = lazy(() => import('./pages/StaffLoginPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading, configured } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="dx-full py-16 text-sm text-ink/60">Loading…</div>;
+  if (loading) return <div className="dx-full space-y-3 py-16"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-5" /></div>;
   if (!configured || !user) {
     // Preserve intent: after login the customer lands back here with their
     // guest bag intact (it merges into the server cart on sign-in).
@@ -43,11 +46,22 @@ function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 function RequireAdmin({ children }: { children: ReactNode }) {
-  const { isAdmin, loading, user } = useAuth();
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Checking permissions…</div>;
+  const { isAdmin, isSubadmin, loading, ready, user } = useAuth();
+  if (loading || !ready) return <div className="mx-auto max-w-7xl space-y-3 px-4 py-16"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-5" /></div>;
   if (!user) return <Navigate to="/login" replace />;
+  // Staff have their own portal — never the admin panel.
+  if (isSubadmin) return <Navigate to="/staff" replace />;
   // Frontend gate is UX only — Supabase RLS + SECURITY DEFINER functions enforce admin server-side.
   if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+function RequireStaff({ children }: { children: ReactNode }) {
+  const { user, isSubadmin, loading, ready, isAdmin } = useAuth();
+  if (loading || !ready) return <div className="mx-auto max-w-6xl space-y-3 px-4 py-16"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-5" /></div>;
+  if (!user) return <Navigate to="/staff/login" replace />;
+  if (isAdmin) return <Navigate to="/admin" replace />;
+  if (!isSubadmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -67,15 +81,17 @@ export default function App() {
   const { pathname } = useLocation();
   // The admin has its own shell (sidebar + topbar + drawer) — rendering the
   // storefront navbar/footer on top doubled every navigation control.
+  // The staff portal is separate the same way.
   const isAdminRoute = pathname.startsWith('/admin');
+  const isStaffRoute = pathname.startsWith('/staff');
   return (
     <div className="flex min-h-screen flex-col pb-16 lg:pb-0">
       <ScrollToTop />
       <InstallBanner />
       <MaintenanceGate>
-        {!isAdminRoute && <Navbar />}
+        {!isAdminRoute && !isStaffRoute && <Navbar />}
         <main className="flex-1">
-          <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-16 text-sm text-ink/60">Loading…</div>}>
+          <Suspense fallback={<div className="mx-auto max-w-7xl space-y-3 px-4 py-16"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-24" /></div>}>
             <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
@@ -98,12 +114,14 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/maintenance" element={<MaintenanceRoute />} />
             <Route path="/admin/*" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
+            <Route path="/staff/login" element={<StaffLoginPage />} />
+            <Route path="/staff" element={<RequireStaff><StaffPage /></RequireStaff>} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </main>
-      {!isAdminRoute && <Footer />}
-      <MobileNav />
+      {!isAdminRoute && !isStaffRoute && <Footer />}
+      {!isAdminRoute && !isStaffRoute && <MobileNav />}
       </MaintenanceGate>
     </div>
   );

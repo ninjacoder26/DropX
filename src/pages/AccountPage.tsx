@@ -8,7 +8,7 @@ import type { Address } from '../types';
 import { districtOfArea, isGuidedComplete } from '../lib/address';
 import { isMissingColumnError, NEEDS_MIGRATION_MSG } from '../lib/checkoutProfile';
 import { AddressForm } from '../components/AddressForm';
-import { Button, Field, Input } from '../components/ui';
+import { Button, EmptyState, Field, Input, Notice, Skeleton } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const EMPTY_DRAFT = { label: 'Home', full_name: '', phone: '', district: 'Kathmandu', area: '', street: '', postal_code: '' };
@@ -19,8 +19,12 @@ export default function AccountPage() {
   const [name, setName] = useState(profile?.full_name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [addrs, setAddrs] = useState<Address[]>([]);
+  const [addrLoading, setAddrLoading] = useState(true);
+  const [addrMsg, setAddrMsg] = useState<string | null>(null);
+  const [addrOk, setAddrOk] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [saveOk, setSaveOk] = useState(false);
   const [showAddr, setShowAddr] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
@@ -33,9 +37,15 @@ export default function AccountPage() {
   }, [profile]);
 
   useEffect(() => {
-    if (!user || !isSupabaseConfigured) return;
+    if (!user || !isSupabaseConfigured) {
+      setAddrLoading(false);
+      return;
+    }
     supabase.from('addresses').select('*').eq('user_id', user.id).order('created_at')
-      .then(({ data }) => setAddrs((data ?? []) as Address[]));
+      .then(({ data, error }) => {
+        if (!error) setAddrs((data ?? []) as Address[]);
+        setAddrLoading(false);
+      }, () => setAddrLoading(false));
   }, [user]);
 
   return (
@@ -99,16 +109,24 @@ export default function AccountPage() {
             <Field label="Phone">
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98XXXXXXXX" />
             </Field>
-            {msg && <p className="text-xs text-ink/70">{msg}</p>}
+            {msg && (
+              <Notice tone={saveOk ? 'success' : 'error'}>{msg}</Notice>
+            )}
             <Button
               disabled={saving}
               onClick={() => {
                 if (!user) return;
                 setSaving(true);
+                setMsg(null);
                 supabase.from('profiles').update({ full_name: name, phone }).eq('id', user.id)
                   .then(({ error }) => {
+                    setSaveOk(!error);
                     setMsg(error ? error.message : 'Profile saved.');
                     if (!error) void refreshProfile();
+                    setSaving(false);
+                  }, () => {
+                    setSaveOk(false);
+                    setMsg('Could not reach the server. Try again.');
                     setSaving(false);
                   });
               }}
@@ -129,6 +147,11 @@ export default function AccountPage() {
               {showAddr ? 'Cancel' : '+ Add address'}
             </button>
           </div>
+          {addrMsg && (
+            <div className="mt-3">
+              <Notice tone={addrOk ? 'success' : 'error'}>{addrMsg}</Notice>
+            </div>
+          )}
           {showAddr && (
             <form
               className="mt-3 space-y-3 rounded-xl bg-paper p-4"
@@ -152,7 +175,15 @@ export default function AccountPage() {
                       setAddrs([...addrs, data as Address]);
                       setDraft({ ...EMPTY_DRAFT, label: 'Home' });
                       setShowAddr(false);
+                      setAddrOk(true);
+                      setAddrMsg('Address saved.');
+                    } else if (error) {
+                      setAddrOk(false);
+                      setAddrMsg(error.message);
                     }
+                  }, () => {
+                    setAddrOk(false);
+                    setAddrMsg('Could not reach the server. Try again.');
                   });
               }}
             >
@@ -168,8 +199,14 @@ export default function AccountPage() {
               <Button className="w-full" variant="dark">Save address</Button>
             </form>
           )}
+          {addrLoading ? (
+            <div className="mt-3 space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
+          ) : addrs.length === 0 ? (
+            <div className="mt-3">
+              <EmptyState title="No addresses yet" body="Save one now and checkout prefills it every time." />
+            </div>
+          ) : (
           <ul className="mt-3 space-y-2">
-            {addrs.length === 0 && <li className="text-sm text-ink/50">No addresses yet.</li>}
             {addrs.map((a) => (
               <li key={a.id} className="rounded-xl border border-ink/10 p-3 text-sm">
                 <div className="flex items-start justify-between gap-2">
@@ -178,7 +215,17 @@ export default function AccountPage() {
                     onClick={() => {
                       if (!confirm(`Delete the “${a.label}” address?`)) return;
                       supabase.from('addresses').delete().eq('id', a.id).then(({ error }) => {
-                        if (!error) setAddrs(addrs.filter((x) => x.id !== a.id));
+                        if (!error) {
+                          setAddrs(addrs.filter((x) => x.id !== a.id));
+                          setAddrOk(true);
+                          setAddrMsg('Address deleted.');
+                        } else {
+                          setAddrOk(false);
+                          setAddrMsg(error.message);
+                        }
+                      }, () => {
+                        setAddrOk(false);
+                        setAddrMsg('Could not reach the server. Try again.');
                       });
                     }}
                     aria-label={`Delete ${a.label} address`}
@@ -192,6 +239,7 @@ export default function AccountPage() {
               </li>
             ))}
           </ul>
+          )}
         </section>
       </div>
 
@@ -219,6 +267,7 @@ function CheckoutDefaultsForm() {
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [defaultsOk, setDefaultsOk] = useState(false);
   // Fill once when the profile first arrives — never clobber typing afterwards.
   const syncedRef = useRef(false);
 
@@ -294,18 +343,28 @@ function CheckoutDefaultsForm() {
             }).eq('id', user.id).then(({ error }) => {
               setSaving(false);
               if (error) {
+                setDefaultsOk(false);
                 setMsg(isMissingColumnError(error) ? NEEDS_MIGRATION_MSG : error.message);
               } else {
+                setDefaultsOk(true);
                 setMsg('Saved — checkout will prefill these next time.');
                 void refreshProfile();
               }
+            }, () => {
+              setSaving(false);
+              setDefaultsOk(false);
+              setMsg('Could not reach the server. Try again.');
             });
           }}
         >
           {saving ? 'Saving…' : 'Save checkout defaults'}
         </Button>
       </div>
-      {msg && <p className="text-xs md:col-span-2">{msg}</p>}
+      {msg && (
+        <div className="md:col-span-2">
+          <Notice tone={defaultsOk ? 'success' : 'error'}>{msg}</Notice>
+        </div>
+      )}
     </div>
   );
 }

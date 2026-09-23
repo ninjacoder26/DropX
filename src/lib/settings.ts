@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEES } from './shop';
+import { createTTLCache, registerCache } from './cache';
 
 /** Store-wide customizable copy + commerce rules (Admin → Settings). */
 export interface StoreSettings {
@@ -88,16 +89,29 @@ export function mapSettings(rows: { key: string; value: string }[]): StoreSettin
   };
 }
 
-let cache: StoreSettings | null = null;
+const settingsCache = createTTLCache<StoreSettings>(60_000);
+registerCache(settingsCache);
+
+/** Peek at the cached settings without fetching (for instant first paint). */
+export function peekSettings(): StoreSettings | null {
+  return settingsCache.get('settings') ?? null;
+}
+
+/** Drop cached settings (called automatically after admin writes). */
+export function invalidateSettingsCache(): void {
+  settingsCache.clear();
+}
 
 export async function fetchSettings(): Promise<StoreSettings> {
-  if (cache) return cache;
+  const hit = settingsCache.get('settings');
+  if (hit) return hit;
   if (!isSupabaseConfigured) return DEFAULT_SETTINGS;
   try {
     const { data, error } = await supabase.from('store_settings').select('key,value');
     if (error) throw error;
-    cache = mapSettings((data ?? []) as { key: string; value: string }[]);
-    return cache;
+    const mapped = mapSettings((data ?? []) as { key: string; value: string }[]);
+    settingsCache.set('settings', mapped);
+    return mapped;
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -105,7 +119,7 @@ export async function fetchSettings(): Promise<StoreSettings> {
 
 /** Reactive hook — defaults first (fast paint), live values when they land. */
 export function useStoreSettings(): StoreSettings {
-  const [settings, setSettings] = useState<StoreSettings>(() => cache ?? DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<StoreSettings>(() => peekSettings() ?? DEFAULT_SETTINGS);
   useEffect(() => {
     let live = true;
     fetchSettings().then((s) => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { useStoreSettings, type StoreSettings } from './settings';
+import { createTTLCache, registerCache } from './cache';
 import type { DeliveryPlan } from '../types';
 
 /**
@@ -54,10 +55,22 @@ function legacyPlans(s: StoreSettings): DeliveryPlan[] {
   ];
 }
 
-let plansCache: DeliveryPlan[] | null = null;
+const plansCache = createTTLCache<DeliveryPlan[]>(60_000);
+registerCache(plansCache);
+
+/** Peek at cached plans without fetching (for instant first paint). */
+export function peekDeliveryPlans(): DeliveryPlan[] | null {
+  return plansCache.get('plans') ?? null;
+}
+
+/** Drop cached plans (called automatically after admin writes). */
+export function invalidateDeliveryCache(): void {
+  plansCache.clear();
+}
 
 export async function fetchDeliveryPlans(s: StoreSettings): Promise<DeliveryPlan[]> {
-  if (plansCache) return plansCache;
+  const hit = plansCache.get('plans');
+  if (hit) return hit;
   if (!isSupabaseConfigured) return legacyPlans(s);
   try {
     const [{ data: plans }, { data: links }] = await Promise.all([
@@ -71,13 +84,14 @@ export async function fetchDeliveryPlans(s: StoreSettings): Promise<DeliveryPlan
       arr.push(l.product_id);
       byPlan.set(l.plan_key, arr);
     }
-    plansCache = (plans as unknown as Omit<DeliveryPlan, 'products'>[]).map((p) => ({
+    const mapped = (plans as unknown as Omit<DeliveryPlan, 'products'>[]).map((p) => ({
       ...p,
       base_fee: Number(p.base_fee),
       rate_per_km: Number(p.rate_per_km),
       products: byPlan.get(p.key) ?? [],
     }));
-    return plansCache;
+    plansCache.set('plans', mapped);
+    return mapped;
   } catch {
     return legacyPlans(s);
   }
@@ -86,7 +100,7 @@ export async function fetchDeliveryPlans(s: StoreSettings): Promise<DeliveryPlan
 /** Reactive plans — live values when they land, legacy behavior meanwhile. */
 export function useDeliveryPlans(): DeliveryPlan[] {
   const settings = useStoreSettings();
-  const [plans, setPlans] = useState<DeliveryPlan[]>(() => plansCache ?? legacyPlans(settings));
+  const [plans, setPlans] = useState<DeliveryPlan[]>(() => peekDeliveryPlans() ?? legacyPlans(settings));
   useEffect(() => {
     let live = true;
     fetchDeliveryPlans(settings).then((p) => {
@@ -115,7 +129,7 @@ export function planAppliesToCart(
   return covered ? { ok: true, reason: null } : { ok: false, reason: 'not-covered' };
 }
 
-/** Client-side quote mirroring the server computation in 019. */
+/** Client-side quote mirroring delivery_fee + place_order (024 prices every method from its own plan row). */
 export function quoteWithPlan(
   plan: DeliveryPlan,
   area: string,

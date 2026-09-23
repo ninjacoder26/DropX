@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import {
-  BarChart3, Bell, ClipboardList, Flame, Images, LayoutDashboard, Menu, Moon, Package,
+  BarChart3, Bell, ClipboardList, Flame, Images, KeyRound, LayoutDashboard, Menu, Moon, Package,
   ScrollText, Settings as SettingsIcon, Star, Sun, Tags, Truck, Users, X, Zap,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAdminTheme } from '../lib/adminTheme';
+import { useAuth } from '../store/AuthContext';
 import { isRealtimeAvailable } from '../lib/realtime';
 import { logAdminAction as log } from '../lib/admin';
 import AdminDelivery from './AdminDelivery';
@@ -21,6 +22,9 @@ import { CloudinaryUpload } from '../components/CloudinaryUpload';
 import { PRODUCT_CSV_HEADERS, parseCSV, slugify, toCSV, validateProductRows } from '../lib/csv';
 import { MAX_TAGS_PER_PRODUCT, TAG_VOCABULARY } from '../lib/tags';
 import { fetchSettings, costFromSelling, sellingFromCost } from '../lib/settings';
+import { validateStaffPassword, validateStaffUsername } from '../lib/staff';
+import { ADMIN_CANCEL_REASONS, buildCancelReason } from '../lib/orderCancel';
+import { CancelOrderBox } from '../components/CancelOrderBox';
 import { primaryImage } from '../components/product';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -31,6 +35,7 @@ const TABS = [
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { to: '/admin/delivery', label: 'Delivery', icon: Truck },
   { to: '/admin/customers', label: 'Customers', icon: Users },
+  { to: '/admin/staff', label: 'Staff', icon: KeyRound },
   { to: '/admin/drops', label: 'Drops', icon: Zap },
   { to: '/admin/reviews', label: 'Reviews', icon: Star },
   { to: '/admin/image-requests', label: 'Images', icon: Images },
@@ -43,6 +48,11 @@ const TABS = [
 export default function AdminPage() {
   const [drawer, setDrawer] = useState(false);
   const { theme, toggle } = useAdminTheme();
+  const { profile } = useAuth();
+  // Staff accounts are a superadmin-only affair — plain admins neither see
+  // the tab nor the route (the API enforces the same rule server-side).
+  const isSuper = profile?.role === 'superadmin';
+  const tabs = TABS.filter((t) => t.to !== '/admin/staff' || isSuper);
   const [pendingReports, setPendingReports] = useState(0);
   const [reportToast, setReportToast] = useState(false);
   usePageTitle('Admin Dashboard');
@@ -108,7 +118,7 @@ export default function AdminPage() {
 
   const nav = (
     <nav className="space-y-1" aria-label="Admin sections">
-      {TABS.map((t) => (
+      {tabs.map((t) => (
         <NavLink
           key={t.to}
           to={t.to}
@@ -209,6 +219,7 @@ export default function AdminPage() {
             <Route path="orders" element={<Orders />} />
           <Route path="delivery" element={<AdminDelivery />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="staff" element={<StaffGate />} />
             <Route path="drops" element={<Drops />} />
           <Route path="reviews" element={<ReviewsMod />} />
           <Route path="image-requests" element={<AdminImageRequests />} />
@@ -359,7 +370,7 @@ function Overview() {
 }
 
 /* ─── Products ─── */
-const EMPTY_PRODUCT = { name: '', slug: '', brand: '', description: '', category_id: '', cost_price: '', base_override: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
+const EMPTY_PRODUCT = { name: '', slug: '', brand: '', brand_website: '', description: '', category_id: '', cost_price: '', base_override: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
 function Products() {
   const [items, setItems] = useState<Product[]>([]);
@@ -410,7 +421,7 @@ function Products() {
     }
     setEditing(p.id);
     setForm({
-      name: p.name, slug: p.slug, brand: p.brand ?? '', description: p.description,
+      name: p.name, slug: p.slug, brand: p.brand ?? '', brand_website: p.brand_website ?? '', description: p.description,
       category_id: p.category_id ?? '',
       cost_price: p.cost_price != null ? String(p.cost_price) : '',
       base_override: p.use_custom_price ? String(p.base_price) : '',
@@ -440,6 +451,7 @@ function Products() {
       name: form.name.trim(),
       slug: form.slug.trim().toLowerCase().replace(/\s+/g, '-'),
       brand: form.brand.trim().slice(0, 60),
+      brand_website: form.brand_website.trim().slice(0, 200) || null,
       description: form.description,
       category_id: form.category_id || null,
       cost_price: cost,
@@ -635,6 +647,9 @@ function Products() {
             <Field label="Slug"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
             <Field label="Brand (blank = no brand row)">
               <Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} maxLength={60} placeholder="e.g. Anker" />
+            </Field>
+            <Field label="Brand website (optional)">
+              <Input value={form.brand_website} onChange={(e) => setForm({ ...form, brand_website: e.target.value })} maxLength={200} placeholder="https://…" inputMode="url" />
             </Field>
             <div className="md:col-span-2">
               <Field label="Description">
@@ -954,14 +969,17 @@ function Orders() {
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [orderErr, setOrderErr] = useState<string | null>(null);
   const nav = useNavigate();
 
   const load = async () => {
     setLoading(true);
+    setOrderErr(null);
     let q = supabase.from('orders').select('*, items:order_items(*)').order('placed_at', { ascending: false }).limit(100);
     if (filter && filter !== 'unpaid') q = q.eq('status', filter);
     if (filter === 'unpaid') q = q.eq('payment_status', 'unpaid').neq('status', 'cancelled');
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) setOrderErr(error.message);
     setItems((data ?? []) as unknown as Order[]);
     setLoading(false);
   };
@@ -973,8 +991,11 @@ function Orders() {
   const setStatus = async (o: Order, status: Order['status']) => {
     const { error } = await supabase.rpc('admin_set_order_status', { p_order: o.id, p_status: status });
     if (!error) {
+      setOrderErr(null);
       setItems(items.map((x) => (x.id === o.id ? { ...x, status } : x)));
       log('order.status', 'orders', o.id, { status });
+    } else {
+      setOrderErr(`Could not move ${o.order_number} to ${status}: ${error.message}`);
     }
   };
 
@@ -989,6 +1010,42 @@ function Orders() {
     if (error) alert(error.message);
     else {
       log('order.paid', 'orders', o.id, { ref });
+      void load();
+    }
+  };
+
+  const [bulkReason, setBulkReason] = useState<string>(ADMIN_CANCEL_REASONS[0]);
+  const [bulkCustom, setBulkCustom] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
+
+  const cancelAllPending = async () => {
+    const reason = buildCancelReason(bulkReason, bulkCustom);
+    if (!reason) {
+      setBulkMsg('Pick a reason first — every cancelled customer sees it.');
+      return;
+    }
+    if (!confirm(`Cancel EVERY pending + confirmed order with reason:\n\n“${reason}”\n\nStock returns to shelves. This cannot be undone.`)) return;
+    setBulkBusy(true);
+    setBulkMsg(null);
+    const { data, error } = await supabase.rpc('admin_cancel_all', { p_reason: reason });
+    setBulkBusy(false);
+    if (error) setBulkMsg(error.message);
+    else {
+      setBulkMsg(`Cancelled ${Number(data ?? 0)} orders.`);
+      void load();
+    }
+  };
+
+  const purgeOld = async () => {
+    if (!confirm('Permanently delete cancelled + delivered orders older than 7 days?\n\nOrder items go with them; reviews stay. This cannot be undone.')) return;
+    setBulkBusy(true);
+    setBulkMsg(null);
+    const { data, error } = await supabase.rpc('purge_old_orders');
+    setBulkBusy(false);
+    if (error) setBulkMsg(error.message);
+    else {
+      setBulkMsg(`Deleted ${Number(data ?? 0)} orders older than 7 days.`);
       void load();
     }
   };
@@ -1008,6 +1065,46 @@ function Orders() {
       <div className="flex flex-wrap items-center gap-2">
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order №, name, phone…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search orders" />
       </div>
+      {orderErr && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 ring-1 ring-red-200" role="alert">{orderErr}</p>}
+      <details className="mt-3 rounded-2xl border border-ink/10 bg-white p-4">
+        <summary className="cursor-pointer text-sm font-bold">Bulk actions — cancel all pending, 7-day cleanup</summary>
+        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink/60" htmlFor="bulk-cancel-reason">
+              Reason shown to every cancelled customer
+            </label>
+            <select
+              id="bulk-cancel-reason"
+              value={bulkReason}
+              onChange={(e) => setBulkReason(e.target.value)}
+              className="w-full rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm"
+            >
+              {ADMIN_CANCEL_REASONS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+            {bulkReason === 'Other' && (
+              <input
+                value={bulkCustom}
+                onChange={(e) => setBulkCustom(e.target.value)}
+                placeholder="Write the reason…"
+                maxLength={500}
+                className="mt-2 w-full rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm"
+                aria-label="Custom bulk cancellation reason"
+              />
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => void cancelAllPending()} disabled={bulkBusy} className="rounded-full bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-50">
+              {bulkBusy ? 'Working…' : 'Cancel all pending'}
+            </button>
+            <button onClick={() => void purgeOld()} disabled={bulkBusy} className="rounded-full border border-ink/15 bg-white px-4 py-2.5 text-xs font-bold transition hover:border-ink/40 disabled:opacity-50">
+              {bulkBusy ? 'Working…' : 'Delete 7-day-old done orders'}
+            </button>
+          </div>
+        </div>
+        {bulkMsg && <p className="mt-2 text-xs font-semibold text-ink/70" role="status">{bulkMsg}</p>}
+      </details>
       <div className="mt-3 flex flex-wrap gap-2">
         {['', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'unpaid'].map((s) => (
           <button
@@ -1035,23 +1132,47 @@ function Orders() {
             <p className="mt-1 text-xs text-ink/60">
               {(o.items ?? []).map((i) => `${i.product_name} ×${i.quantity}`).join(' · ')}
             </p>
+            {o.status === 'cancelled' && o.cancel_reason && (
+              <p className="mt-1 rounded-lg bg-paper px-2.5 py-1.5 text-xs text-ink/60">
+                Cancelled{ o.cancelled_by === 'customer' ? ' by customer' : ' by store'} — “{o.cancel_reason}”.
+              </p>
+            )}
             <div className="mt-2 flex flex-wrap gap-1.5">
-              <select
-                value={o.status}
-                onChange={(e) => void setStatus(o, e.target.value as Order['status'])}
-                className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-xs font-bold"
-                aria-label="Order status"
-              >
-                {['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'].map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              {o.status === 'cancelled' ? (
+                <span className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">cancelled</span>
+              ) : (
+                <select
+                  value={o.status}
+                  onChange={(e) => void setStatus(o, e.target.value as Order['status'])}
+                  className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-xs font-bold"
+                  aria-label="Order status"
+                >
+                  {['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'refunded'].map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              )}
               {o.payment_status !== 'paid' && (
                 <button onClick={() => void markPaid(o)} className="rounded-full bg-ember px-3.5 py-1.5 text-xs font-bold text-white">
                   Mark paid (verified ref required)
                 </button>
               )}
             </div>
+            {!['delivered', 'cancelled', 'refunded'].includes(o.status) && (
+              <div className="mt-2">
+                <CancelOrderBox
+                  presets={ADMIN_CANCEL_REASONS}
+                  title="Cancel order"
+                  body="The customer sees the reason. Stock returns to shelves."
+                  onConfirm={async (reason) => {
+                    const { error } = await supabase.rpc('cancel_order', { p_order: o.id, p_reason: reason });
+                    if (error) throw new Error(error.message);
+                    setItems(items.map((x) => (x.id === o.id ? { ...x, status: 'cancelled', cancel_reason: reason, cancelled_by: 'admin' } as Order : x)));
+                    log('order.cancel', 'orders', o.id, { reason });
+                  }}
+                />
+              </div>
+            )}
           </Card>
         ))}
         {shown.length === 0 && <EmptyState title="No orders" body={search ? 'No orders match your search.' : 'Orders will appear here as customers check out.'} />}
@@ -1061,6 +1182,209 @@ function Orders() {
 }
 
 /* ─── Customers ─── */
+/* ─── Staff (subadmin accounts: username + password, images only) ─── */
+function StaffGate() {
+  const { profile } = useAuth();
+  if (profile?.role !== 'superadmin') {
+    return (
+      <EmptyState
+        title="Superadmins only"
+        body="Staff accounts can only be created and managed by a superadmin."
+      />
+    );
+  }
+  return <Staff />;
+}
+
+function Staff() {
+  const [items, setItems] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [resetId, setResetId] = useState<string | null>(null);
+  const [resetPw, setResetPw] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('profiles').select('*').eq('role', 'subadmin').order('created_at', { ascending: false });
+    setItems((data ?? []) as Profile[]);
+    setLoading(false);
+  };
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const callApi = async (body: object) => {
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch('/api/staff-manage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session.session ? { Authorization: `Bearer ${session.session.access_token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const out = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    if (!res.ok || !out.ok) throw new Error(out.error ?? 'Request failed.');
+  };
+
+  const say = (good: boolean, text: string) => {
+    setOk(good);
+    setMsg(text);
+  };
+
+  if (loading) return <Skeleton className="h-64" />;
+  return (
+    <div>
+      <Card className="p-5">
+        <h3 className="font-display text-base font-extrabold">New staff account</h3>
+        <p className="mt-1 text-xs text-ink/60">
+          Username + password only — no email. Staff sign in at <span className="font-bold">/staff/login</span> and can
+          only add or remove product images. Nothing else.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Field label="Username">
+            <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. photo-team" maxLength={24} autoComplete="off" />
+          </Field>
+          <Field label="Password (min 8)">
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+          </Field>
+          <Field label="Display name (optional)">
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="e.g. Rojina" maxLength={120} />
+          </Field>
+        </div>
+        {msg && (
+          <p className={`mt-3 rounded-xl px-3 py-2 text-xs font-semibold ring-1 ${ok ? 'bg-green-50 text-green-800 ring-green-200' : 'bg-red-50 text-red-700 ring-red-200'}`} role={ok ? 'status' : 'alert'}>
+            {msg}
+          </p>
+        )}
+        <Button
+          className="mt-3"
+          disabled={busy}
+          onClick={() => {
+            const uErr = validateStaffUsername(username);
+            if (uErr) {
+              say(false, uErr);
+              return;
+            }
+            const pErr = validateStaffPassword(password);
+            if (pErr) {
+              say(false, pErr);
+              return;
+            }
+            setBusy(true);
+            setMsg(null);
+            callApi({ action: 'create', username: username.trim(), password, full_name: fullName.trim() }).then(
+              () => {
+                say(true, `Staff account “${username.trim().toLowerCase()}” created — share the username + password with them.`);
+                setUsername('');
+                setPassword('');
+                setFullName('');
+                setBusy(false);
+                void load();
+              },
+              (e: unknown) => {
+                say(false, e instanceof Error ? e.message : 'Could not create staff account.');
+                setBusy(false);
+              }
+            );
+          }}
+        >
+          {busy ? 'Creating…' : 'Create staff account'}
+        </Button>
+      </Card>
+
+      <div className="mt-4 overflow-x-auto rounded-2xl bg-white shadow-card ring-1 ring-ink/5">
+        <table className="w-full min-w-[42rem] text-left text-sm">
+          <thead><tr className="border-b border-ink/10 text-xs uppercase tracking-wider text-ink/50">
+            <th className="px-4 py-3">Staff</th><th className="px-4 py-3">Since</th><th className="px-4 py-3 text-right">Action</th>
+          </tr></thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr><td colSpan={3} className="px-4 py-6 text-center text-sm text-ink/50">No staff accounts yet.</td></tr>
+            )}
+            {items.map((p) => (
+              <tr key={p.id} className="border-b border-ink/5 last:border-0">
+                <td className="px-4 py-3">
+                  <p className="font-bold">@{p.username ?? '—'}</p>
+                  <p className="text-xs text-ink/50">{p.full_name || 'No display name'}</p>
+                </td>
+                <td className="px-4 py-3 text-xs text-ink/50">
+                  {(p as { created_at?: string }).created_at
+                    ? new Date((p as { created_at?: string }).created_at as string).toLocaleDateString('en-NP')
+                    : '—'}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {resetId === p.id ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Input
+                        type="password"
+                        value={resetPw}
+                        onChange={(e) => setResetPw(e.target.value)}
+                        placeholder="New password"
+                        className="!w-40 !py-1.5 text-xs"
+                        aria-label="New password"
+                      />
+                      <button
+                        onClick={() => {
+                          const pErr = validateStaffPassword(resetPw);
+                          if (pErr) {
+                            say(false, pErr);
+                            return;
+                          }
+                          callApi({ action: 'reset', user_id: p.id, password: resetPw }).then(
+                            () => {
+                              say(true, `Password reset for @${p.username ?? 'staff'}.`);
+                              setResetId(null);
+                              setResetPw('');
+                            },
+                            (e: unknown) => say(false, e instanceof Error ? e.message : 'Reset failed.')
+                          );
+                        }}
+                        className="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-paper"
+                      >
+                        Save
+                      </button>
+                      <button onClick={() => { setResetId(null); setResetPw(''); }} className="rounded-full px-3 py-1.5 text-xs font-bold text-ink/60 hover:bg-ink/5">
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <button onClick={() => { setResetId(p.id); setResetPw(''); setMsg(null); }} className="rounded-full border border-ink/15 px-3 py-1.5 text-xs font-bold hover:border-ink/40">
+                        Reset password
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!confirm(`Remove staff account @${p.username ?? 'staff'}? They will be signed out everywhere and cannot sign back in.`)) return;
+                          callApi({ action: 'delete', user_id: p.id }).then(
+                            () => {
+                              say(true, 'Staff account removed.');
+                              void load();
+                            },
+                            (e: unknown) => say(false, e instanceof Error ? e.message : 'Remove failed.')
+                          );
+                        }}
+                        className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function Customers() {
   const [items, setItems] = useState<Profile[]>([]);
   const [q, setQ] = useState('');
@@ -1463,6 +1787,7 @@ function Settings() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [includeCustom, setIncludeCustom] = useState(false);
 
   useEffect(() => {
     supabase.from('store_settings').select('key,value').then(({ data }) => {
@@ -1551,42 +1876,67 @@ function Settings() {
 
   const applyMargin = async () => {
     const m = marginNum();
-    if (!confirm(`Reprice EVERY product to cost + ${m}%?\n\nSelling prices are rewritten from each product's real cost. This cannot be undone — but every change is logged.`)) return;
+    const scope = includeCustom
+      ? 'EVERY product (hand-priced items lose their custom flag)'
+      : 'every cost-priced product (hand-priced items are skipped)';
+    if (!confirm(`Reprice ${scope} to cost + ${m}%?\n\nThe margin is saved as the store default too. This cannot be undone — but every change is logged.`)) return;
     setApplying(true);
     setMsg(null);
+    // The margin only "works" as the saved default — product forms price
+    // automatically from it — so persist it before touching products.
+    const { error: marginErr } = await supabase
+      .from('store_settings')
+      .upsert({ key: 'profit_margin', value: String(m) }, { onConflict: 'key' });
+    if (marginErr) {
+      setMsg(marginErr.message);
+      setApplying(false);
+      return;
+    }
+    setForm((f) => ({ ...f, profit_margin: String(m) }));
     // supabase-js can't express computed updates, so this is two honest
     // steps: 1) read every cost, 2) write each computed selling price.
-    // Hand-priced products (use_custom_price) are never touched.
     const { data: rows, error: readErr } = await supabase
       .from('products')
-      .select('id,cost_price')
-      .eq('use_custom_price', false);
+      .select('id,cost_price,use_custom_price');
     if (readErr) {
       setMsg(readErr.message);
       setApplying(false);
       return;
     }
+    const list = (rows ?? []) as { id: string; cost_price: number | null; use_custom_price: boolean }[];
+    const priced = list.filter((r) => !r.use_custom_price);
+    const targets = (includeCustom ? list : priced).filter(
+      (r) => r.cost_price !== null && !Number.isNaN(Number(r.cost_price))
+    );
+    const skipped = list.length - targets.length;
     let updated = 0;
     const problems: string[] = [];
-    const list = (rows ?? []) as { id: string; cost_price: number }[];
-    for (let i = 0; i < list.length; i += 25) {
-      const chunk = list.slice(i, i + 25);
+    for (let i = 0; i < targets.length; i += 25) {
+      const chunk = targets.slice(i, i + 25);
       const results = await Promise.all(
-        chunk.map((r) => {
-          const selling = Math.round(Number(r.cost_price) * (1 + m / 100));
-          return supabase.from('products').update({ base_price: selling }).eq('id', r.id);
-        })
+        chunk.map((r) =>
+          supabase
+            .from('products')
+            .update({
+              base_price: sellingFromCost(Number(r.cost_price), m),
+              ...(includeCustom ? { use_custom_price: false } : {}),
+            })
+            .eq('id', r.id)
+        )
       );
       for (const res of results) {
         if (res.error) problems.push(res.error.message);
         else updated++;
       }
     }
-    log('products.reprice', 'products', undefined, { margin: m, updated });
+    log('products.reprice', 'products', undefined, { margin: m, updated, skipped, includeCustom });
     setMsg(
-      problems.length > 0
+      (problems.length > 0
         ? `Repriced ${updated} products at +${m}%. ${problems.length} failed: ${problems[0]}`
-        : `Repriced ${updated} products at +${m}% over real cost (hand-priced items skipped). Storefront prices update immediately.`
+        : `Repriced ${updated} products at +${m}% over real cost. Storefront prices update immediately.`) +
+        (skipped > 0
+          ? ` ${skipped} item${skipped === 1 ? '' : 's'} skipped (hand-priced or missing cost${includeCustom ? '' : ' — tick the box to include hand-priced ones'}).`
+          : '')
     );
     setApplying(false);
   };
@@ -1640,15 +1990,19 @@ function Settings() {
           <div className="rounded-2xl border border-ember/30 bg-ember/5 p-4">
             <h3 className="font-display font-extrabold">Profit margin — {marginNum()}% over real cost</h3>
             <p className="mt-1 text-xs text-ink/60">
-              Every product carries its real cost price. This margin is added on top to make the
-              storefront price — e.g. Rs 1,000 cost → Rs {sellingFromCost(1000, marginNum())} selling.
-              Changing the number only stages it; prices change when you apply.
+              Every product carries its real cost price. Applying saves this margin as the store
+              default and reprices from cost — e.g. Rs 1,000 cost → Rs {sellingFromCost(1000, marginNum())} selling.
+              Hand-priced items are skipped unless you tick the box.
             </p>
             <div className="mt-3 grid max-w-xs grid-cols-1 gap-2">
               <Field label="Margin % (0–100, default 20)">
                 <Input type="number" min={0} max={100} value={form.profit_margin} onChange={(e) => setForm({ ...form, profit_margin: e.target.value })} placeholder="20" />
               </Field>
             </div>
+            <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs text-ink/70">
+              <input type="checkbox" checked={includeCustom} onChange={(e) => setIncludeCustom(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#F06427]" />
+              <span>Also rewrite <strong className="text-ink">hand-priced</strong> items (they lose their custom flag).</span>
+            </label>
             <Button onClick={applyMargin} disabled={applying || saving} variant="dark" className="mt-3">
               {applying ? 'Repricing…' : `Apply +${marginNum()}% to all products`}
             </Button>

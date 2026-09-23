@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Construction, ShieldCheck } from 'lucide-react';
 import { useStoreSettings, type StoreSettings } from '../lib/settings';
 import { useAuth } from '../store/AuthContext';
+import { isStaffRole } from '../lib/permissions';
 import {
   hasMaintenanceBypass,
   isMaintenanceMode,
@@ -250,6 +251,8 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
 /**
  * Blocks customer routes while maintenance is on. Admin routes and
  * opted-in sessions pass straight through — nothing else changes.
+ * Team members (admins AND subadmins) bypass automatically once their
+ * session + role are known; visitors and customers see the page.
  *
  * Source of truth: the code flag (emergency) OR Admin → Settings.
  * Frequency 'once' remembers Continue for the browser session;
@@ -258,10 +261,25 @@ export function MaintenancePage({ onContinue, overrides }: { onContinue?: () => 
 export function MaintenanceGate({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const settings = useStoreSettings();
+  const { profile, loading, ready } = useAuth();
   const [passed, setPassed] = useState(false);
 
   const on = isMaintenanceMode() || settings.maintenanceEnabled;
-  if (!on || pathname.startsWith('/admin')) {
+  if (!on || pathname.startsWith('/admin') || pathname.startsWith('/staff')) {
+    return <>{children}</>;
+  }
+  // Signed-in team never waits on the maintenance page. While auth is still
+  // resolving we hold a neutral loader — never the storefront (customers
+  // must not flash through) and never the maintenance page for staff.
+  if (loading || !ready) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-3 px-4 py-16" aria-label="Loading">
+        <div className="h-10 w-2/3 animate-pulse rounded-xl bg-ink/10" />
+        <div className="h-5 animate-pulse rounded-xl bg-ink/10" />
+      </div>
+    );
+  }
+  if (isStaffRole(profile?.role)) {
     return <>{children}</>;
   }
   const bypassed =

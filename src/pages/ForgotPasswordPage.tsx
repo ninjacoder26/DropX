@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { Button, Field, Input } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function ForgotPasswordPage() {
   const { resetPassword } = useAuth();
+  usePageTitle('Reset password');
   const [email, setEmail] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

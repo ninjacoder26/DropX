@@ -48,8 +48,8 @@ describe('layout invariants', () => {
 
   it('admin shell never renders storefront chrome (single navigation)', () => {
     const app = readFileSync(join(root, 'src/App.tsx'), 'utf8');
-    expect(app).toMatch(/!isAdminRoute && <Navbar \/>/);
-    expect(app).toMatch(/!isAdminRoute && <Footer \/>/);
+    expect(app).toMatch(/!isAdminRoute && !isStaffRoute && <Navbar \/>/);
+    expect(app).toMatch(/!isAdminRoute && !isStaffRoute && <Footer \/>/);
     expect(app.match(/<Navbar \/>/g)?.length).toBe(1);
   });
 });

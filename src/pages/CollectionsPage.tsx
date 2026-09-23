@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchCategories, fetchProducts } from '../lib/catalog';
 import type { Category, Product } from '../types';
 import { ProductGrid } from '../components/product';
-import { Skeleton } from '../components/ui';
+import { Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function CollectionsPage() {
@@ -11,10 +11,15 @@ export default function CollectionsPage() {
   const [cats, setCats] = useState<Category[]>([]);
   const [byCat, setByCat] = useState<Record<string, Product[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setLoadError(null);
     (async () => {
-      const c = await fetchCategories().catch(() => [] as Category[]);
+      const c = await fetchCategories().catch((e: unknown) => {
+        throw e instanceof Error ? e : new Error('Could not load collections.');
+      });
       setCats(c);
       const entries = await Promise.all(
         c.map(async (cat) => {
@@ -24,7 +29,15 @@ export default function CollectionsPage() {
       );
       setByCat(Object.fromEntries(entries));
       setLoading(false);
-    })();
+    })().catch((e: unknown) => {
+      setLoadError(e instanceof Error ? e.message : 'Could not load collections.');
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -34,8 +47,16 @@ export default function CollectionsPage() {
       <p className="mt-1 text-sm text-ink/60">Curated edits across every category.</p>
       {loading ? (
         <div className="mt-6 space-y-4"><Skeleton className="h-40" /><Skeleton className="h-40" /></div>
+      ) : loadError ? (
+        <div className="mt-6"><ErrorState message={loadError} onRetry={load} /></div>
       ) : cats.length === 0 ? (
-        <p className="mt-6 text-sm text-ink/60">No collections yet.</p>
+        <div className="mt-6">
+          <EmptyState
+            title="No collections yet"
+            body="Curated edits are on the way — browse the full shop meanwhile."
+            action={<Link to="/shop"><Button>Browse the shop</Button></Link>}
+          />
+        </div>
       ) : (
         <div className="mt-8 space-y-12">
           {cats.map((c) => (

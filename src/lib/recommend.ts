@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { fetchDrops, fetchProducts, fetchProductsByIds } from './catalog';
+import { createTTLCache, registerCache } from './cache';
 import { useRecentlyViewed } from '../hooks/useShop';
 import type { CartLine, Product } from '../types';
 
@@ -82,17 +83,30 @@ export type RecContext =
   | { kind: 'category'; categorySlug: string; categoryName: string }
   | { kind: 'browse' };
 
-/** Aggregate popularity (counts only, no customer data). Cached per session. */
-let popularityCache: Map<string, PopularityRow> | null = null;
+/** Aggregate popularity (counts only, no customer data). 60s TTL — views and
+ * carts land constantly, so a minute-stale score is the honest trade for
+ * not re-running the aggregate on every shelf render. */
+const popularityCache = createTTLCache<Map<string, PopularityRow>>(60_000);
+const alsoViewedCache = createTTLCache<string[]>(60_000);
+registerCache(popularityCache);
+registerCache(alsoViewedCache);
+
+/** Drop cached popularity/co-view reads (called automatically after admin writes). */
+export function invalidateRecommendCache(): void {
+  popularityCache.clear();
+  alsoViewedCache.clear();
+}
 
 export async function fetchPopularity(): Promise<Map<string, PopularityRow>> {
-  if (popularityCache) return popularityCache;
+  const hit = popularityCache.get('popularity');
+  if (hit) return hit;
   if (!isSupabaseConfigured) return new Map();
   try {
     const { data, error } = await supabase.rpc('product_popularity');
     if (error) throw error;
-    popularityCache = new Map(((data ?? []) as PopularityRow[]).map((r) => [r.product_id, r]));
-    return popularityCache;
+    const mapped = new Map(((data ?? []) as PopularityRow[]).map((r) => [r.product_id, r]));
+    popularityCache.set('popularity', mapped);
+    return mapped;
   } catch {
     return new Map();
   }
@@ -100,6 +114,9 @@ export async function fetchPopularity(): Promise<Map<string, PopularityRow>> {
 
 /** Products viewed in the same sessions as this one (aggregate, anonymous). */
 export async function fetchAlsoViewed(productId: string): Promise<string[]> {
+  const key = `alsoviewed:${productId}`;
+  const hit = alsoViewedCache.get(key);
+  if (hit) return hit;
   if (!isSupabaseConfigured) return [];
   try {
     const { data, error } = await supabase.rpc('related_by_session', {
@@ -107,7 +124,9 @@ export async function fetchAlsoViewed(productId: string): Promise<string[]> {
       p_limit: 6,
     });
     if (error) throw error;
-    return ((data ?? []) as { product_id: string }[]).map((r) => r.product_id);
+    const mapped = ((data ?? []) as { product_id: string }[]).map((r) => r.product_id);
+    alsoViewedCache.set(key, mapped);
+    return mapped;
   } catch {
     return [];
   }

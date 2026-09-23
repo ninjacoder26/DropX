@@ -6,7 +6,10 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 import type { Order } from '../types';
 import { cloudinaryThumb, formatNPR } from '../lib/shop';
-import { Badge, Button, EmptyState, Skeleton } from '../components/ui';
+import { CUSTOMER_CANCEL_REASONS } from '../lib/orderCancel';
+import { CancelOrderBox } from '../components/CancelOrderBox';
+import { Badge, Button, EmptyState, ErrorState, Notice, Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const STAGES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'] as const;
 
@@ -15,26 +18,47 @@ export default function OrderDetailPage() {
   const { user } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [review, setReview] = useState({ productId: '', rating: 5, title: '', body: '' });
   const [reviewMsg, setReviewMsg] = useState<string | null>(null);
+  const [reviewOk, setReviewOk] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  usePageTitle(order?.order_number ?? 'Order details');
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
     }
-    supabase.from('orders').select('*, items:order_items(*)').eq('id', id).single()
-      .then(({ data }) => {
-        setOrder((data ?? null) as Order | null);
+    setLoading(true);
+    setLoadError(null);
+    let q = supabase.from('orders').select('*, items:order_items(*)').eq('id', id);
+    // customers only ever see their own orders (admins use the dashboard)
+    if (user) q = q.eq('user_id', user.id);
+    q.single()
+      .then(({ data, error: err }) => {
+        if (err) setLoadError(err.message);
+        else setOrder((data ?? null) as Order | null);
+        setLoading(false);
+      }, () => {
+        setLoadError('Could not reach the server. Check your connection.');
         setLoading(false);
       });
-  }, [id]);
+  }, [id, user]);
 
   if (loading) return <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8"><Skeleton className="h-64" /></div>;
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+        <Link to="/orders" className="text-xs font-bold text-ember hover:underline">← All orders</Link>
+        <div className="mt-4"><ErrorState message={loadError} onRetry={() => window.location.reload()} /></div>
+      </div>
+    );
+  }
   if (!order) {
     return (
       <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16">
-        <EmptyState title="Order not found" body="Check the link or your order history." action={<Link to="/orders" className="rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-paper">Back to orders</Link>} />
+        <EmptyState title="Order not found" body="Check the link or your order history." action={<Link to="/orders"><Button variant="dark">Back to orders</Button></Link>} />
       </div>
     );
   }
@@ -116,6 +140,27 @@ export default function OrderDetailPage() {
         </dl>
       </div>
 
+      {/* Cancellation — pending orders only; reason required, stock returns */}
+      {order.status === 'pending' && (
+        <div className="mt-5">
+          <CancelOrderBox
+            presets={CUSTOMER_CANCEL_REASONS}
+            title="Cancel this order"
+            body="Your items go back on sale immediately. This cannot be undone."
+            onConfirm={async (reason) => {
+              const { error } = await supabase.rpc('cancel_order', { p_order: order.id, p_reason: reason });
+              if (error) throw new Error(error.message);
+              setOrder({ ...order, status: 'cancelled', cancel_reason: reason, cancelled_by: 'customer' });
+            }}
+          />
+        </div>
+      )}
+      {order.status === 'cancelled' && order.cancel_reason && (
+        <div className="mt-5">
+          <Notice tone="info">Cancelled{order.cancelled_by === 'admin' ? ' by the store' : ''} — reason: “{order.cancel_reason}”.</Notice>
+        </div>
+      )}
+
       {/* Review form (verified buyers on delivered orders) */}
       {order.status === 'delivered' && user && (order.items ?? []).length > 0 && (
         <section className="mt-5 rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
@@ -138,28 +183,62 @@ export default function OrderDetailPage() {
             <input value={review.title} onChange={(e) => setReview({ ...review, title: e.target.value })} placeholder="Title" maxLength={120} className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm" />
             <textarea value={review.body} onChange={(e) => setReview({ ...review, body: e.target.value })} placeholder="How was the fit, fabric, delivery?" rows={3} maxLength={2000} className="rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm sm:col-span-2" />
           </div>
-          {reviewMsg && <p className="mt-2 text-xs">{reviewMsg}</p>}
+          {reviewMsg && (
+            <div className="mt-2">
+              <Notice tone={reviewOk ? 'success' : 'error'}>{reviewMsg}</Notice>
+            </div>
+          )}
           <Button
             variant="dark"
             className="mt-3"
+            disabled={reviewBusy}
             onClick={() => {
               if (!review.productId) {
-                setReviewMsg('Select a product first.');
+                setReviewOk(false);
+                setReviewMsg('Pick which product you are reviewing first.');
                 return;
               }
+              if (review.title.trim().length > 120) {
+                setReviewOk(false);
+                setReviewMsg('Keep the title under 120 characters.');
+                return;
+              }
+              if (review.body.trim().length > 2000) {
+                setReviewOk(false);
+                setReviewMsg('Keep the review under 2000 characters.');
+                return;
+              }
+              setReviewBusy(true);
+              setReviewMsg(null);
               supabase.from('reviews').insert({
                 product_id: review.productId,
                 user_id: user.id,
                 order_id: order.id,
                 rating: review.rating,
-                title: review.title,
-                body: review.body,
+                title: review.title.trim(),
+                body: review.body.trim(),
               }).then(({ error }) => {
-                setReviewMsg(error ? error.message : 'Thanks! Your review is pending moderation.');
+                setReviewBusy(false);
+                if (error) {
+                  setReviewOk(false);
+                  setReviewMsg(
+                    error.message.includes('duplicate') || error.code === '23505'
+                      ? 'You already reviewed this product for this order — thanks!'
+                      : error.message
+                  );
+                } else {
+                  setReviewOk(true);
+                  setReviewMsg('Thanks! Your review is in and waiting for moderation.');
+                  setReview({ productId: '', rating: 5, title: '', body: '' });
+                }
+              }, () => {
+                setReviewBusy(false);
+                setReviewOk(false);
+                setReviewMsg('Could not reach the server. Try again in a bit.');
               });
             }}
           >
-            Submit review
+            {reviewBusy ? 'Sending…' : 'Submit review'}
           </Button>
         </section>
       )}

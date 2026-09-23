@@ -10,7 +10,7 @@ import { HUB_NAME, planAppliesToCart, quoteWithPlan, useDeliveryPlans } from '..
 import { AddressForm } from '../components/AddressForm';
 import type { Address } from '../types';
 import { useStoreSettings } from '../lib/settings';
-import { Button, Field, Input } from '../components/ui';
+import { Button, Field, Input, Skeleton } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { primaryImage } from '../components/product';
 
@@ -38,6 +38,7 @@ export default function CheckoutPage() {
   const [agreed, setAgreed] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prefillLoading, setPrefillLoading] = useState(true);
   usePageTitle('Checkout');
   // Set when the order succeeds so the empty-cart redirect below doesn't
   // fire after we clear the cart on the way to the success page.
@@ -57,7 +58,10 @@ export default function CheckoutPage() {
   }, [lines, nav]);
 
   useEffect(() => {
-    if (!user || !isSupabaseConfigured) return;
+    if (!user || !isSupabaseConfigured) {
+      setPrefillLoading(false);
+      return;
+    }
     (async () => {
       const [{ data: addrRows }, { data: prof }] = await Promise.all([
         supabase
@@ -103,7 +107,7 @@ export default function CheckoutPage() {
         postal_code: pre.postal_code,
       });
       setMethod(pre.method);
-    })();
+    })().finally(() => setPrefillLoading(false));
   }, [user]);
 
   const pickSaved = (id: string) => {
@@ -148,6 +152,9 @@ export default function CheckoutPage() {
   // effect above syncs state; submission always uses the synced method.
   const displayed = selectedOk ? selected : (applicable[0] ?? null);
   const quote = displayed ? quoteWithPlan(displayed, addr.area, subtotal, settings) : null;
+  // unknown area = no honest preview (the server would guess 10 km).
+  // show a dash and ask for the area instead of flashing Rs 0.
+  const feeUnknown = displayed != null && quote?.fee == null;
   const shippingFee = quote?.fee ?? 0;
   const total = subtotal + shippingFee;
 
@@ -176,6 +183,10 @@ export default function CheckoutPage() {
     }
     if (!selectedOk) {
       setError('No delivery method covers everything in your bag right now. Try removing an item.');
+      return;
+    }
+    if (!quote || quote.fee === null) {
+      setError('Pick your delivery area above and we will show the exact fee before you order.');
       return;
     }
     if (!isSupabaseConfigured || !user) {
@@ -266,6 +277,13 @@ export default function CheckoutPage() {
           });
       }
       await clear();
+      // Admin email alert. Fire-and-forget on purpose: the order already
+      // exists via the idempotent place_order above, so this can never
+      // duplicate it — a failed email just shows up in function logs.
+      supabase.functions.invoke('notify-order', { body: { order_id: orderId } }).then(
+        () => undefined,
+        () => undefined
+      );
       nav(`/order-success/${orderId}`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Order failed. Please try again.';
@@ -282,6 +300,12 @@ export default function CheckoutPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="font-display text-3xl font-black">Checkout</h1>
+      {prefillLoading ? (
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
+          <div className="space-y-5"><Skeleton className="h-64" /><Skeleton className="h-48" /></div>
+          <Skeleton className="h-80" />
+        </div>
+      ) : (
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="space-y-5">
           <section className="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5">
@@ -438,11 +462,11 @@ export default function CheckoutPage() {
           </ul>
           <dl className="mt-4 space-y-1.5 border-t border-paper/10 pt-4 text-sm">
             <div className="flex justify-between"><dt className="text-paper/60">Subtotal</dt><dd>{formatNPR(subtotal)}</dd></div>
-            <div className="flex justify-between"><dt className="text-paper/60">Shipping</dt><dd>{!displayed ? '—' : shippingFee === 0 ? 'FREE' : formatNPR(shippingFee)}</dd></div>
-            <div className="flex justify-between font-display text-lg font-black"><dt>Total</dt><dd>{formatNPR(total)}</dd></div>
+            <div className="flex justify-between"><dt className="text-paper/60">Shipping</dt><dd>{!displayed || feeUnknown ? '—' : shippingFee === 0 ? 'FREE' : formatNPR(shippingFee)}</dd></div>
+            <div className="flex justify-between font-display text-lg font-black"><dt>Total</dt><dd>{feeUnknown ? `${formatNPR(subtotal)} + delivery` : formatNPR(total)}</dd></div>
           </dl>
           <Button onClick={placeOrder} disabled={placing} className="mt-5 w-full">
-            {placing ? 'Placing order…' : `Place order · ${formatNPR(total)}`}
+            {placing ? 'Placing order…' : feeUnknown ? 'Pick an area to see total' : `Place order · ${formatNPR(total)}`}
           </Button>
           {!valid && !placing && missing.length > 0 && (
             <p className="mt-2 text-center text-[11px] font-semibold text-ember">
@@ -465,6 +489,7 @@ export default function CheckoutPage() {
           <p className="mt-2 text-center text-[11px] text-paper/50">Prices & stock re-verified server-side at order time.</p>
         </aside>
       </div>
+      )}
     </div>
   );
 }

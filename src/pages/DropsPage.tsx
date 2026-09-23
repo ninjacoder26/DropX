@@ -7,7 +7,7 @@ import type { Drop } from '../types';
 import { dropState } from '../types';
 import { ProductGrid } from '../components/product';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { Badge, Skeleton } from '../components/ui';
+import { Badge, Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
 
 function DropHero({ drop, mega }: { drop: Drop; mega?: boolean }) {
   const state = dropState(drop);
@@ -53,14 +53,25 @@ export default function DropsPage() {
   const { slug } = useParams();
   const [drops, setDrops] = useState<Drop[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showPast, setShowPast] = useState(false);
   usePageTitle(slug ? 'Drop details' : 'Drops');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setLoadError(null);
     fetchDrops().then((d) => {
       setDrops(d);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((e: unknown) => {
+      setLoadError(e instanceof Error ? e.message : 'Could not load drops.');
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const live = drops.filter((d) => dropState(d) === 'active');
@@ -72,14 +83,37 @@ export default function DropsPage() {
     return <div className="dx-full space-y-4 py-8"><Skeleton className="h-64" /><Skeleton className="h-40" /></div>;
   }
 
+  if (loadError && !slug) {
+    return (
+      <div className="dx-full space-y-6 py-8">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Limited collections</p>
+          <h1 className="mt-1 font-display text-3xl font-black tracking-tight sm:text-4xl">Drops</h1>
+        </div>
+        <ErrorState message={loadError} onRetry={load} />
+      </div>
+    );
+  }
+
   // Single-drop view — ended drops keep their page (shared links don't rot),
   // but their products are only purchasable while the drop is live.
   if (slug) {
+    if (loadError) {
+      return (
+        <div className="dx-full space-y-6 py-8">
+          <Link to="/drops" className="text-xs font-bold text-ember hover:underline">← All drops</Link>
+          <ErrorState message={loadError} onRetry={load} />
+        </div>
+      );
+    }
     if (!focused) {
       return (
-        <div className="dx-full py-16 text-center">
-          <h1 className="font-display text-3xl font-black">Drop not found</h1>
-          <Link to="/drops" className="mt-4 inline-block rounded-full bg-ink px-6 py-2.5 text-sm font-bold text-paper">All drops</Link>
+        <div className="dx-full py-16">
+          <EmptyState
+            title="Drop not found"
+            body="This drop may have been unpublished, or the link is wrong."
+            action={<Link to="/drops"><Button variant="dark">All drops</Button></Link>}
+          />
         </div>
       );
     }
@@ -117,9 +151,11 @@ export default function DropsPage() {
       </div>
 
       {live.length === 0 && upcoming.length === 0 && ended.length === 0 && (
-        <p className="rounded-2xl bg-white p-8 text-center text-sm text-ink/60 ring-1 ring-ink/10">
-          No published drops yet. Admins can create the Drop of the Month and Mega Drop of the Year in the dashboard.
-        </p>
+        <EmptyState
+          title="No published drops yet"
+          body="Limited collections land here every month — check back soon or browse the live shop."
+          action={<Link to="/shop"><Button>Browse the shop</Button></Link>}
+        />
       )}
 
       {live.map((d) => (

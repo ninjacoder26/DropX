@@ -1,7 +1,8 @@
 /**
  * POST /api/cloudinary-delete
- * Server-side Cloudinary asset deletion. The caller must be an admin
- * (verified Supabase JWT + profiles role check, same as cloudinary-sign).
+ * Server-side Cloudinary asset deletion. The caller must be staff or above
+ * (verified Supabase JWT + profiles role check, same as cloudinary-sign):
+ * subadmins remove product images through the staff portal.
  *
  * Env: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET,
  *      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -31,7 +32,7 @@ async function isAdminRequest(req: Request): Promise<boolean> {
     .eq('id', data.user.id)
     .single();
   const role = (profile as { role?: string } | null)?.role;
-  return role === 'admin' || role === 'superadmin';
+  return role === 'admin' || role === 'superadmin' || role === 'subadmin';
 }
 
 export async function POST(req: Request) {

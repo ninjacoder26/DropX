@@ -12,7 +12,7 @@ import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
 import { useRecentlyViewed, useWishlist } from '../hooks/useShop';
 import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
-import { Badge, Button, EmptyState, Skeleton } from '../components/ui';
+import { Badge, Button, EmptyState, ErrorState, Notice, Skeleton } from '../components/ui';
 import { ReportProduct } from '../components/ReportProduct';
 import { useStoreSettings } from '../lib/settings';
 import { ProductGrid, primaryImage, specLabel, srcSetFor } from '../components/product';
@@ -28,11 +28,13 @@ export default function ProductPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [added, setAdded] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
   usePageTitle(product?.name ?? 'Product');
   const { add } = useCart();
@@ -45,30 +47,36 @@ export default function ProductPage() {
     (async () => {
       setLoading(true);
       setNotFound(false);
-      const p = await fetchProductBySlug(slug);
-      if (!p) {
-        setNotFound(true);
+      setLoadError(null);
+      try {
+        const p = await fetchProductBySlug(slug);
+        if (!p) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        setProduct(p);
+        push(p.id);
+        logView(user?.id ?? null, p.id, p.category_id);
+        const active = (p.variants ?? []).filter((v) => v.is_active);
+        setVariant(active.find((v) => v.stock > 0) ?? active[0] ?? null);
+        setQty(1);
+        setImgIdx(0);
+        if (isSupabaseConfigured) {
+          const { data } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('product_id', p.id)
+            .eq('is_approved', true)
+            .order('created_at', { ascending: false })
+            .limit(10);
+          setReviews((data ?? []) as Review[]);
+        }
         setLoading(false);
-        return;
+      } catch (e) {
+        setLoadError(e instanceof Error ? e.message : 'Could not load this product.');
+        setLoading(false);
       }
-      setProduct(p);
-      push(p.id);
-      logView(user?.id ?? null, p.id, p.category_id);
-      const active = (p.variants ?? []).filter((v) => v.is_active);
-      setVariant(active.find((v) => v.stock > 0) ?? active[0] ?? null);
-      setQty(1);
-      setImgIdx(0);
-      if (isSupabaseConfigured) {
-        const { data } = await supabase
-          .from('reviews')
-          .select('*')
-          .eq('product_id', p.id)
-          .eq('is_approved', true)
-          .order('created_at', { ascending: false })
-          .limit(10);
-        setReviews((data ?? []) as Review[]);
-      }
-      setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
@@ -112,12 +120,19 @@ export default function ProductPage() {
   }
 
   if (notFound || !product) {
+    if (loadError) {
+      return (
+        <div className="mx-auto max-w-7xl space-y-4 px-4 py-16">
+          <ErrorState message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      );
+    }
     return (
       <div className="mx-auto max-w-7xl px-4 py-16">
         <EmptyState
           title="Product not found"
           body="This product may be sold out, hidden, or the link is wrong."
-          action={<Link to="/shop" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper">Back to shop</Link>}
+          action={<Link to="/shop"><Button variant="dark">Back to shop</Button></Link>}
         />
       </div>
     );
@@ -218,7 +233,12 @@ export default function ProductPage() {
             </p>
           )}
 
-          {/* Variants */}
+          {/* Variants — stock lives on variants, so a product with none can't be ordered yet */}
+          {(product.variants?.length ?? 0) === 0 && (
+            <div className="mt-6">
+              <Notice tone="info">Sizes for this item are still being stocked — check back soon.</Notice>
+            </div>
+          )}
           {(product.variants?.length ?? 0) > 0 && (
             <div className="mt-6">
               <p className="text-xs font-bold uppercase tracking-widest text-ink/60">
@@ -267,9 +287,12 @@ export default function ProductPage() {
               disabled={!variant || out}
               onClick={() => {
                 if (!variant) return;
+                setAddError(null);
                 void add(product, variant, qty).then(() => {
                   setAdded(true);
                   setTimeout(() => setAdded(false), 2000);
+                }).catch((e: unknown) => {
+                  setAddError(e instanceof Error ? e.message : 'Could not add to bag. Try again.');
                 });
               }}
               className="flex-1 sm:flex-none sm:px-8"
@@ -304,6 +327,11 @@ export default function ProductPage() {
               {shared ? <Check size={17} className="text-ember" /> : <Share2 size={17} />}
             </button>
           </div>
+          {addError && (
+            <div className="mt-3">
+              <Notice tone="error">{addError}</Notice>
+            </div>
+          )}
 
           <div className="mt-6 grid grid-cols-2 gap-2 text-xs text-ink/70">
             <span className="flex items-center gap-1.5 rounded-xl bg-white p-3 ring-1 ring-ink/5"><Truck size={14} className="text-ember" /> 1–3 day Valley delivery</span>
@@ -350,7 +378,17 @@ export default function ProductPage() {
                 ].map(([k, v]) => (
                   <div key={k} className="bg-white px-5 py-3">
                     <dt className="font-bold uppercase tracking-wider text-ink/40">{specLabel(k)}</dt>
-                    <dd className="mt-0.5 font-semibold">{v}</dd>
+                    <dd className="mt-0.5 font-semibold">
+                      {v}
+                      {k === 'Brand' && product.brand_website && (
+                        <>
+                          {' · '}
+                          <a href={product.brand_website} target="_blank" rel="noopener noreferrer" className="font-bold text-ember hover:underline">
+                            Official site ↗
+                          </a>
+                        </>
+                      )}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -405,6 +443,8 @@ export default function ProductPage() {
               void add(product, variant, qty).then(() => {
                 setAdded(true);
                 setTimeout(() => setAdded(false), 2000);
+              }).catch(() => {
+                setAddError('Could not add to bag. Try again.');
               });
             }}
             className="!px-6 !py-2.5"

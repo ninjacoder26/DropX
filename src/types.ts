@@ -1,4 +1,4 @@
-export type Role = 'customer' | 'admin' | 'superadmin';
+export type Role = 'customer' | 'admin' | 'superadmin' | 'subadmin';
 
 export interface Category {
   id: string;
@@ -31,6 +31,7 @@ export interface Product {
   total_sold: number;
   tags: string[];
   brand: string;
+  brand_website: string | null;
   specs: Record<string, string>;
   created_at: string;
   category?: Category | null;
@@ -72,6 +73,7 @@ export interface Profile {
   phone: string | null;
   avatar_url: string | null;
   role: Role;
+  username: string | null;
   checkout_name: string;
   checkout_phone: string;
   checkout_district: string;
@@ -130,6 +132,10 @@ export interface Order {
   notes: string;
   placed_at: string;
   paid_at: string | null;
+  cancel_reason: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  delivered_at: string | null;
   items?: OrderItem[];
 }
 

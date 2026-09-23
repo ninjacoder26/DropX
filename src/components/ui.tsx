@@ -96,8 +96,7 @@ export function EmptyState({
   );
 }
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
-  return (
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {  return (
     <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-8 text-center">
       <p className="font-semibold text-red-800">Something went wrong</p>
       <p className="mt-1 text-sm text-red-700/80">{message}</p>
@@ -107,6 +106,33 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
         </button>
       )}
     </div>
+  );
+}
+
+export function PageHeader({ kicker, title, sub }: { kicker?: string; title: string; sub?: string }) {
+  return (
+    <div>
+      {kicker && <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">{kicker}</p>}
+      <h1 className="mt-1 font-display text-3xl font-black tracking-tight">{title}</h1>
+      {sub && <p className="mt-1 max-w-2xl text-sm text-ink/60">{sub}</p>}
+    </div>
+  );
+}
+
+// small inline note for form saves: green = done, red = failed
+export function Notice({ tone, children }: { tone: 'success' | 'error' | 'info'; children: ReactNode }) {
+  return (
+    <p
+      className={clsx(
+        'rounded-xl px-3 py-2 text-xs font-semibold ring-1',
+        tone === 'success' && 'bg-green-50 text-green-800 ring-green-200',
+        tone === 'error' && 'bg-red-50 text-red-700 ring-red-200',
+        tone === 'info' && 'bg-ember/10 text-ink/70 ring-ember/20'
+      )}
+      role={tone === 'error' ? 'alert' : 'status'}
+    >
+      {children}
+    </p>
   );
 }
 

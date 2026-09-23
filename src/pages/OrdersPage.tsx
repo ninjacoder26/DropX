@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../store/AuthContext';
 import type { Order } from '../types';
 import { formatNPR } from '../lib/shop';
-import { Badge, EmptyState, Skeleton } from '../components/ui';
+import { Badge, Button, EmptyState, ErrorState, PageHeader, Skeleton } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const tone = (s: string) => (s === 'delivered' || s === 'paid' ? 'green' : s === 'cancelled' || s === 'failed' ? 'red' : s === 'pending' || s === 'unpaid' ? 'paper' : 'ember') as 'green' | 'red' | 'paper' | 'ember';
@@ -15,29 +15,52 @@ export default function OrdersPage() {
   usePageTitle('Order History');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
+  const load = useCallback(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
     supabase.from('orders').select('*').eq('user_id', user.id).order('placed_at', { ascending: false })
-      .then(({ data }) => {
-        setOrders((data ?? []) as Order[]);
+      .then(({ data, error: err }) => {
+        if (err) setError(err.message);
+        else setOrders((data ?? []) as Order[]);
+        setLoading(false);
+      }, () => {
+        setError('Could not reach the server. Check your connection.');
         setLoading(false);
       });
   }, [user]);
 
-  if (loading) return <div className="mx-auto max-w-4xl space-y-3 px-4 py-8"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) return <div className="mx-auto max-w-5xl space-y-3 px-4 sm:px-6 py-8"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
+        <PageHeader title="Order history" sub="Your orders and live tracking." />
+        <div className="mt-6"><ErrorState message={error} onRetry={load} /></div>
+      </div>
+    );
+  }
 
   if (orders.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-16">
-        <EmptyState title="No orders yet" body="Your order history and live tracking will appear here." action={<Link to="/shop" className="rounded-full bg-ember px-6 py-2.5 text-sm font-bold text-white">Start shopping</Link>} />
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+        <EmptyState title="No orders yet" body="Your order history and live tracking will appear here." action={<Link to="/shop"><Button>Start shopping</Button></Link>} />
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
-      <h1 className="font-display text-3xl font-black">Order history</h1>
+      <PageHeader title="Order history" sub={`${orders.length} order${orders.length === 1 ? '' : 's'} · tap one to track it.`} />
       <ul className="mt-6 space-y-3">
         {orders.map((o) => (
           <li key={o.id}>

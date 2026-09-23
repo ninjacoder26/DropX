@@ -1,8 +1,9 @@
 /**
  * POST /api/cloudinary-sign
  * Returns a signature for a signed Cloudinary upload. Keeps CLOUDINARY_API_SECRET
- * strictly server-side. The caller must be an admin: we verify the Supabase
- * JWT from the Authorization header and check the profiles role.
+ * strictly server-side. The caller must be staff or above: we verify the Supabase
+ * JWT from the Authorization header and check the profiles role (subadmins
+ * upload product images through the staff portal).
  *
  * Env: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET,
  *      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -32,7 +33,7 @@ async function isAdminRequest(req: Request): Promise<boolean> {
     .eq('id', data.user.id)
     .single();
   const role = (profile as { role?: string } | null)?.role;
-  return role === 'admin' || role === 'superadmin';
+  return role === 'admin' || role === 'superadmin' || role === 'subadmin';
 }
 
 export async function POST(req: Request) {
