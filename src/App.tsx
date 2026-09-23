@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar, Footer, MobileNav } from './components/layout';
 import { InstallBanner } from './components/InstallBanner';
@@ -78,6 +78,51 @@ function MaintenanceRoute() {
   );
 }
 
+/**
+ * If boot data (session restore) still hasn't landed after 5 seconds,
+ * say so: either the backend is down or the connection dropped. Retry
+ * reloads; dismiss hides it for the session.
+ */
+function SlowDataNotice() {
+  const { loading } = useAuth();
+  const [slow, setSlow] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setSlow(false);
+      return;
+    }
+    const t = setTimeout(() => setSlow(true), 5000);
+    return () => clearTimeout(t);
+  }, [loading ]);
+  if (!loading || !slow || dismissed) return null;
+  return (
+    <div
+      role="alert"
+      className="fixed bottom-20 left-1/2 z-[60] w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl bg-ink p-4 text-paper shadow-pop lg:bottom-6"
+    >
+      <p className="font-display text-sm font-extrabold">Taking longer than usual…</p>
+      <p className="mt-1 text-xs leading-relaxed text-paper/70">
+        DropX might be down, or your connection dropped. Your data is safe — give it a moment, then try again.
+      </p>
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-full bg-ember px-4 py-2 text-xs font-bold text-white transition hover:bg-ember-dark"
+        >
+          Retry
+        </button>
+        <button
+          onClick={() => setDismissed(true)}
+          className="rounded-full px-4 py-2 text-xs font-bold text-paper/70 transition hover:text-paper"
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { pathname } = useLocation();
   // The admin has its own shell (sidebar + topbar + drawer) — rendering the
@@ -89,6 +134,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col pb-16 lg:pb-0">
       <ScrollToTop />
       <InstallBanner />
+      <SlowDataNotice />
       <MaintenanceGate>
         {!isAdminRoute && !isStaffRoute && <Navbar />}
         <main className="flex-1">

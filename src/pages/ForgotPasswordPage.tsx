@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
+import { AuthShell } from '../components/AuthShell';
 import { Button, Field, Input } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -12,11 +13,13 @@ export default function ForgotPasswordPage() {
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="mx-auto max-w-md px-4 sm:px-6 py-14">
-      <h1 className="font-display text-3xl font-black">Reset password</h1>
-      <p className="mt-1 text-sm text-ink/60">We will email you a recovery link.</p>
+    <AuthShell
+      kicker="Locked out?"
+      title="Reset password"
+      sub="We will email you a recovery link."
+    >
       <form
-        className="mt-6 space-y-4 rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           setBusy(true);
@@ -28,12 +31,12 @@ export default function ForgotPasswordPage() {
         }}
       >
         <Field label="Email">
-          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="!py-3 !text-base" />
         </Field>
-        {msg && <p className="rounded-xl bg-paper-dark px-3 py-2 text-xs">{msg}</p>}
-        <Button className="w-full" disabled={busy}>{busy ? 'Sending…' : 'Send recovery link'}</Button>
-        <p className="text-center text-xs"><Link to="/login" className="font-bold text-ember">Back to login</Link></p>
+        {msg && <p className="rounded-xl bg-paper-dark px-3 py-2.5 text-sm">{msg}</p>}
+        <Button className="w-full !min-h-[48px] !text-base" disabled={busy}>{busy ? 'Sending…' : 'Send recovery link'}</Button>
+        <p className="text-center text-sm"><Link to="/login" className="font-bold text-ember">Back to login</Link></p>
       </form>
-    </div>
+    </AuthShell>
   );
 }

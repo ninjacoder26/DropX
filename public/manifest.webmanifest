@@ -3,6 +3,7 @@
   "short_name": "DropX",
   "description": "Nepal-focused premium streetwear, stationery, tech and lifestyle store.",
   "start_url": "/",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

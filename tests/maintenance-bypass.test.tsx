@@ -55,6 +55,16 @@ function renderGate() {
   );
 }
 
+function renderGateAt(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <MaintenanceGate>
+        <p>shop content</p>
+      </MaintenanceGate>
+    </MemoryRouter>
+  );
+}
+
 beforeEach(() => {
   viewer.role = null;
 });
@@ -78,5 +88,11 @@ describe('maintenance auto-bypass (no clicks)', () => {
     renderGate();
     expect(screen.queryByText('shop content')).toBeNull();
     expect(screen.getByText(/tuning/)).toBeInTheDocument();
+  });
+
+  it.each(['/staff/login', '/get-acc-info'])('team entry %s never sees the page', (path) => {
+    renderGateAt(path);
+    expect(screen.getByText('shop content')).toBeInTheDocument();
+    expect(screen.queryByText(/tuning/)).toBeNull();
   });
 });

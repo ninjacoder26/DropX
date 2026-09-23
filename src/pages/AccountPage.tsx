@@ -8,6 +8,7 @@ import type { Address } from '../types';
 import { districtOfArea, isGuidedComplete } from '../lib/address';
 import { isMissingColumnError, NEEDS_MIGRATION_MSG } from '../lib/checkoutProfile';
 import { AddressForm } from '../components/AddressForm';
+import { usePwaInstall } from '../lib/pwaInstall';
 import { Button, EmptyState, Field, Input, Notice, Skeleton } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -250,7 +251,47 @@ export default function AccountPage() {
         </p>
         <CheckoutDefaultsForm />
       </section>
+      <InstallAppCard />
     </div>
+  );
+}
+
+function InstallAppCard() {
+  const { canInstall, showIOSHint, install } = usePwaInstall();
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  if (!canInstall && !showIOSHint) return null;
+  return (
+    <section className="mt-5 overflow-hidden rounded-2xl bg-ink text-paper shadow-card">
+      <div className="flex items-center gap-4 p-6">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-ember font-display text-base font-black text-white">
+          DX
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-extrabold">Get the DropX app</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-paper/60">
+            {canInstall
+              ? 'Install for full-screen shopping, faster loads and offline browsing.'
+              : 'On iPhone: tap Share, then “Add to Home Screen” for full-screen shopping.'}
+          </p>
+        </div>
+        {canInstall && (
+          <Button
+            disabled={busy || done}
+            onClick={() => {
+              setBusy(true);
+              void install().finally(() => {
+                setBusy(false);
+                setDone(true);
+              });
+            }}
+            className="!bg-ember !px-5 !py-2.5 hover:!bg-ember-dark"
+          >
+            {done ? 'Done!' : busy ? '…' : 'Install'}
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }
 

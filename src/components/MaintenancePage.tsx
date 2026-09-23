@@ -265,7 +265,9 @@ export function MaintenanceGate({ children }: { children: ReactNode }) {
   const [passed, setPassed] = useState(false);
 
   const on = isMaintenanceMode() || settings.maintenanceEnabled;
-  if (!on || pathname.startsWith('/admin') || pathname.startsWith('/staff')) {
+  // Team entry points never see the page: admin, staff portal, staff login
+  // and the one-time account lookup all pass straight through.
+  if (!on || pathname.startsWith('/admin') || pathname.startsWith('/staff') || pathname.startsWith('/get-acc-info')) {
     return <>{children}</>;
   }
   // Signed-in team never waits on the maintenance page. While auth is still

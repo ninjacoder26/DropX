@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { AuthShell } from '../components/AuthShell';
 import { Button, Field, Input } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -27,20 +28,23 @@ export default function ResetPasswordPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-md px-4 sm:px-6 py-14">
-      <h1 className="font-display text-3xl font-black">Set a new password</h1>
+    <AuthShell
+      kicker="Almost there"
+      title="Set a new password"
+      sub="Choose something strong — you will use it at every login."
+    >
       {ready === null ? (
-        <p className="mt-4 rounded-2xl bg-white p-6 text-sm text-ink/60 shadow-card ring-1 ring-ink/5">
+        <p className="rounded-2xl bg-paper p-6 text-sm text-ink/60">
           Checking your recovery link…
         </p>
       ) : !ready ? (
-        <p className="mt-4 rounded-2xl bg-white p-6 text-sm text-ink/60 shadow-card ring-1 ring-ink/5">
+        <p className="rounded-2xl bg-paper p-6 text-sm text-ink/60">
           This link is invalid or has expired. Request a fresh one from the{' '}
           <Link to="/forgot-password" className="font-bold text-ember">forgot-password page</Link>.
         </p>
       ) : (
         <form
-          className="mt-6 space-y-4 rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink/5"
+          className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
             setError(null);
@@ -61,15 +65,15 @@ export default function ResetPasswordPage() {
           }}
         >
           <Field label="New password (min 8 characters)">
-            <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+            <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" className="!py-3 !text-base" />
           </Field>
           <Field label="Confirm new password">
-            <Input type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+            <Input type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" className="!py-3 !text-base" />
           </Field>
-          {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
-          <Button className="w-full" disabled={busy}>{busy ? 'Saving…' : 'Save new password'}</Button>
+          {error && <p className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</p>}
+          <Button className="w-full !min-h-[48px] !text-base" disabled={busy}>{busy ? 'Saving…' : 'Save new password'}</Button>
         </form>
       )}
-    </div>
+    </AuthShell>
   );
 }
