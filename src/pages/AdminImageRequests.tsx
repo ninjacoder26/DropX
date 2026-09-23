@@ -8,7 +8,7 @@ import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Skeleton } from 
 
 const STATUSES: ImageRequestStatus[] = ['pending', 'reviewed', 'resolved', 'rejected'];
 
-export default function AdminImageRequests() {
+export default function AdminImageRequests({ readOnly }: { readOnly: boolean }) {
   const [items, setItems] = useState<(ImageRequest & { product_name?: string; product_slug?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | ImageRequestStatus>('all');
@@ -62,6 +62,7 @@ export default function AdminImageRequests() {
   };
 
   const addNote = async (id: string) => {
+    if (readOnly) return;
     const text = draft.trim();
     if (!text) return;
     setNoteBusy(true);
@@ -80,6 +81,7 @@ export default function AdminImageRequests() {
   };
 
   const setStatus = async (r: ImageRequest, status: ImageRequestStatus) => {
+    if (readOnly) return;
     const { error } = await supabase.from('image_requests').update({ status }).eq('id', r.id);
     if (!error) {
       log('imagerequest.status', 'image_requests', r.id, { status });
@@ -88,6 +90,7 @@ export default function AdminImageRequests() {
   };
 
   const toggleHidden = async (r: ImageRequest) => {
+    if (readOnly) return;
     const row = hiddenMap[r.id];
     if (!row) return;
     const next = !row.is_hidden;
@@ -166,20 +169,23 @@ export default function AdminImageRequests() {
                     </button>
                     <select
                       value={r.status}
+                      disabled={readOnly}
                       onChange={(e) => void setStatus(r, e.target.value as ImageRequestStatus)}
-                      className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-xs font-bold"
+                      className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-xs font-bold disabled:opacity-60"
                       aria-label="Request status"
                     >
                       {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
-                    {hiddenMap[r.id] && (
+                    {hiddenMap[r.id] && !readOnly && (
                       <button onClick={() => void toggleHidden(r)} className={`rounded-full px-3.5 py-1.5 text-xs font-bold ${hidden ? 'bg-ember text-white' : 'bg-ink/5 hover:bg-ink/10'}`}>
                         {hidden ? 'Restore photo' : 'Hide photo'}
                       </button>
                     )}
-                    <button onClick={() => setConfirmDel(r)} className="rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700">
-                      Delete
-                    </button>
+                    {!readOnly && (
+                      <button onClick={() => setConfirmDel(r)} className="rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700">
+                        Delete
+                      </button>
+                    )}
                   </div>
 
                   {isOpen && (
@@ -228,12 +234,15 @@ export default function AdminImageRequests() {
                             onChange={(e) => setDraft(e.target.value)}
                             placeholder="Add an internal note…"
                             maxLength={2000}
-                            className="flex-1 rounded-xl border border-ink/15 bg-white px-3 py-2 text-xs"
+                            disabled={readOnly}
+                            className="flex-1 rounded-xl border border-ink/15 bg-white px-3 py-2 text-xs disabled:opacity-60"
                             aria-label="Internal note"
                           />
-                          <Button variant="dark" onClick={() => void addNote(r.id)} disabled={noteBusy || !draft.trim()}>
-                            {noteBusy ? '…' : 'Add'}
-                          </Button>
+                          {!readOnly && (
+                            <Button variant="dark" onClick={() => void addNote(r.id)} disabled={noteBusy || !draft.trim()}>
+                              {noteBusy ? '…' : 'Add'}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

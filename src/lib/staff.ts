@@ -50,3 +50,8 @@ export function validateStaffPassword(password: string): string | null {
 export function isSubAdminRole(role: string | null | undefined): boolean {
   return role === 'subadmin';
 }
+
+/** Loose client-side shape check for one-time login codes (dx1_…). */
+export function isLikelyShareCode(raw: string): boolean {
+  return /^dx1_[A-Za-z0-9_-]{20,}$/.test(raw.trim());
+}

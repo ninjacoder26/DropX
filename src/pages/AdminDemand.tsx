@@ -11,7 +11,7 @@ type SortKey = 'score' | 'views' | 'purchases' | 'conversion';
 const WINDOW_30 = new Date(Date.now() - 30 * 864e5).toISOString();
 const WINDOW_7 = new Date(Date.now() - 7 * 864e5).toISOString();
 
-export default function AdminDemand() {
+export default function AdminDemand({ readOnly }: { readOnly: boolean }) {
   const [searches, setSearches] = useState<{ query: string; meta: { results?: number } }[]>([]);
   const [requests, setRequests] = useState<ProductRequest[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -193,6 +193,7 @@ export default function AdminDemand() {
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <select
                       value={g.latest.status}
+                      disabled={readOnly}
                       onChange={(e) => {
                         const status = e.target.value;
                         supabase.from('product_requests').update({ status }).eq('id', g.latest.id).then(({ error }) => {
@@ -202,19 +203,21 @@ export default function AdminDemand() {
                           }
                         });
                       }}
-                      className="rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-bold"
+                      className="rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-bold disabled:opacity-60"
                       aria-label="Request status"
                     >
                       <option value="pending">pending</option>
                       <option value="sourced">sourced</option>
                       <option value="rejected">rejected</option>
                     </select>
-                    <button
-                      onClick={() => setConfirmDel(g.latest)}
-                      className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700"
-                    >
-                      Delete
-                    </button>
+                    {!readOnly && (
+                      <button
+                        onClick={() => setConfirmDel(g.latest)}
+                        className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700"
+                      >
+                        Delete
+                      </button>
+                    )}
                     <span className="ml-auto text-[11px] text-ink/40">
                       latest {new Date(g.latest.created_at).toLocaleDateString('en-NP', { month: 'short', day: 'numeric' })}
                     </span>

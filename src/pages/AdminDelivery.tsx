@@ -27,7 +27,7 @@ const emptyForm = (p: DeliveryPlan): PlanForm => ({
   products: [...p.products],
 });
 
-export default function AdminDelivery() {
+export default function AdminDelivery({ readOnly }: { readOnly: boolean }) {
   const [plans, setPlans] = useState<DeliveryPlan[]>([]);
   const [forms, setForms] = useState<Record<string, PlanForm>>({});
   const [products, setProducts] = useState<Product[]>([]);
@@ -72,6 +72,7 @@ export default function AdminDelivery() {
   }, [products, search]);
 
   const save = async (key: string) => {
+    if (readOnly) return;
     const f = forms[key];
     if (!f) return;
     const base = Number(f.base_fee);
@@ -157,8 +158,9 @@ export default function AdminDelivery() {
                 <button
                   onClick={() => setForms({ ...forms, [plan.key]: { ...f, is_active: !f.is_active } })}
                   aria-pressed={f.is_active}
+                  disabled={readOnly}
                   className={clsx(
-                    'relative h-7 w-12 shrink-0 rounded-full transition',
+                    'relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-60',
                     f.is_active ? 'bg-ember' : 'bg-ink/15'
                   )}
                   aria-label={`${f.is_active ? 'Deactivate' : 'Activate'} ${f.label}`}
@@ -170,7 +172,7 @@ export default function AdminDelivery() {
                 </button>
               </div>
 
-              <div className="mt-4 space-y-3">
+              <fieldset disabled={readOnly} className="mt-4 space-y-3">
                 <Field label="Label">
                   <Input value={f.label} onChange={(e) => setForms({ ...forms, [plan.key]: { ...f, label: e.target.value } })} />
                 </Field>
@@ -243,10 +245,12 @@ export default function AdminDelivery() {
                   </div>
                 )}
 
-                <Button onClick={() => void save(plan.key)} disabled={saving === plan.key} className="w-full">
-                  {saving === plan.key ? 'Saving…' : `Save ${f.label || plan.key}`}
-                </Button>
-              </div>
+                {!readOnly && (
+                  <Button onClick={() => void save(plan.key)} disabled={saving === plan.key} className="w-full">
+                    {saving === plan.key ? 'Saving…' : `Save ${f.label || plan.key}`}
+                  </Button>
+                )}
+              </fieldset>
             </Card>
           );
         })}

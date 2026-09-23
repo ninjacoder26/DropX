@@ -49,10 +49,10 @@ function RequireAdmin({ children }: { children: ReactNode }) {
   const { isAdmin, isSubadmin, loading, ready, user } = useAuth();
   if (loading || !ready) return <div className="mx-auto max-w-7xl space-y-3 px-4 py-16"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-5" /></div>;
   if (!user) return <Navigate to="/login" replace />;
-  // Staff have their own portal — never the admin panel.
-  if (isSubadmin) return <Navigate to="/staff" replace />;
+  // Subadmins enter read-only (except product photos) — RLS enforces it
+  // server-side; the admin UI disables everything else.
   // Frontend gate is UX only — Supabase RLS + SECURITY DEFINER functions enforce admin server-side.
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin && !isSubadmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 

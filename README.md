@@ -175,4 +175,10 @@ DropX/
 | Cloudinary cloud + preset | `src/config.ts` — §4 |
 | Server secrets (if using `/api`) | `.env` / Vercel — §7 |
 
+## License
+
+Proprietary — Copyright © 2026 Yogeshanand Raut. All rights reserved.
+No copying, modification, redistribution, or reuse without prior written
+permission. See `LICENSE`. Licensing inquiries: dropx.nepal@gmail.com.
+
 © 2026 DropX.

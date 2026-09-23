@@ -19,8 +19,10 @@ interface PendingImage {
 /**
  * Admin image manager: upload (Cloudinary) → preview → reorder → replace → remove.
  * Rows persist in Supabase product_images; bytes live in Cloudinary.
+ * allowManage=false keeps upload + remove but hides reorder/primary/hide,
+ * which subadmins may not touch (RLS would reject them anyway).
  */
-export function ImageManager({ productId }: { productId: string }) {
+export function ImageManager({ productId, allowManage = true }: { productId: string; allowManage?: boolean }) {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -302,21 +304,25 @@ export function ImageManager({ productId }: { productId: string }) {
                 </span>
               )}
               <div className="absolute inset-x-1 bottom-1 flex justify-center gap-1 opacity-0 transition group-hover:opacity-100">
-                <button onClick={() => void move(im.id, -1)} className="rounded-full bg-white p-1.5 shadow" aria-label="Move left"><ArrowUp size={12} className="-rotate-90" /></button>
-                <button onClick={() => void move(im.id, 1)} className="rounded-full bg-white p-1.5 shadow" aria-label="Move right"><ArrowDown size={12} className="-rotate-90" /></button>
-                {!im.is_primary && (
-                  <button onClick={() => void setPrimary(im.id)} className="rounded-full bg-white p-1.5 shadow" aria-label="Set primary"><Star size={12} /></button>
+                {allowManage && (
+                  <>
+                    <button onClick={() => void move(im.id, -1)} className="rounded-full bg-white p-1.5 shadow" aria-label="Move left"><ArrowUp size={12} className="-rotate-90" /></button>
+                    <button onClick={() => void move(im.id, 1)} className="rounded-full bg-white p-1.5 shadow" aria-label="Move right"><ArrowDown size={12} className="-rotate-90" /></button>
+                    {!im.is_primary && (
+                      <button onClick={() => void setPrimary(im.id)} className="rounded-full bg-white p-1.5 shadow" aria-label="Set primary"><Star size={12} /></button>
+                    )}
+                    <button
+                      onClick={() => {
+                        supabase.from('product_images').update({ is_hidden: !im.is_hidden }).eq('id', im.id).then(() => void load());
+                      }}
+                      className="rounded-full bg-white p-1.5 shadow"
+                      aria-label={im.is_hidden ? 'Unhide image' : 'Hide image from storefront'}
+                      title={im.is_hidden ? 'Unhide image' : 'Hide image from storefront'}
+                    >
+                      {im.is_hidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                    </button>
+                  </>
                 )}
-                <button
-                  onClick={() => {
-                    supabase.from('product_images').update({ is_hidden: !im.is_hidden }).eq('id', im.id).then(() => void load());
-                  }}
-                  className="rounded-full bg-white p-1.5 shadow"
-                  aria-label={im.is_hidden ? 'Unhide image' : 'Hide image from storefront'}
-                  title={im.is_hidden ? 'Unhide image' : 'Hide image from storefront'}
-                >
-                  {im.is_hidden ? <Eye size={12} /> : <EyeOff size={12} />}
-                </button>
                 <button onClick={() => void remove(im)} className="rounded-full bg-red-600 p-1.5 text-white shadow" aria-label="Delete image"><Trash2 size={12} /></button>
               </div>
             </li>

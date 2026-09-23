@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isLikelyShareCode,
   isStaffEmail,
   isSubAdminRole,
   normalizeStaffUsername,
@@ -39,6 +40,14 @@ describe('staff accounts', () => {
     expect(isSubAdminRole('subadmin')).toBe(true);
     expect(isSubAdminRole('admin')).toBe(false);
     expect(isSubAdminRole(null)).toBe(false);
+  });
+
+  it('recognizes one-time login code shapes', () => {
+    expect(isLikelyShareCode('dx1_abcdefghijklmnopqrstuvwx123456')).toBe(true);
+    expect(isLikelyShareCode('  dx1_abcdefghijklmnopqrstuvwx123456  ')).toBe(true);
+    expect(isLikelyShareCode('hunter2')).toBe(false);
+    expect(isLikelyShareCode('dx1_short')).toBe(false);
+    expect(isLikelyShareCode('')).toBe(false);
   });
 });
 

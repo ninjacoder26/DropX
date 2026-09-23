@@ -52,7 +52,14 @@ export default function AdminPage() {
   // Staff accounts are a superadmin-only affair — plain admins neither see
   // the tab nor the route (the API enforces the same rule server-side).
   const isSuper = profile?.role === 'superadmin';
-  const tabs = TABS.filter((t) => t.to !== '/admin/staff' || isSuper);
+  // Subadmins browse the whole dashboard but change nothing except product
+  // photos. RLS enforces it server-side; the UI below only hides/disables.
+  const readOnly = profile?.role === 'subadmin';
+  const tabs = TABS.filter(
+    (t) =>
+      (t.to !== '/admin/staff' || isSuper) &&
+      (!readOnly || (t.to !== '/admin/customers' && t.to !== '/admin/logs'))
+  );
   const [pendingReports, setPendingReports] = useState(0);
   const [reportToast, setReportToast] = useState(false);
   usePageTitle('Admin Dashboard');
@@ -187,6 +194,11 @@ export default function AdminPage() {
           <p className="text-xs font-semibold text-ink/50">
             RLS-enforced · every write is audited
           </p>
+          {readOnly && (
+            <p className="rounded-full bg-ember/10 px-3 py-1.5 text-[11px] font-bold text-ember" role="status">
+              View only — you can add or remove product photos, nothing else
+            </p>
+          )}
           <Link
             to="/admin/image-requests"
             aria-label={`Image reports${pendingReports > 0 ? `, ${pendingReports} pending` : ''}`}
@@ -214,18 +226,18 @@ export default function AdminPage() {
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route index element={<Overview />} />
-            <Route path="products" element={<Products />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="orders" element={<Orders />} />
-          <Route path="delivery" element={<AdminDelivery />} />
+            <Route path="products" element={<Products readOnly={readOnly} />} />
+            <Route path="categories" element={<Categories readOnly={readOnly} />} />
+            <Route path="orders" element={<Orders readOnly={readOnly} />} />
+          <Route path="delivery" element={<AdminDelivery readOnly={readOnly} />} />
             <Route path="customers" element={<Customers />} />
             <Route path="staff" element={<StaffGate />} />
-            <Route path="drops" element={<Drops />} />
-          <Route path="reviews" element={<ReviewsMod />} />
-          <Route path="image-requests" element={<AdminImageRequests />} />
-          <Route path="demand" element={<AdminDemand />} />
+            <Route path="drops" element={<Drops readOnly={readOnly} />} />
+          <Route path="reviews" element={<ReviewsMod readOnly={readOnly} />} />
+          <Route path="image-requests" element={<AdminImageRequests readOnly={readOnly} />} />
+          <Route path="demand" element={<AdminDemand readOnly={readOnly} />} />
           <Route path="analytics" element={<Analytics />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="settings" element={<Settings readOnly={readOnly} />} />
           <Route path="logs" element={<Logs />} />
           </Routes>
         </div>
@@ -372,7 +384,7 @@ function Overview() {
 /* ─── Products ─── */
 const EMPTY_PRODUCT = { name: '', slug: '', brand: '', brand_website: '', description: '', category_id: '', cost_price: '', base_override: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
-function Products() {
+function Products({ readOnly }: { readOnly: boolean }) {
   const [items, setItems] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [q, setQ] = useState('');
@@ -434,6 +446,7 @@ function Products() {
   };
 
   const save = async () => {
+    if (readOnly) return;
     const cost = Number(form.cost_price);
     if (!form.name.trim() || !form.slug.trim() || form.cost_price.trim() === '' || Number.isNaN(cost) || cost < 0) {
       setMsg('Name, slug and a valid cost price (≥ 0) are required.');
@@ -483,6 +496,7 @@ function Products() {
   };
 
   const addVariant = async () => {
+    if (readOnly) return;
     if (!editing || editing === 'new' || !vForm.name.trim() || !vForm.sku.trim()) {
       setMsg('Variant needs a name and SKU.');
       return;
@@ -606,23 +620,32 @@ function Products() {
           >
             Export CSV
           </button>
-          <label className="cursor-pointer rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30">
-            {csvBusy ? 'Importing…' : 'Import CSV'}
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              disabled={csvBusy}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void importCSV(f);
-                e.target.value = '';
-              }}
-            />
-          </label>
-          <Button onClick={() => void startEdit(undefined)}>+ New product</Button>
+          {!readOnly && (
+            <>
+              <label className="cursor-pointer rounded-full bg-white px-4 py-2 text-xs font-bold ring-1 ring-ink/10 transition hover:ring-ink/30">
+                {csvBusy ? 'Importing…' : 'Import CSV'}
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  disabled={csvBusy}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void importCSV(f);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              <Button onClick={() => void startEdit(undefined)}>+ New product</Button>
+            </>
+          )}
         </div>
       </div>
+      {readOnly && (
+        <p className="mt-3 rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold text-ink/70">
+          View only — open a product to manage its photos below.
+        </p>
+      )}
       {csvMsg && (
         <p className="mt-3 whitespace-pre-line rounded-2xl bg-white px-4 py-3 text-xs ring-1 ring-ink/10">{csvMsg}</p>
       )}
@@ -630,7 +653,12 @@ function Products() {
       {editing && (
         <Card className="mt-4 p-6">
           <h2 className="font-display text-lg font-extrabold">{editing === 'new' ? 'New product' : 'Edit product'}</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {readOnly && (
+            <p className="mt-2 rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold text-ink/70">
+              View only — everything below is locked except the photo manager.
+            </p>
+          )}
+          <fieldset disabled={readOnly} className="mt-4 grid gap-4 md:grid-cols-2">
             <Field label="Name">
               <Input
                 value={form.name}
@@ -719,10 +747,10 @@ function Products() {
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
           {msg && <p className="mt-3 text-xs text-red-700">{msg}</p>}
           <div className="mt-4 flex gap-2">
-            <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save product'}</Button>
+            {!readOnly && <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save product'}</Button>}
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
 
@@ -734,47 +762,55 @@ function Products() {
                   {variants.map((v) => (
                     <li key={v.id} className="flex items-center gap-2 rounded-xl bg-paper px-3 py-2 text-sm">
                       <span className="min-w-0 flex-1"><strong>{v.name}</strong> <span className="text-ink/50">· {v.sku} · stock {v.stock}</span></span>
-                      <button
-                        className="rounded-lg bg-ink px-2 py-1 text-[11px] font-bold text-paper"
-                        onClick={() => {
-                          const s = prompt('New stock quantity:', String(v.stock));
-                          if (s === null) return;
-                          const n = Math.max(0, Number(s) || 0);
-                          supabase.from('product_variants').update({ stock: n }).eq('id', v.id).then(() => {
-                            log('variant.stock', 'product_variants', v.id, { stock: n });
-                            setVariants(variants.map((x) => (x.id === v.id ? { ...x, stock: n } : x)));
-                          });
-                        }}
-                      >
-                        Set stock
-                      </button>
-                      <button
-                        className="rounded-lg bg-red-100 px-2 py-1 text-[11px] font-bold text-red-700"
-                        onClick={() => {
-                          if (!confirm(`Delete variant ${v.sku}?`)) return;
-                          supabase.from('product_variants').delete().eq('id', v.id).then(() => {
-                            log('variant.delete', 'product_variants', v.id, {});
-                            setVariants(variants.filter((x) => x.id !== v.id));
-                          });
-                        }}
-                      >
-                        Delete
-                      </button>
+                      {!readOnly && (
+                        <>
+                          <button
+                            className="rounded-lg bg-ink px-2 py-1 text-[11px] font-bold text-paper"
+                            onClick={() => {
+                              const s = prompt('New stock quantity:', String(v.stock));
+                              if (s === null) return;
+                              const n = Math.max(0, Number(s) || 0);
+                              supabase.from('product_variants').update({ stock: n }).eq('id', v.id).then(() => {
+                                log('variant.stock', 'product_variants', v.id, { stock: n });
+                                setVariants(variants.map((x) => (x.id === v.id ? { ...x, stock: n } : x)));
+                              });
+                            }}
+                          >
+                            Set stock
+                          </button>
+                          <button
+                            className="rounded-lg bg-red-100 px-2 py-1 text-[11px] font-bold text-red-700"
+                            onClick={() => {
+                              if (!confirm(`Delete variant ${v.sku}?`)) return;
+                              supabase.from('product_variants').delete().eq('id', v.id).then(() => {
+                                log('variant.delete', 'product_variants', v.id, {});
+                                setVariants(variants.filter((x) => x.id !== v.id));
+                              });
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </li>
                   ))}
                   {variants.length === 0 && <li className="text-xs text-ink/50">No variants — add at least one so checkout can verify stock.</li>}
                 </ul>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <Input placeholder="Name (M / Black)" value={vForm.name} onChange={(e) => setVForm({ ...vForm, name: e.target.value })} />
-                  <Input placeholder="SKU" value={vForm.sku} onChange={(e) => setVForm({ ...vForm, sku: e.target.value })} />
-                  <Input placeholder="Size" value={vForm.size} onChange={(e) => setVForm({ ...vForm, size: e.target.value })} />
-                  <Input placeholder="Color" value={vForm.color} onChange={(e) => setVForm({ ...vForm, color: e.target.value })} />
-                  <Input placeholder="+ NPR adj." type="number" value={vForm.price_adjustment} onChange={(e) => setVForm({ ...vForm, price_adjustment: e.target.value })} />
-                  <Input placeholder="Stock" type="number" min={0} value={vForm.stock} onChange={(e) => setVForm({ ...vForm, stock: e.target.value })} />
-                </div>
-                <Button variant="dark" className="mt-2" onClick={addVariant}>Add variant</Button>
+                {!readOnly && (
+                  <>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <Input placeholder="Name (M / Black)" value={vForm.name} onChange={(e) => setVForm({ ...vForm, name: e.target.value })} />
+                      <Input placeholder="SKU" value={vForm.sku} onChange={(e) => setVForm({ ...vForm, sku: e.target.value })} />
+                      <Input placeholder="Size" value={vForm.size} onChange={(e) => setVForm({ ...vForm, size: e.target.value })} />
+                      <Input placeholder="Color" value={vForm.color} onChange={(e) => setVForm({ ...vForm, color: e.target.value })} />
+                      <Input placeholder="+ NPR adj." type="number" value={vForm.price_adjustment} onChange={(e) => setVForm({ ...vForm, price_adjustment: e.target.value })} />
+                      <Input placeholder="Stock" type="number" min={0} value={vForm.stock} onChange={(e) => setVForm({ ...vForm, stock: e.target.value })} />
+                    </div>
+                    <Button variant="dark" className="mt-2" onClick={addVariant}>Add variant</Button>
+                  </>
+                )}
               </div>
-              <ImageManager productId={editing} />
+              <ImageManager productId={editing} allowManage={!readOnly} />
             </div>
           )}
         </Card>
@@ -834,8 +870,8 @@ function Products() {
                   <td className="px-4 py-3 text-right">
                     <span className="inline-flex flex-wrap justify-end gap-1.5">
                       <a href={`/product/${p.slug}`} target="_blank" rel="noreferrer" className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-bold hover:bg-ink/10">View</a>
-                      <button onClick={() => void startEdit(p)} className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-bold hover:bg-ink/10">Edit</button>{' '}
-                      <button onClick={() => setConfirmDel(p)} className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">Delete</button>
+                      <button onClick={() => void startEdit(p)} className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-bold hover:bg-ink/10">{readOnly ? 'Photos' : 'Edit'}</button>{' '}
+                      {!readOnly && <button onClick={() => setConfirmDel(p)} className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">Delete</button>}
                     </span>
                   </td>
                 </tr>
@@ -865,7 +901,7 @@ function Products() {
 }
 
 /* ─── Categories ─── */
-function Categories() {
+function Categories({ readOnly }: { readOnly: boolean }) {
   const [items, setItems] = useState<Category[]>([]);
   const [form, setForm] = useState({ name: '', slug: '', description: '', image_url: '' });
   const [msg, setMsg] = useState<string | null>(null);
@@ -880,8 +916,9 @@ function Categories() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <Card className="h-fit p-5">
-        <h2 className="font-display font-extrabold">New category</h2>
+      {!readOnly && (
+        <Card className="h-fit p-5">
+          <h2 className="font-display font-extrabold">New category</h2>
         <div className="mt-3 space-y-3">
           <Field label="Name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label="Slug"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto from name" /></Field>
@@ -918,6 +955,7 @@ function Categories() {
           </Button>
         </div>
       </Card>
+      )}
       <Card className="p-5">
         <h2 className="font-display font-extrabold">Categories ({items.length})</h2>
         <ul className="mt-3 space-y-2">
@@ -932,29 +970,33 @@ function Categories() {
               <a href={`/shop?category=${c.slug}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-ember hover:underline">
                 View
               </a>
-              <button
-                className="text-xs font-bold text-ink/50 hover:text-ink"
-                onClick={() => {
-                  supabase.from('categories').update({ is_active: !c.is_active }).eq('id', c.id).then(() => {
-                    log('category.toggle', 'categories', c.id, { is_active: !c.is_active });
-                    void load();
-                  });
-                }}
-              >
-                {c.is_active ? 'Hide' : 'Show'}
-              </button>
-              <button
-                className="text-xs font-bold text-red-600"
-                onClick={() => {
-                  if (!confirm(`Delete category “${c.name}”? Products become uncategorized.`)) return;
-                  supabase.from('categories').delete().eq('id', c.id).then(() => {
-                    log('category.delete', 'categories', c.id, {});
-                    void load();
-                  });
-                }}
-              >
-                Delete
-              </button>
+              {!readOnly && (
+                <>
+                  <button
+                    className="text-xs font-bold text-ink/50 hover:text-ink"
+                    onClick={() => {
+                      supabase.from('categories').update({ is_active: !c.is_active }).eq('id', c.id).then(() => {
+                        log('category.toggle', 'categories', c.id, { is_active: !c.is_active });
+                        void load();
+                      });
+                    }}
+                  >
+                    {c.is_active ? 'Hide' : 'Show'}
+                  </button>
+                  <button
+                    className="text-xs font-bold text-red-600"
+                    onClick={() => {
+                      if (!confirm(`Delete category “${c.name}”? Products become uncategorized.`)) return;
+                      supabase.from('categories').delete().eq('id', c.id).then(() => {
+                        log('category.delete', 'categories', c.id, {});
+                        void load();
+                      });
+                    }}
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -964,7 +1006,7 @@ function Categories() {
 }
 
 /* ─── Orders ─── */
-function Orders() {
+function Orders({ readOnly }: { readOnly: boolean }) {
   const [items, setItems] = useState<Order[]>([]);
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -989,6 +1031,7 @@ function Orders() {
   }, [filter]);
 
   const setStatus = async (o: Order, status: Order['status']) => {
+    if (readOnly) return;
     const { error } = await supabase.rpc('admin_set_order_status', { p_order: o.id, p_status: status });
     if (!error) {
       setOrderErr(null);
@@ -1000,6 +1043,7 @@ function Orders() {
   };
 
   const markPaid = async (o: Order) => {
+    if (readOnly) return;
     const ref = prompt(`Confirm verified payment reference for ${o.order_number} (provider receipt/transaction id):`);
     if (!ref?.trim()) return;
     const { error } = await supabase.rpc('mark_order_paid', {
@@ -1020,6 +1064,7 @@ function Orders() {
   const [bulkMsg, setBulkMsg] = useState<string | null>(null);
 
   const cancelAllPending = async () => {
+    if (readOnly) return;
     const reason = buildCancelReason(bulkReason, bulkCustom);
     if (!reason) {
       setBulkMsg('Pick a reason first — every cancelled customer sees it.');
@@ -1038,6 +1083,7 @@ function Orders() {
   };
 
   const purgeOld = async () => {
+    if (readOnly) return;
     if (!confirm('Permanently delete cancelled + delivered orders older than 7 days?\n\nOrder items go with them; reviews stay. This cannot be undone.')) return;
     setBulkBusy(true);
     setBulkMsg(null);
@@ -1066,6 +1112,11 @@ function Orders() {
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order №, name, phone…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search orders" />
       </div>
       {orderErr && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 ring-1 ring-red-200" role="alert">{orderErr}</p>}
+      {readOnly ? (
+        <p className="mt-3 rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold text-ink/70">
+          View only — order statuses, payments and cancellations are handled by admins.
+        </p>
+      ) : (
       <details className="mt-3 rounded-2xl border border-ink/10 bg-white p-4">
         <summary className="cursor-pointer text-sm font-bold">Bulk actions — cancel all pending, 7-day cleanup</summary>
         <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
@@ -1105,6 +1156,7 @@ function Orders() {
         </div>
         {bulkMsg && <p className="mt-2 text-xs font-semibold text-ink/70" role="status">{bulkMsg}</p>}
       </details>
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
         {['', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'unpaid'].map((s) => (
           <button
@@ -1143,8 +1195,9 @@ function Orders() {
               ) : (
                 <select
                   value={o.status}
+                  disabled={readOnly}
                   onChange={(e) => void setStatus(o, e.target.value as Order['status'])}
-                  className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-xs font-bold"
+                  className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-xs font-bold disabled:opacity-60"
                   aria-label="Order status"
                 >
                   {['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'refunded'].map((s) => (
@@ -1152,13 +1205,13 @@ function Orders() {
                   ))}
                 </select>
               )}
-              {o.payment_status !== 'paid' && (
+              {!readOnly && o.payment_status !== 'paid' && (
                 <button onClick={() => void markPaid(o)} className="rounded-full bg-ember px-3.5 py-1.5 text-xs font-bold text-white">
                   Mark paid (verified ref required)
                 </button>
               )}
             </div>
-            {!['delivered', 'cancelled', 'refunded'].includes(o.status) && (
+            {!readOnly && !['delivered', 'cancelled', 'refunded'].includes(o.status) && (
               <div className="mt-2">
                 <CancelOrderBox
                   presets={ADMIN_CANCEL_REASONS}
@@ -1207,6 +1260,8 @@ function Staff() {
   const [busy, setBusy] = useState(false);
   const [resetId, setResetId] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState('');
+  const [share, setShare] = useState<{ code: string; forUser: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -1228,8 +1283,26 @@ function Staff() {
       },
       body: JSON.stringify(body),
     });
-    const out = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    const out = (await res.json().catch(() => ({}))) as {
+      ok?: boolean; error?: string; share_code?: string | null; share_unavailable?: string;
+    };
     if (!res.ok || !out.ok) throw new Error(out.error ?? 'Request failed.');
+    return out;
+  };
+
+  const copyShare = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const say = (good: boolean, text: string) => {
@@ -1262,6 +1335,22 @@ function Staff() {
             {msg}
           </p>
         )}
+        {share && (
+          <div className="mt-3 rounded-2xl border border-ember/40 bg-ember/5 p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-ember">One-time login code for @{share.forUser}</p>
+            <p className="mt-2 break-all rounded-xl bg-ink px-3 py-2.5 font-mono text-sm text-paper">{share.code}</p>
+            <p className="mt-2 text-xs text-ink/60">
+              Safe to send over chat — it reveals the password <strong>once</strong>, then dies (7-day expiry).
+              Need another? Reset the password to mint a fresh code.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button variant="dark" className="!px-4 !py-2 text-xs" onClick={() => void copyShare(share.code)}>
+                {copied ? 'Copied!' : 'Copy code'}
+              </Button>
+              <Button variant="ghost" className="!px-4 !py-2 text-xs" onClick={() => setShare(null)}>Dismiss</Button>
+            </div>
+          </div>
+        )}
         <Button
           className="mt-3"
           disabled={busy}
@@ -1278,9 +1367,16 @@ function Staff() {
             }
             setBusy(true);
             setMsg(null);
+            setShare(null);
             callApi({ action: 'create', username: username.trim(), password, full_name: fullName.trim() }).then(
-              () => {
-                say(true, `Staff account “${username.trim().toLowerCase()}” created — share the username + password with them.`);
+              (out) => {
+                const uname = username.trim().toLowerCase();
+                if (out.share_code) {
+                  setShare({ code: out.share_code, forUser: uname });
+                  say(true, `Staff account “${uname}” created — send the one-time code below, not the password.`);
+                } else {
+                  say(true, `Staff account “${uname}” created — share the username + password with them directly.`);
+                }
                 setUsername('');
                 setPassword('');
                 setFullName('');
@@ -1337,8 +1433,13 @@ function Staff() {
                             return;
                           }
                           callApi({ action: 'reset', user_id: p.id, password: resetPw }).then(
-                            () => {
-                              say(true, `Password reset for @${p.username ?? 'staff'}.`);
+                            (out) => {
+                              if (out.share_code) {
+                                setShare({ code: out.share_code, forUser: p.username ?? 'staff' });
+                                say(true, `Password reset for @${p.username ?? 'staff'} — send the one-time code below.`);
+                              } else {
+                                say(true, `Password reset for @${p.username ?? 'staff'}.`);
+                              }
                               setResetId(null);
                               setResetPw('');
                             },
@@ -1439,7 +1540,7 @@ function Customers() {
 /* ─── Drops ─── */
 const EMPTY_DROP = { kind: 'monthly' as Drop['kind'], title: '', slug: '', description: '', artwork_url: '', theme_color: '#F06427', starts_at: '', ends_at: '', hero_label: '', is_published: false };
 
-function Drops() {
+function Drops({ readOnly }: { readOnly: boolean }) {
   const [items, setItems] = useState<Drop[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -1479,6 +1580,7 @@ function Drops() {
   };
 
   const save = async () => {
+    if (readOnly) return;
     if (!form.title.trim() || !form.slug.trim()) {
       setMsg('Title and slug are required.');
       return;
@@ -1537,13 +1639,13 @@ function Drops() {
     <div>
       <div className="flex items-center gap-3">
         <p className="text-sm text-ink/60">Monthly + Mega drops power the homepage. States derive from dates — no hardcoded promos.</p>
-        <Button onClick={() => void startEdit(undefined)} className="ml-auto">+ New drop</Button>
+        {!readOnly && <Button onClick={() => void startEdit(undefined)} className="ml-auto">+ New drop</Button>}
       </div>
 
       {editing && (
         <Card className="mt-4 p-6">
           <h2 className="font-display text-lg font-extrabold">{editing === 'new' ? 'New drop' : 'Edit drop'}</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <fieldset disabled={readOnly} className="mt-4 grid gap-4 md:grid-cols-2">
             <Field label="Kind">
               <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as Drop['kind'] })} className="w-full rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm">
                 <option value="monthly">Drop of the Month</option>
@@ -1578,7 +1680,7 @@ function Drops() {
             </Field>
             <Field label="Starts at"><Input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} /></Field>
             <Field label="Ends at"><Input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} /></Field>
-          </div>
+          </fieldset>
 
           <div className="mt-4">
             <h3 className="font-bold">Curated products</h3>
@@ -1586,33 +1688,35 @@ function Drops() {
               {links.map((l, i) => (
                 <li key={l.product_id} className="flex items-center gap-2 rounded-xl bg-paper px-3 py-2 text-sm">
                   <span className="flex-1 font-semibold">{products.find((p) => p.id === l.product_id)?.name ?? l.product_id}</span>
-                  <input value={l.badge} onChange={(e) => setLinks(links.map((x, j) => (j === i ? { ...x, badge: e.target.value } : x)))} placeholder="Badge" className="w-28 rounded-lg border border-ink/15 px-2 py-1 text-xs" />
-                  <button onClick={() => setLinks(links.filter((_, j) => j !== i))} className="text-xs font-bold text-red-600">Remove</button>
+                  <input value={l.badge} disabled={readOnly} onChange={(e) => setLinks(links.map((x, j) => (j === i ? { ...x, badge: e.target.value } : x)))} placeholder="Badge" className="w-28 rounded-lg border border-ink/15 px-2 py-1 text-xs disabled:opacity-60" />
+                  {!readOnly && <button onClick={() => setLinks(links.filter((_, j) => j !== i))} className="text-xs font-bold text-red-600">Remove</button>}
                 </li>
               ))}
             </ul>
-            <div className="mt-2 flex gap-2">
-              <select id="drop-product-pick" className="flex-1 rounded-xl border border-ink/15 bg-white px-3 py-2 text-sm" defaultValue="">
-                <option value="" disabled>Add product…</option>
-                {products.filter((p) => !links.some((l) => l.product_id === p.id)).map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <Button
-                variant="dark"
-                onClick={() => {
-                  const el = document.getElementById('drop-product-pick') as HTMLSelectElement | null;
-                  if (el?.value) setLinks([...links, { product_id: el.value, badge: '' }]);
-                }}
-              >
-                Add
-              </Button>
-            </div>
+            {!readOnly && (
+              <div className="mt-2 flex gap-2">
+                <select id="drop-product-pick" className="flex-1 rounded-xl border border-ink/15 bg-white px-3 py-2 text-sm" defaultValue="">
+                  <option value="" disabled>Add product…</option>
+                  {products.filter((p) => !links.some((l) => l.product_id === p.id)).map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <Button
+                  variant="dark"
+                  onClick={() => {
+                    const el = document.getElementById('drop-product-pick') as HTMLSelectElement | null;
+                    if (el?.value) setLinks([...links, { product_id: el.value, badge: '' }]);
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+            )}
           </div>
 
           {msg && <p className="mt-3 text-xs text-red-700">{msg}</p>}
           <div className="mt-4 flex gap-2">
-            <Button onClick={save}>Save drop</Button>
+            {!readOnly && <Button onClick={save}>Save drop</Button>}
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </Card>
@@ -1631,18 +1735,20 @@ function Drops() {
             <div className="mt-3 flex gap-2">
               <a href={`/drops/${d.slug}`} target="_blank" rel="noreferrer" className="rounded-full bg-ink/5 px-3.5 py-1.5 text-xs font-bold">View</a>
               <button onClick={() => void startEdit(d)} className="rounded-full bg-ink/5 px-3.5 py-1.5 text-xs font-bold">Edit</button>
-              <button
-                onClick={() => {
-                  if (!confirm(`Delete drop “${d.title}”?`)) return;
-                  supabase.from('drops').delete().eq('id', d.id).then(() => {
-                    log('drop.delete', 'drops', d.id, {});
-                    setItems(items.filter((x) => x.id !== d.id));
-                  });
-                }}
-                className="rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700"
-              >
-                Delete
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => {
+                    if (!confirm(`Delete drop “${d.title}”?`)) return;
+                    supabase.from('drops').delete().eq('id', d.id).then(() => {
+                      log('drop.delete', 'drops', d.id, {});
+                      setItems(items.filter((x) => x.id !== d.id));
+                    });
+                  }}
+                  className="rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </Card>
         ))}
@@ -1652,7 +1758,7 @@ function Drops() {
 }
 
 /* ─── Reviews moderation ─── */
-function ReviewsMod() {
+function ReviewsMod({ readOnly }: { readOnly: boolean }) {
   const [items, setItems] = useState<(Review & { product_name?: string })[]>([]);
   const [filter, setFilter] = useState<'pending' | 'all'>('pending');
   const load = async () => {
@@ -1678,25 +1784,27 @@ function ReviewsMod() {
             <p className="text-sm"><strong>{r.product_name}</strong> · {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</p>
             {r.title && <p className="mt-1 font-bold">{r.title}</p>}
             <p className="text-sm text-ink/70">{r.body}</p>
-            <div className="mt-2 flex gap-2">
-              {!r.is_approved && (
+            {!readOnly && (
+              <div className="mt-2 flex gap-2">
+                {!r.is_approved && (
+                  <button
+                    onClick={() => supabase.from('reviews').update({ is_approved: true }).eq('id', r.id).then(() => { log('review.approve', 'reviews', r.id, {}); void load(); })}
+                    className="rounded-full bg-ember px-3.5 py-1.5 text-xs font-bold text-white"
+                  >
+                    Approve
+                  </button>
+                )}
                 <button
-                  onClick={() => supabase.from('reviews').update({ is_approved: true }).eq('id', r.id).then(() => { log('review.approve', 'reviews', r.id, {}); void load(); })}
-                  className="rounded-full bg-ember px-3.5 py-1.5 text-xs font-bold text-white"
+                  onClick={() => {
+                    if (!confirm('Delete this review?')) return;
+                    supabase.from('reviews').delete().eq('id', r.id).then(() => { log('review.delete', 'reviews', r.id, {}); void load(); });
+                  }}
+                  className="rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700"
                 >
-                  Approve
+                  Delete
                 </button>
-              )}
-              <button
-                onClick={() => {
-                  if (!confirm('Delete this review?')) return;
-                  supabase.from('reviews').delete().eq('id', r.id).then(() => { log('review.delete', 'reviews', r.id, {}); void load(); });
-                }}
-                className="rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700"
-              >
-                Delete
-              </button>
-            </div>
+              </div>
+            )}
           </Card>
         ))}
         {items.length === 0 && <EmptyState title="All clear" body="No reviews awaiting moderation." />}
@@ -1766,7 +1874,7 @@ function Analytics() {
 }
 
 /* ─── Store settings (the whole shop, customizable without code) ─── */
-function Settings() {
+function Settings({ readOnly }: { readOnly: boolean }) {
   const [form, setForm] = useState({
     announcement: '',
     support_email: '',
@@ -1818,6 +1926,7 @@ function Settings() {
   };
 
   const save = async () => {
+    if (readOnly) return;
     setMsg(null);
     const nums: Record<string, string> = {
       free_shipping_threshold: form.free_shipping_threshold,
@@ -1875,6 +1984,7 @@ function Settings() {
   if (loading) return <Skeleton className="h-64" />;
 
   const applyMargin = async () => {
+    if (readOnly) return;
     const m = marginNum();
     const scope = includeCustom
       ? 'EVERY product (hand-priced items lose their custom flag)'
@@ -1950,7 +2060,12 @@ function Settings() {
           server-side from these same rows — no code changes needed.
         </p>
         <div className="mt-4 space-y-4">
-          <Field label="Announcement bar text">
+          {readOnly && (
+            <p className="rounded-xl bg-ember/10 px-3 py-2 text-xs font-semibold text-ink/70">
+              View only — settings are managed by admins.
+            </p>
+          )}
+          <fieldset disabled={readOnly} className="space-y-4">          <Field label="Announcement bar text">
             <Input value={form.announcement} onChange={(e) => setForm({ ...form, announcement: e.target.value })} placeholder="Free standard shipping over NPR 2,999" />
           </Field>
           <Field label="Support email">
@@ -1983,9 +2098,11 @@ function Settings() {
             </div>
           </div>
           {msg && <p className="whitespace-pre-line rounded-xl bg-paper px-3 py-2 text-xs">{msg}</p>}
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
-          </div>
+          {!readOnly && (
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
+            </div>
+          )}
 
           <div className="rounded-2xl border border-ember/30 bg-ember/5 p-4">
             <h3 className="font-display font-extrabold">Profit margin — {marginNum()}% over real cost</h3>
@@ -2003,9 +2120,11 @@ function Settings() {
               <input type="checkbox" checked={includeCustom} onChange={(e) => setIncludeCustom(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#F06427]" />
               <span>Also rewrite <strong className="text-ink">hand-priced</strong> items (they lose their custom flag).</span>
             </label>
-            <Button onClick={applyMargin} disabled={applying || saving} variant="dark" className="mt-3">
-              {applying ? 'Repricing…' : `Apply +${marginNum()}% to all products`}
-            </Button>
+            {!readOnly && (
+              <Button onClick={applyMargin} disabled={applying || saving} variant="dark" className="mt-3">
+                {applying ? 'Repricing…' : `Apply +${marginNum()}% to all products`}
+              </Button>
+            )}
           </div>
 
           <div className="rounded-2xl border border-ink/10 bg-paper p-4">
@@ -2075,6 +2194,7 @@ function Settings() {
               </div>
             </div>
           </div>
+          </fieldset>
         </div>
       </Card>
       <Card className="h-fit p-6">
