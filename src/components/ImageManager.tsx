@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Loader2, Star, Trash2 } fro
 import { supabase } from '../lib/supabase';
 import { isCloudinaryConfigured, uploadToCloudinary, validateImageFile } from '../lib/cloudinary';
 import { processImageBackground } from '../lib/bgremove';
-import type { ProductImage } from '../types';
+import type { ProductImage, ProductVariant } from '../types';
 import { Button } from './ui';
 
 interface PendingImage {
@@ -24,6 +24,7 @@ interface PendingImage {
  */
 export function ImageManager({ productId, allowManage = true }: { productId: string; allowManage?: boolean }) {
   const [images, setImages] = useState<ProductImage[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bgRemove, setBgRemove] = useState(false);
@@ -31,12 +32,12 @@ export function ImageManager({ productId, allowManage = true }: { productId: str
   const [review, setReview] = useState<PendingImage[] | null>(null);
 
   const load = async () => {
-    const { data } = await supabase
-      .from('product_images')
-      .select('*')
-      .eq('product_id', productId)
-      .order('sort_order');
+    const [{ data }, { data: v }] = await Promise.all([
+      supabase.from('product_images').select('*').eq('product_id', productId).order('sort_order'),
+      supabase.from('product_variants').select('*').eq('product_id', productId).order('created_at'),
+    ]);
     setImages((data ?? []) as ProductImage[]);
+    setVariants((v ?? []) as ProductVariant[]);
   };
 
   useEffect(() => {
@@ -230,7 +231,7 @@ export function ImageManager({ productId, allowManage = true }: { productId: str
         </p>
       )}
       {review && (
-        <div className="mt-3 rounded-2xl border border-ink/10 bg-white p-3">
+        <div className="pop-in mt-3 rounded-2xl border border-ink/10 bg-white p-3">
           <p className="text-xs font-bold">Preview — {review.length} image{review.length === 1 ? '' : 's'}</p>
           <ul className="mt-2 space-y-3">
             {review.map((p) => (
@@ -325,6 +326,25 @@ export function ImageManager({ productId, allowManage = true }: { productId: str
                 )}
                 <button onClick={() => void remove(im)} className="rounded-full bg-red-600 p-1.5 text-white shadow" aria-label="Delete image"><Trash2 size={12} /></button>
               </div>
+              {allowManage && variants.length > 0 && (
+                <select
+                  value={im.variant_id ?? ''}
+                  onChange={(e) => {
+                    const vid = e.target.value || null;
+                    supabase.from('product_images').update({ variant_id: vid }).eq('id', im.id).then(({ error: err }) => {
+                      if (!err) setImages(images.map((x) => (x.id === im.id ? { ...x, variant_id: vid } : x)));
+                    });
+                  }}
+                  aria-label="Photo belongs to variant"
+                  title="Which variant this photo previews"
+                  className="w-full border-t border-ink/10 bg-white px-1 py-1 text-[10px] font-bold text-ink/70"
+                >
+                  <option value="">All variants</option>
+                  {variants.filter((v) => v.is_active).map((v) => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
+              )}
             </li>
           ))}
         </ul>

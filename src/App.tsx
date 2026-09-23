@@ -99,7 +99,7 @@ function SlowDataNotice() {
   return (
     <div
       role="alert"
-      className="fixed bottom-20 left-1/2 z-[60] w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl bg-ink p-4 text-paper shadow-pop lg:bottom-6"
+      className="pop-in fixed bottom-20 left-1/2 z-[60] w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl bg-ink p-4 text-paper shadow-pop lg:bottom-6"
     >
       <p className="font-display text-sm font-extrabold">Taking longer than usual…</p>
       <p className="mt-1 text-xs leading-relaxed text-paper/70">
@@ -138,6 +138,7 @@ export default function App() {
       <MaintenanceGate>
         {!isAdminRoute && !isStaffRoute && <Navbar />}
         <main className="flex-1">
+          <div className="page-enter">
           <Suspense fallback={<div className="mx-auto max-w-7xl space-y-3 px-4 py-16"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-24" /></div>}>
             <Routes>
             <Route path="/" element={<HomePage />} />
@@ -167,6 +168,7 @@ export default function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+          </div>
       </main>
       {!isAdminRoute && !isStaffRoute && <Footer />}
       {!isAdminRoute && !isStaffRoute && <MobileNav />}

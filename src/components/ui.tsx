@@ -72,7 +72,7 @@ export function Card({ children, className }: { children: ReactNode; className?:
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={clsx('animate-pulse rounded-xl bg-ink/10', className)} />;
+  return <div className={clsx('skeleton rounded-xl', className)} />;
 }
 
 export function EmptyState({
@@ -124,7 +124,7 @@ export function Notice({ tone, children }: { tone: 'success' | 'error' | 'info';
   return (
     <p
       className={clsx(
-        'rounded-xl px-3 py-2 text-xs font-semibold ring-1',
+        'pop-in rounded-xl px-3 py-2 text-xs font-semibold ring-1',
         tone === 'success' && 'bg-green-50 text-green-800 ring-green-200',
         tone === 'error' && 'bg-red-50 text-red-700 ring-red-200',
         tone === 'info' && 'bg-ember/10 text-ink/70 ring-ember/20'
@@ -160,7 +160,7 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-4 sm:items-center" role="dialog" aria-modal="true">
-      <div className="glass w-full max-w-md rounded-2xl border border-ink/10 p-6 shadow-pop">
+      <div className="pop-in glass w-full max-w-md rounded-2xl border border-ink/10 p-6 shadow-pop">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-extrabold">{title}</h3>
           <button ref={closeRef} onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-ink/5">

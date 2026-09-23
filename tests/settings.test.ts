@@ -40,6 +40,14 @@ describe('store settings', () => {
     expect(mapSettings([{ key: 'profit_margin', value: 'junk' }]).profitMargin).toBe(20);
   });
 
+  it('defaults max per item to 3 and clamps 1–99', () => {
+    expect(mapSettings([]).maxQtyPerItem).toBe(3);
+    expect(mapSettings([{ key: 'max_qty_per_item', value: '5' }]).maxQtyPerItem).toBe(5);
+    expect(mapSettings([{ key: 'max_qty_per_item', value: '0' }]).maxQtyPerItem).toBe(1);
+    expect(mapSettings([{ key: 'max_qty_per_item', value: '250' }]).maxQtyPerItem).toBe(99);
+    expect(mapSettings([{ key: 'max_qty_per_item', value: 'junk' }]).maxQtyPerItem).toBe(3);
+  });
+
   it('prices as cost + margin, whole rupees', () => {
     expect(sellingFromCost(1000, 20)).toBe(1200);
     expect(sellingFromCost(1350, 20)).toBe(1620);

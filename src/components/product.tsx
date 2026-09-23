@@ -184,7 +184,7 @@ export function ProductGrid({ products, density = 'compact', reasons, recSource 
   // Phones: strict 2 columns. Beyond that auto-fit: rows always stretch
   // edge to edge, however many items remain.
   return (
-    <div className={density === 'comfortable' ? GRID_COMFORTABLE : GRID_COMPACT}>
+    <div className={`stagger ${density === 'comfortable' ? GRID_COMFORTABLE : GRID_COMPACT}`}>
       {products.map((p) => (
         <ProductCard key={p.id} product={p} reason={reasons?.get(p.id)} recSource={reasons?.has(p.id) ? recSource ?? 'shelf' : undefined} />
       ))}

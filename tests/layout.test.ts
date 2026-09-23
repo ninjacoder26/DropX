@@ -52,4 +52,15 @@ describe('layout invariants', () => {
     expect(app).toMatch(/!isAdminRoute && !isStaffRoute && <Footer \/>/);
     expect(app.match(/<Navbar \/>/g)?.length).toBe(1);
   });
+
+  it('motion set exists and all of it dies under reduced-motion', () => {
+    const css = readFileSync(join(root, 'src/index.css'), 'utf8');
+    for (const token of ['.skeleton', '.page-enter', '.stagger', '.pop-in', 'dropx-shimmer', 'dropx-page-in', 'dropx-pop']) {
+      expect(css, token).toContain(token);
+    }
+    const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
+    for (const token of ['.page-enter', '.stagger > *', '.pop-in', '.skeleton']) {
+      expect(reduced, token).toContain(token);
+    }
+  });
 });

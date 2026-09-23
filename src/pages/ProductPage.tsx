@@ -41,7 +41,7 @@ export default function ProductPage() {
   const { user } = useAuth();
   const { has, toggle } = useWishlist();
   const { push } = useRecentlyViewed();
-  const { profitMargin } = useStoreSettings();
+  const { profitMargin, maxQtyPerItem } = useStoreSettings();
 
   useEffect(() => {
     (async () => {
@@ -83,12 +83,16 @@ export default function ProductPage() {
 
   const images = useMemo(() => {
     if (!product?.images?.length) return [];
+    const vId = variant?.id ?? null;
     return [...product.images]
       .filter((im) => !im.is_hidden)
-      .sort(
-        (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
-      );
-  }, [product]);
+      .sort((a, b) => {
+        // The selected variant's own photos lead — a preview of that variant.
+        const av = a.variant_id != null && a.variant_id === vId ? 0 : 1;
+        const bv = b.variant_id != null && b.variant_id === vId ? 0 : 1;
+        return av - bv || Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order;
+      });
+  }, [product, variant]);
 
   useEffect(() => {
     if (lightbox === null) return;
@@ -239,7 +243,7 @@ export default function ProductPage() {
               <Notice tone="info">Sizes for this item are still being stocked — check back soon.</Notice>
             </div>
           )}
-          {(product.variants?.length ?? 0) > 0 && (
+          {(product.variants?.length ?? 0) > 1 && (
             <div className="mt-6">
               <p className="text-xs font-bold uppercase tracking-widest text-ink/60">
                 Select variant {variant && <span className="text-ink">— {variant.name}</span>}
@@ -250,7 +254,10 @@ export default function ProductPage() {
                     key={v.id}
                     role="radio"
                     aria-checked={variant?.id === v.id}
-                    onClick={() => setVariant(v)}
+                    onClick={() => {
+                      setVariant(v);
+                      setImgIdx(0);
+                    }}
                     disabled={v.stock <= 0}
                     className={clsx(
                       'rounded-full border px-4 py-2 text-sm font-semibold transition',
@@ -276,13 +283,16 @@ export default function ProductPage() {
               </button>
               <span className="w-8 text-center text-sm font-bold" aria-live="polite">{qty}</span>
               <button
-                onClick={() => setQty(Math.min(variant?.stock || 99, qty + 1))}
+                onClick={() => setQty(Math.min(variant?.stock ?? maxQtyPerItem, maxQtyPerItem, qty + 1))}
                 className="p-2.5 hover:text-ember"
                 aria-label="Increase quantity"
               >
                 <Plus size={16} />
               </button>
             </div>
+            {qty >= maxQtyPerItem && (
+              <p className="w-full text-xs text-ink/50">Max {maxQtyPerItem} per order for this item.</p>
+            )}
             <Button
               disabled={!variant || out}
               onClick={() => {

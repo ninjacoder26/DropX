@@ -222,9 +222,24 @@ export function ReportProduct({ product }: { product: Product }) {
                   Reference <strong className="font-mono text-ink">{refId || '—'}</strong>. We review every
                   report and reply to your email.
                 </p>
-                <button onClick={() => setOpen(false)} className="mt-3 rounded-full bg-ink px-5 py-2 text-xs font-bold text-paper">
-                  Done
-                </button>
+                <div className="mt-3 flex justify-center gap-2">
+                  <button
+                    onClick={() => {
+                      setPhase('form');
+                      setBrand('');
+                      setReason('');
+                      setImageUrl(images.length === 1 ? images[0].secure_url : '');
+                      setError(null);
+                      setRefId('');
+                    }}
+                    className="rounded-full border border-ink/15 px-5 py-2 text-xs font-bold hover:border-ink/40"
+                  >
+                    Report another
+                  </button>
+                  <button onClick={() => setOpen(false)} className="rounded-full bg-ink px-5 py-2 text-xs font-bold text-paper">
+                    Done
+                  </button>
+                </div>
               </div>
             )}
           </div>

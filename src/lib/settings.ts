@@ -12,6 +12,8 @@ export interface StoreSettings {
   shippingExpress: number;
   /** Profit margin %, applied as cost × (1 + margin/100). Default 20. */
   profitMargin: number;
+  /** Max units of one item per order. Adjustable in Admin → Settings. Default 3. */
+  maxQtyPerItem: number;
   /** Rs per km from Imadol. Defaults: standard 10, express 20. */
   deliveryRateStandard: number;
   deliveryRateExpress: number;
@@ -34,6 +36,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   shippingStandard: SHIPPING_FEES.standard,
   shippingExpress: SHIPPING_FEES.express,
   profitMargin: 20,
+  maxQtyPerItem: 3,
   deliveryRateStandard: 10,
   deliveryRateExpress: 20,
   maintenanceEnabled: false,
@@ -76,6 +79,7 @@ export function mapSettings(rows: { key: string; value: string }[]): StoreSettin
     shippingStandard: num(get('shipping_standard'), DEFAULT_SETTINGS.shippingStandard),
     shippingExpress: num(get('shipping_express'), DEFAULT_SETTINGS.shippingExpress),
     profitMargin: clampMargin(num(get('profit_margin'), DEFAULT_SETTINGS.profitMargin)),
+    maxQtyPerItem: Math.min(99, Math.max(1, Math.round(num(get('max_qty_per_item'), DEFAULT_SETTINGS.maxQtyPerItem)))),
     deliveryRateStandard: num(get('delivery_rate_standard'), DEFAULT_SETTINGS.deliveryRateStandard),
     deliveryRateExpress: num(get('delivery_rate_express'), DEFAULT_SETTINGS.deliveryRateExpress),
     maintenanceEnabled: truthy(get('maintenance_enabled')),

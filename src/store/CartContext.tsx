@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useStoreSettings } from '../lib/settings';
 import { logCartAdd } from '../lib/analytics';
 import { safeGet, safeRemove, safeSet } from '../lib/storage';
 import { useAuth } from './AuthContext';
@@ -37,6 +38,7 @@ function loadLocal(): LocalItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { maxQtyPerItem: maxQty } = useStoreSettings();
   const [items, setItemsState] = useState<LocalItem[]>(() => loadLocal());
   const [loading, setLoading] = useState(false);
   // Ref mirror so rapid consecutive updates (double-click quick-add) never
@@ -70,7 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           .map((r) => ({
             product_id: r.product_id,
             variant_id: r.variant_id,
-            quantity: r.quantity,
+            quantity: Math.min(maxQty, r.quantity),
             product: r.products,
             variant: r.variants,
           }));
@@ -80,8 +82,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const f = merged.find(
             (m) => m.product_id === g.product_id && (m.variant_id ?? null) === (g.variant_id ?? null)
           );
-          if (f) f.quantity = Math.min(99, f.quantity + g.quantity);
-          else merged.push(g);
+          if (f) f.quantity = Math.min(maxQty, f.quantity + g.quantity);
+          else merged.push({ ...g, quantity: Math.min(maxQty, g.quantity) });
         }
         setItems(merged);
         safeRemove(LS_KEY);
@@ -89,6 +91,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     })();
   }, [user]);
+
+  // The cap can land after the cart (settings fetch first, live value after):
+  // shrink anything over it. place_order() enforces the same cap server-side.
+  useEffect(() => {
+    const over = itemsRef.current.some((i) => i.quantity > maxQty);
+    if (over) setItems(itemsRef.current.map((i) => (i.quantity > maxQty ? { ...i, quantity: maxQty } : i)));
+  }, [maxQty, setItems]);
 
   const syncServer = useCallback(
     async (next: LocalItem[]) => {
@@ -113,13 +122,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const key = (p: string, v: string | null) => `${p}::${v ?? ''}`;
       const found = prev.find((i) => key(i.product_id, i.variant_id) === key(product.id, variant?.id ?? null));
       const next: LocalItem[] = found
-        ? prev.map((i) => (i === found ? { ...i, quantity: Math.min(99, i.quantity + qty) } : i))
+        ? prev.map((i) => (i === found ? { ...i, quantity: Math.min(maxQty, i.quantity + qty) } : i))
         : [
             ...prev,
             {
               product_id: product.id,
               variant_id: variant?.id ?? null,
-              quantity: qty,
+              quantity: Math.min(maxQty, Math.max(1, qty)),
               product,
               variant,
             },
@@ -128,7 +137,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       logCartAdd(user?.id ?? null, product.id, product.category_id, qty);
       await syncServer(next);
     },
-    [syncServer, setItems, user]
+    [syncServer, setItems, user, maxQty]
   );
 
   const setQty = useCallback(
@@ -139,13 +148,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ? prev.filter((i) => !(i.product_id === productId && (i.variant_id ?? null) === (variantId ?? null)))
           : prev.map((i) =>
               i.product_id === productId && (i.variant_id ?? null) === (variantId ?? null)
-                ? { ...i, quantity: qty }
+                ? { ...i, quantity: Math.min(maxQty, qty) }
                 : i
             );
       setItems(next);
       await syncServer(next);
     },
-    [syncServer, setItems]
+    [syncServer, setItems, maxQty]
   );
 
   const remove = useCallback(

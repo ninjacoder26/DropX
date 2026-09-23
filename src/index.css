@@ -110,6 +110,47 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Shimmer skeletons — a soft light sweep instead of flat blinking. */
+@keyframes dropx-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  background: linear-gradient(100deg, rgba(16, 16, 16, 0.07) 35%, rgba(16, 16, 16, 0.15) 50%, rgba(16, 16, 16, 0.07) 65%);
+  background-size: 200% 100%;
+  animation: dropx-shimmer 1.6s ease-in-out infinite;
+}
+
+/* Route-change entrance: one soft rise, over before you notice it. */
+@keyframes dropx-page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: dropx-page-in 0.35s ease both;
+}
+
+/* Staggered shelf entrances — quick cascade, capped so long grids settle. */
+.stagger > * {
+  animation: dropx-page-in 0.4s ease both;
+}
+.stagger > *:nth-child(2) { animation-delay: 0.04s; }
+.stagger > *:nth-child(3) { animation-delay: 0.08s; }
+.stagger > *:nth-child(4) { animation-delay: 0.12s; }
+.stagger > *:nth-child(5) { animation-delay: 0.16s; }
+.stagger > *:nth-child(6) { animation-delay: 0.2s; }
+.stagger > *:nth-child(7) { animation-delay: 0.24s; }
+.stagger > *:nth-child(n+8) { animation-delay: 0.28s; }
+
+/* Pop-in for dialogs, notices and toasts. */
+@keyframes dropx-pop {
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.pop-in {
+  animation: dropx-pop 0.25s ease both;
+}
+
 /* Marquee strip */
 @keyframes dropx-marquee {
   from { transform: translateX(0); }
@@ -125,6 +166,10 @@ body {
   .install-banner { animation: none; }
   .tick-pop { animation: none; }
   .pulse-ready { animation: none; }
+  .page-enter { animation: none; }
+  .stagger > * { animation: none; }
+  .pop-in { animation: none; }
+  .skeleton { animation: none; background: rgba(16, 16, 16, 0.08); }
 }
 
 /* Countdown tick pop + ready-button glow (maintenance page) */

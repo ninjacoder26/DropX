@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import {
   BarChart3, Bell, ClipboardList, Flame, Images, KeyRound, LayoutDashboard, Menu, Moon, Package,
@@ -29,20 +29,20 @@ import { primaryImage } from '../components/product';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const TABS = [
-  { to: '/admin', label: 'Overview', end: true, icon: LayoutDashboard },
-  { to: '/admin/products', label: 'Products', icon: Package },
-  { to: '/admin/categories', label: 'Categories', icon: Tags },
-  { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
-  { to: '/admin/delivery', label: 'Delivery', icon: Truck },
-  { to: '/admin/customers', label: 'Customers', icon: Users },
-  { to: '/admin/staff', label: 'Staff', icon: KeyRound },
-  { to: '/admin/drops', label: 'Drops', icon: Zap },
-  { to: '/admin/reviews', label: 'Reviews', icon: Star },
-  { to: '/admin/image-requests', label: 'Images', icon: Images },
-  { to: '/admin/demand', label: 'Demand', icon: Flame },
-  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
-  { to: '/admin/logs', label: 'Activity', icon: ScrollText },
+  { to: '/admin', label: 'Overview', end: true, icon: LayoutDashboard, group: '' },
+  { to: '/admin/products', label: 'Products', icon: Package, group: 'Catalog' },
+  { to: '/admin/categories', label: 'Categories', icon: Tags, group: 'Catalog' },
+  { to: '/admin/drops', label: 'Drops', icon: Zap, group: 'Catalog' },
+  { to: '/admin/orders', label: 'Orders', icon: ClipboardList, group: 'Sales' },
+  { to: '/admin/reviews', label: 'Reviews', icon: Star, group: 'Sales' },
+  { to: '/admin/image-requests', label: 'Images', icon: Images, group: 'Sales' },
+  { to: '/admin/demand', label: 'Demand', icon: Flame, group: 'Sales' },
+  { to: '/admin/delivery', label: 'Delivery', icon: Truck, group: 'Store' },
+  { to: '/admin/customers', label: 'Customers', icon: Users, group: 'Store' },
+  { to: '/admin/settings', label: 'Settings', icon: SettingsIcon, group: 'Store' },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3, group: 'System' },
+  { to: '/admin/logs', label: 'Activity', icon: ScrollText, group: 'System' },
+  { to: '/admin/staff', label: 'Staff', icon: KeyRound, group: 'System' },
 ];
 
 export default function AdminPage() {
@@ -125,28 +125,34 @@ export default function AdminPage() {
 
   const nav = (
     <nav className="space-y-1" aria-label="Admin sections">
-      {tabs.map((t) => (
-        <NavLink
-          key={t.to}
-          to={t.to}
-          end={t.end}
-          onClick={() => setDrawer(false)}
-          className={({ isActive }) =>
-            clsx(
-              'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition',
-              isActive ? 'bg-ember text-white shadow-card' : 'text-ink/70 hover:bg-ink/5 hover:text-ink'
-            )
-          }
-        >
-          <t.icon size={17} />
-          <span className="flex-1">{t.label}</span>
-          {t.to === '/admin/image-requests' && pendingReports > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1.5 text-[10px] font-bold text-white">
-              {pendingReports > 99 ? '99+' : pendingReports}
-            </span>
-          )}
-        </NavLink>
-      ))}
+      {tabs.flatMap((t, i) => {
+        const showHeader = t.group !== '' && (i === 0 || tabs[i - 1].group !== t.group);
+        return [
+          ...(showHeader
+            ? [<p key={`g-${t.group}`} className="px-4 pb-1 pt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-ink/40 first:pt-0">{t.group}</p>]
+            : []),
+          <NavLink
+            key={t.to}
+            to={t.to}
+            end={t.end}
+            onClick={() => setDrawer(false)}
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                isActive ? 'bg-ember text-white shadow-card' : 'text-ink/70 hover:bg-ink/5 hover:text-ink'
+              )
+            }
+          >
+            <t.icon size={17} />
+            <span className="flex-1">{t.label}</span>
+            {t.to === '/admin/image-requests' && pendingReports > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1.5 text-[10px] font-bold text-white">
+                {pendingReports > 99 ? '99+' : pendingReports}
+              </span>
+            )}
+          </NavLink>,
+        ];
+      })}
     </nav>
   );
 
@@ -226,7 +232,7 @@ export default function AdminPage() {
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route index element={<Overview />} />
-            <Route path="products" element={<Products readOnly={readOnly} />} />
+            <Route path="products" element={<Products readOnly={readOnly} isSuper={isSuper} />} />
             <Route path="categories" element={<Categories readOnly={readOnly} />} />
             <Route path="orders" element={<Orders readOnly={readOnly} />} />
           <Route path="delivery" element={<AdminDelivery readOnly={readOnly} />} />
@@ -243,7 +249,7 @@ export default function AdminPage() {
         </div>
       </div>
       {reportToast && (
-        <div className="fixed bottom-4 right-4 z-50 w-72 rounded-2xl bg-ink p-4 text-paper shadow-pop" role="status">
+        <div className="pop-in fixed bottom-4 right-4 z-50 w-72 rounded-2xl bg-ink p-4 text-paper shadow-pop" role="status">
           <p className="font-display text-sm font-extrabold">New image report</p>
           <p className="mt-0.5 text-xs text-paper/70">A brand just disputed a product photo.</p>
           <div className="mt-2 flex gap-2">
@@ -384,7 +390,7 @@ function Overview() {
 /* ─── Products ─── */
 const EMPTY_PRODUCT = { name: '', slug: '', brand: '', brand_website: '', description: '', category_id: '', cost_price: '', base_override: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
-function Products({ readOnly }: { readOnly: boolean }) {
+function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }) {
   const [items, setItems] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [q, setQ] = useState('');
@@ -496,7 +502,7 @@ function Products({ readOnly }: { readOnly: boolean }) {
   };
 
   const addVariant = async () => {
-    if (readOnly) return;
+    if (readOnly || !isSuper) return;
     if (!editing || editing === 'new' || !vForm.name.trim() || !vForm.sku.trim()) {
       setMsg('Variant needs a name and SKU.');
       return;
@@ -778,25 +784,27 @@ function Products({ readOnly }: { readOnly: boolean }) {
                           >
                             Set stock
                           </button>
-                          <button
-                            className="rounded-lg bg-red-100 px-2 py-1 text-[11px] font-bold text-red-700"
-                            onClick={() => {
-                              if (!confirm(`Delete variant ${v.sku}?`)) return;
-                              supabase.from('product_variants').delete().eq('id', v.id).then(() => {
-                                log('variant.delete', 'product_variants', v.id, {});
-                                setVariants(variants.filter((x) => x.id !== v.id));
-                              });
-                            }}
-                          >
-                            Delete
-                          </button>
+                          {isSuper && (
+                            <button
+                              className="rounded-lg bg-red-100 px-2 py-1 text-[11px] font-bold text-red-700"
+                              onClick={() => {
+                                if (!confirm(`Delete variant ${v.sku}?`)) return;
+                                supabase.from('product_variants').delete().eq('id', v.id).then(() => {
+                                  log('variant.delete', 'product_variants', v.id, {});
+                                  setVariants(variants.filter((x) => x.id !== v.id));
+                                });
+                              }}
+                            >
+                              Delete
+                            </button>
+                          )}
                         </>
                       )}
                     </li>
                   ))}
                   {variants.length === 0 && <li className="text-xs text-ink/50">No variants — add at least one so checkout can verify stock.</li>}
                 </ul>
-                {!readOnly && (
+                {!readOnly && isSuper && (
                   <>
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       <Input placeholder="Name (M / Black)" value={vForm.name} onChange={(e) => setVForm({ ...vForm, name: e.target.value })} />
@@ -1454,11 +1462,40 @@ function Staff() {
 function Customers() {
   const [items, setItems] = useState<Profile[]>([]);
   const [q, setQ] = useState('');
+  const [wlOpen, setWlOpen] = useState<string | null>(null);
+  const [wl, setWl] = useState<Record<string, { product_id: string; product_name: string }[]>>({});
   useEffect(() => {
     supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200)
       .then(({ data }) => setItems((data ?? []) as Profile[]));
   }, []);
   const filtered = items.filter((p) => !q || p.email.includes(q) || (p.full_name ?? '').toLowerCase().includes(q.toLowerCase()));
+
+  const toggleWishlist = async (p: Profile) => {
+    if (wlOpen === p.id) {
+      setWlOpen(null);
+      return;
+    }
+    setWlOpen(p.id);
+    if (wl[p.id]) return;
+    const { data } = await supabase
+      .from('wishlists')
+      .select('product_id, products:product_id (name)')
+      .eq('user_id', p.id)
+      .order('product_id');
+    setWl((m) => ({
+      ...m,
+      [p.id]: ((data ?? []) as unknown as { product_id: string; products: { name: string } | null }[])
+        .map((r) => ({ product_id: r.product_id, product_name: r.products?.name ?? 'Removed product' })),
+    }));
+  };
+
+  const removeWish = async (p: Profile, productId: string) => {
+    const { error } = await supabase.from('wishlists').delete().eq('user_id', p.id).eq('product_id', productId);
+    if (!error) {
+      log('wishlist.remove', 'wishlists', p.id, { product_id: productId });
+      setWl((m) => ({ ...m, [p.id]: (m[p.id] ?? []).filter((w) => w.product_id !== productId) }));
+    }
+  };
   return (
     <div>
       <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by email or name…" className="max-w-xs" aria-label="Search customers" />
@@ -1469,31 +1506,58 @@ function Customers() {
           </tr></thead>
           <tbody>
             {filtered.map((p) => (
-              <tr key={p.id} className="border-b border-ink/5 last:border-0">
-                <td className="px-4 py-3"><p className="font-bold">{p.full_name || '—'}</p><p className="text-xs text-ink/50">{p.email} · {p.phone ?? 'no phone'}</p></td>
-                <td className="px-4 py-3"><Badge tone={p.role === 'customer' ? 'paper' : 'ember'}>{p.role}</Badge></td>
-                <td className="px-4 py-3 text-right">
-                  <select
-                    value={p.role}
-                    onChange={(e) => {
-                      const role = e.target.value;
-                      if (!confirm(`Change ${p.email} role to ${role}?`)) return;
-                      supabase.from('profiles').update({ role }).eq('id', p.id).then(({ error }) => {
-                        if (!error) {
-                          log('customer.role', 'profiles', p.id, { role });
-                          setItems(items.map((x) => (x.id === p.id ? { ...x, role: role as Profile['role'] } : x)));
-                        }
-                      });
-                    }}
-                    className="rounded-full border border-ink/15 px-3 py-1.5 text-xs font-bold"
-                    aria-label="Customer role"
-                  >
-                    <option value="customer">customer</option>
-                    <option value="admin">admin</option>
-                    <option value="superadmin">superadmin</option>
-                  </select>
-                </td>
-              </tr>
+              <Fragment key={p.id}>
+                <tr className="border-b border-ink/5 last:border-0">
+                  <td className="px-4 py-3"><p className="font-bold">{p.full_name || '—'}</p><p className="text-xs text-ink/50">{p.email} · {p.phone ?? 'no phone'}</p></td>
+                  <td className="px-4 py-3"><Badge tone={p.role === 'customer' ? 'paper' : 'ember'}>{p.role}</Badge></td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="inline-flex items-center gap-1.5">
+                      <button onClick={() => void toggleWishlist(p)} className="rounded-full border border-ink/15 px-3 py-1.5 text-xs font-bold hover:border-ink/40" aria-expanded={wlOpen === p.id}>
+                        {wlOpen === p.id ? 'Hide wishlist' : 'Wishlist'}
+                      </button>
+                      <select
+                        value={p.role}
+                        onChange={(e) => {
+                          const role = e.target.value;
+                          if (!confirm(`Change ${p.email} role to ${role}?`)) return;
+                          supabase.from('profiles').update({ role }).eq('id', p.id).then(({ error }) => {
+                            if (!error) {
+                              log('customer.role', 'profiles', p.id, { role });
+                              setItems(items.map((x) => (x.id === p.id ? { ...x, role: role as Profile['role'] } : x)));
+                            }
+                          });
+                        }}
+                        className="rounded-full border border-ink/15 px-3 py-1.5 text-xs font-bold"
+                        aria-label="Customer role"
+                      >
+                        <option value="customer">customer</option>
+                        <option value="admin">admin</option>
+                        <option value="superadmin">superadmin</option>
+                      </select>
+                    </span>
+                  </td>
+                </tr>
+                {wlOpen === p.id && (
+                  <tr>
+                    <td colSpan={3} className="bg-paper px-4 py-3">
+                      {(wl[p.id] ?? []).length === 0 ? (
+                        <p className="text-xs text-ink/50">Wishlist is empty.</p>
+                      ) : (
+                        <ul className="space-y-1.5">
+                          {(wl[p.id] ?? []).map((w) => (
+                            <li key={w.product_id} className="flex items-center gap-2 text-sm">
+                              <span className="min-w-0 flex-1 truncate font-semibold">{w.product_name}</span>
+                              <button onClick={() => void removeWish(p, w.product_id)} className="shrink-0 text-xs font-bold text-red-600 hover:underline">
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -1844,6 +1908,7 @@ function Settings({ readOnly }: { readOnly: boolean }) {
     announcement: '',
     support_email: '',
     free_shipping_threshold: '',
+    max_qty_per_item: '',
     profit_margin: '',
     delivery_rate_standard: '',
     delivery_rate_express: '',
@@ -1869,6 +1934,7 @@ function Settings({ readOnly }: { readOnly: boolean }) {
         announcement: get('announcement'),
         support_email: get('support_email'),
         free_shipping_threshold: get('free_shipping_threshold'),
+        max_qty_per_item: get('max_qty_per_item'),
         profit_margin: get('profit_margin'),
         delivery_rate_standard: get('delivery_rate_standard'),
         delivery_rate_express: get('delivery_rate_express'),
@@ -1908,6 +1974,13 @@ function Settings({ readOnly }: { readOnly: boolean }) {
       const m = Number(form.profit_margin);
       if (Number.isNaN(m) || m < 0 || m > 100) {
         setMsg('Profit margin must be between 0 and 100.');
+        return;
+      }
+    }
+    if (form.max_qty_per_item.trim() !== '') {
+      const q = Number(form.max_qty_per_item);
+      if (!Number.isInteger(q) || q < 1 || q > 99) {
+        setMsg('Max per item must be a whole number between 1 and 99.');
         return;
       }
     }
@@ -2030,7 +2103,8 @@ function Settings({ readOnly }: { readOnly: boolean }) {
               View only — settings are managed by admins.
             </p>
           )}
-          <fieldset disabled={readOnly} className="space-y-4">          <Field label="Announcement bar text">
+          <fieldset disabled={readOnly} className="space-y-4">
+          <Field label="Announcement bar text">
             <Input value={form.announcement} onChange={(e) => setForm({ ...form, announcement: e.target.value })} placeholder="Free standard shipping over NPR 2,999" />
           </Field>
           <Field label="Support email">
@@ -2040,7 +2114,10 @@ function Settings({ readOnly }: { readOnly: boolean }) {
             <Field label="Free shipping over (NPR)">
               <Input type="number" min={0} value={form.free_shipping_threshold} onChange={(e) => setForm({ ...form, free_shipping_threshold: e.target.value })} />
             </Field>
-            <div className="sm:col-span-2">
+            <Field label="Max qty per item (1–99)">
+              <Input type="number" min={1} max={99} value={form.max_qty_per_item} onChange={(e) => setForm({ ...form, max_qty_per_item: e.target.value })} placeholder="3" />
+            </Field>
+            <div>
               <p className="rounded-xl bg-paper px-3 py-2.5 text-xs text-ink/60">
                 Per-order fees now come from <strong>Admin → Delivery</strong> plans (base + Rs/km).
               </p>
