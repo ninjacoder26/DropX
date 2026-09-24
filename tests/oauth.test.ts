@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { oauthRedirectTo, safeNextPath } from '../src/lib/oauth';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { consumeLoginOrigin, oauthRedirectTo, rememberLoginOrigin, safeNextPath } from '../src/lib/oauth';
 
 describe('oauth redirect construction', () => {
   it('passes through legitimate in-app paths', () => {
@@ -39,5 +39,47 @@ describe('oauth redirect construction', () => {
     expect(oauthRedirectTo('https://dropx-preview-1.vercel.app', '/account')).toBe(
       'https://dropx-preview-1.vercel.app/account'
     );
+  });
+});
+
+describe('login origin self-heal', () => {
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => {
+        store.set(k, String(v));
+      },
+      removeItem: (k: string) => {
+        store.delete(k);
+      },
+    });
+    vi.stubGlobal('window', { location: { origin: 'https://dropxnepal.vercel.app' } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('remembers and consumes the origin exactly once', () => {
+    rememberLoginOrigin();
+    expect(consumeLoginOrigin()).toBe('https://dropxnepal.vercel.app');
+    expect(consumeLoginOrigin()).toBeNull();
+  });
+
+  it('never throws when storage is blocked', () => {
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+      setItem: () => {
+        throw new Error('blocked');
+      },
+      removeItem: () => {
+        throw new Error('blocked');
+      },
+    });
+    expect(() => rememberLoginOrigin()).not.toThrow();
+    expect(consumeLoginOrigin()).toBeNull();
   });
 });
