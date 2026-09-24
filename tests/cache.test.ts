@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cachedFetch, createTTLCache } from '../src/lib/cache';
+import { cachedFetch, createTTLCache, onSlowData } from '../src/lib/cache';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -44,5 +44,47 @@ describe('ttl cache', () => {
     cache.clear();
     await cachedFetch(cache, 'k', loader);
     expect(calls).toBe(2);
+  });
+
+  it('notifies slow listeners when a load hangs past 5s, then clears', async () => {
+    const cache = createTTLCache<string>(60_000);
+    const states: boolean[] = [];
+    const unsub = onSlowData((s) => states.push(s));
+    try {
+      let resolve!: (v: string) => void;
+      const p = cachedFetch(
+        cache,
+        'k',
+        () =>
+          new Promise<string>((r) => {
+            resolve = r;
+          })
+      );
+      expect(states).toEqual([]);
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(states).toEqual([]);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(states).toEqual([true]);
+      resolve('v');
+      await expect(p).resolves.toBe('v');
+      expect(states).toEqual([true, false]);
+    } finally {
+      unsub();
+    }
+  });
+
+  it('stays quiet without listeners and on fast loads', async () => {
+    const cache = createTTLCache<string>(60_000);
+    await cachedFetch(cache, 'k', async () => 'v');
+    await vi.advanceTimersByTimeAsync(30_000);
+    const states: boolean[] = [];
+    const unsub = onSlowData((s) => states.push(s));
+    try {
+      await cachedFetch(cache, 'k', async () => 'v2');
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(states).toEqual([]);
+    } finally {
+      unsub();
+    }
   });
 });

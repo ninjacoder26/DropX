@@ -39,9 +39,66 @@ export function createTTLCache<T>(ttlMs: number): TTLCache<T> {
 export async function cachedFetch<T>(cache: TTLCache<T>, key: string, loader: () => Promise<T>): Promise<T> {
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
-  const value = await loader();
-  cache.set(key, value);
-  return value;
+  trackStart();
+  try {
+    const value = await loader();
+    cache.set(key, value);
+    return value;
+  } finally {
+    trackEnd();
+  }
+}
+
+/* ── Slow-data signal: any cached read hanging past 5 seconds ── */
+
+export type SlowDataListener = (slow: boolean) => void;
+
+const slowListeners = new Set<SlowDataListener>();
+let inFlight = 0;
+let slowTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Subscribe to "data is taking a while". Returns an unsubscribe fn. */
+export function onSlowData(cb: SlowDataListener): () => void {
+  slowListeners.add(cb);
+  return () => {
+    slowListeners.delete(cb);
+  };
+}
+
+function emitSlow(slow: boolean): void {
+  for (const cb of [...slowListeners]) {
+    try {
+      cb(slow);
+    } catch {
+      /* listener bugs must never break fetches */
+    }
+  }
+}
+
+function trackStart(): void {
+  if (slowListeners.size === 0) return;
+  inFlight += 1;
+  if (inFlight === 1 && slowTimer === null) {
+    slowTimer = setTimeout(() => {
+      slowTimer = null;
+      if (inFlight > 0) emitSlow(true);
+    }, 5000);
+  }
+}
+
+function trackEnd(): void {
+  if (slowListeners.size === 0) {
+    inFlight = 0;
+    return;
+  }
+  inFlight = Math.max(0, inFlight - 1);
+  if (inFlight === 0) {
+    if (slowTimer !== null) {
+      clearTimeout(slowTimer);
+      slowTimer = null;
+    }
+    emitSlow(false);
+  }
 }
 
 /* ═══════════════ registry: one call invalidates every storefront read ═══════════════ */

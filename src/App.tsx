@@ -7,6 +7,7 @@ import { Skeleton } from './components/ui';
 import { MaintenanceGate, MaintenancePage } from './components/MaintenancePage';
 import { isMaintenanceMode } from './lib/maintenance';
 import { canonicalRedirectFor } from './lib/oauth';
+import { onSlowData } from './lib/cache';
 import { useAuth } from './store/AuthContext';
 import type { ReactNode } from 'react';
 
@@ -80,23 +81,26 @@ function MaintenanceRoute() {
 }
 
 /**
- * If boot data (session restore) still hasn't landed after 5 seconds,
- * say so: either the backend is down or the connection dropped. Retry
- * reloads; dismiss hides it for the session.
+ * If boot data (session restore) OR any page data still hasn't landed after
+ * 5 seconds, say so: either the backend is down or the connection dropped.
+ * Retry reloads; dismiss hides it for the session.
  */
 function SlowDataNotice() {
   const { loading } = useAuth();
-  const [slow, setSlow] = useState(false);
+  const [slowBoot, setSlowBoot] = useState(false);
+  const [slowFetch, setSlowFetch] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
     if (!loading) {
-      setSlow(false);
+      setSlowBoot(false);
       return;
     }
-    const t = setTimeout(() => setSlow(true), 5000);
+    const t = setTimeout(() => setSlowBoot(true), 5000);
     return () => clearTimeout(t);
   }, [loading ]);
-  if (!loading || !slow || dismissed) return null;
+  useEffect(() => onSlowData(setSlowFetch), []);
+  if ((!loading || !slowBoot) && !slowFetch) return null;
+  if (dismissed) return null;
   return (
     <div
       role="alert"
