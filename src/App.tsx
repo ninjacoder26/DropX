@@ -6,6 +6,7 @@ import { ScrollToTop } from './components/ScrollToTop';
 import { Skeleton } from './components/ui';
 import { MaintenanceGate, MaintenancePage } from './components/MaintenancePage';
 import { isMaintenanceMode } from './lib/maintenance';
+import { canonicalRedirectFor } from './lib/oauth';
 import { useAuth } from './store/AuthContext';
 import type { ReactNode } from 'react';
 
@@ -125,6 +126,14 @@ function SlowDataNotice() {
 
 export default function App() {
   const { pathname } = useLocation();
+  // Retired domains bounce to the canonical host before anything renders —
+  // no login flow, bookmark, or installed PWA can strand users on old URLs.
+  useEffect(() => {
+    const canonical = canonicalRedirectFor(window.location.hostname);
+    if (canonical) {
+      window.location.replace(`https://${canonical}${window.location.pathname}${window.location.search}`);
+    }
+  }, []);
   // The admin has its own shell (sidebar + topbar + drawer) — rendering the
   // storefront navbar/footer on top doubled every navigation control.
   // The staff portal is separate the same way.

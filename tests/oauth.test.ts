@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { consumeLoginOrigin, oauthRedirectTo, rememberLoginOrigin, safeNextPath } from '../src/lib/oauth';
+import { canonicalRedirectFor, consumeLoginOrigin, oauthRedirectTo, rememberLoginOrigin, safeNextPath } from '../src/lib/oauth';
 
 describe('oauth redirect construction', () => {
   it('passes through legitimate in-app paths', () => {
@@ -81,5 +81,21 @@ describe('login origin self-heal', () => {
     });
     expect(() => rememberLoginOrigin()).not.toThrow();
     expect(consumeLoginOrigin()).toBeNull();
+  });
+});
+
+describe('canonical host enforcement', () => {
+  it('bounces only retired hosts to dropxnepal', () => {
+    expect(canonicalRedirectFor('dropx-ninjacoder26.vercel.app')).toBe('dropxnepal.vercel.app');
+    expect(canonicalRedirectFor('DROPX-NINJACODER26.VERCEL.APP')).toBe('dropxnepal.vercel.app');
+  });
+
+  it('leaves everything else alone', () => {
+    expect(canonicalRedirectFor('dropxnepal.vercel.app')).toBeNull();
+    expect(canonicalRedirectFor('localhost')).toBeNull();
+    expect(canonicalRedirectFor('127.0.0.1')).toBeNull();
+    expect(canonicalRedirectFor('dropx-git-main-ninjacoder26.vercel.app')).toBeNull();
+    expect(canonicalRedirectFor('evil-dropx-ninjacoder26.vercel.app.evil.com')).toBeNull();
+    expect(canonicalRedirectFor('')).toBeNull();
   });
 });

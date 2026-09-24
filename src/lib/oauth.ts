@@ -29,6 +29,23 @@ export function oauthRedirectTo(origin: string, next?: unknown, fallback = '/acc
   return `${origin}${safeNextPath(next, fallback)}`;
 }
 
+/**
+ * One true production host. Vercel keeps serving the old auto-made domain
+ * next to the new one (and Supabase falls back to whichever Site URL it
+ * has), so anyone arriving on a retired host is bounced here with path
+ * intact. Preview deployments and localhost are NEVER touched.
+ */
+export const CANONICAL_HOST = 'dropxnepal.vercel.app';
+
+/** Retired hosts that must land on CANONICAL_HOST. Exact matches only. */
+const LEGACY_HOSTS = ['dropx-ninjacoder26.vercel.app'];
+
+/** Canonical host for a retired hostname, or null to stay put. */
+export function canonicalRedirectFor(hostname: string): string | null {
+  if (LEGACY_HOSTS.includes(hostname.trim().toLowerCase())) return CANONICAL_HOST;
+  return null;
+}
+
 /** Stash where the login started (best-effort; storage may be blocked). */
 export function rememberLoginOrigin(): void {
   try {
