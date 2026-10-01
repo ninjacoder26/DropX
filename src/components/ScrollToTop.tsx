@@ -1,11 +1,30 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useLocation, useNavigationType } from 'react-router-dom';
 
-/** Every route change starts at the top — no more landing mid-page. */
+/**
+ * Consistent scroll on every navigation:
+ * - PUSH (links, tabs, filters): start at the top.
+ * - POP (browser back/forward): restore where you were.
+ * Positions live in memory per route — a full reload starts at the top,
+ * which is the standard everyone expects.
+ */
 export function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const navType = useNavigationType();
+  const key = `${pathname}${search}`;
+  const saved = useRef(new Map<string, number>());
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    if (navType === 'POP') {
+      window.scrollTo(0, saved.current.get(key) ?? 0);
+    } else {
+      window.scrollTo(0, 0);
+    }
+    const onScroll = () => {
+      saved.current.set(key, window.scrollY);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [key, navType]);
   return null;
 }

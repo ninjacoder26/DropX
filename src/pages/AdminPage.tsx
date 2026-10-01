@@ -394,9 +394,19 @@ function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
-  const [q, setQ] = useState('');
-  const [catFilter, setCatFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  // List filters live in the URL next to ?edit= — tab switches and reloads
+  // keep the exact view. replace:true so typing never spams history.
+  const q = params.get('q') ?? '';
+  const catFilter = params.get('cat') ?? '';
+  const setL = (patch: Record<string, string | null>) => {
+    const next = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
+    setParams(next, { replace: true });
+  };
   const [form, setForm] = useState(EMPTY_PRODUCT);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -638,10 +648,10 @@ function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
+        <Input value={q} onChange={(e) => setL({ q: e.target.value || null })} placeholder="Search products…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search products" />
         <select
           value={catFilter}
-          onChange={(e) => setCatFilter(e.target.value)}
+          onChange={(e) => setL({ cat: e.target.value || null })}
           className="rounded-xl border border-ink/15 bg-white px-3 py-2 text-xs font-bold"
           aria-label="Filter by category"
         >
@@ -1061,9 +1071,19 @@ function Categories({ readOnly }: { readOnly: boolean }) {
 
 /* ─── Orders ─── */
 function Orders({ readOnly }: { readOnly: boolean }) {
+  const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<Order[]>([]);
-  const [filter, setFilter] = useState('');
-  const [search, setSearch] = useState('');
+  // Filter + search live in the URL so tab switches and reloads keep them.
+  const filter = params.get('f') ?? '';
+  const search = params.get('q') ?? '';
+  const setF = (patch: Record<string, string | null>) => {
+    const next = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
+    setParams(next, { replace: true });
+  };
   const [loading, setLoading] = useState(true);
   const [orderErr, setOrderErr] = useState<string | null>(null);
   const nav = useNavigate();
@@ -1171,7 +1191,7 @@ function Orders({ readOnly }: { readOnly: boolean }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order №, name, phone…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search orders" />
+        <Input value={search} onChange={(e) => setF({ q: e.target.value || null })} placeholder="Search order №, name, phone…" className="max-w-xs flex-1 sm:flex-none" aria-label="Search orders" />
       </div>
       {orderErr && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 ring-1 ring-red-200" role="alert">{orderErr}</p>}
       {readOnly ? (
@@ -1223,7 +1243,7 @@ function Orders({ readOnly }: { readOnly: boolean }) {
         {['', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'unpaid'].map((s) => (
           <button
             key={s || 'all'}
-            onClick={() => setFilter(s)}
+            onClick={() => setF({ f: s || null })}
             className={`rounded-full px-3.5 py-1.5 text-xs font-bold ${filter === s ? 'bg-ink text-paper' : 'bg-white ring-1 ring-ink/10'}`}
           >
             {s === '' ? 'All' : s === 'unpaid' ? 'Unpaid' : s}
@@ -1877,8 +1897,15 @@ function Drops({ readOnly }: { readOnly: boolean }) {
 
 /* ─── Reviews moderation ─── */
 function ReviewsMod({ readOnly }: { readOnly: boolean }) {
+  const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<(Review & { product_name?: string })[]>([]);
-  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
+  const filter = (params.get('f') === 'all' ? 'all' : 'pending') as 'pending' | 'all';
+  const setFilter = (f: 'pending' | 'all') => {
+    const next = new URLSearchParams(params);
+    if (f === 'all') next.set('f', 'all');
+    else next.delete('f');
+    setParams(next, { replace: true });
+  };
   const load = async () => {
     let q = supabase.from('reviews').select('*, products:product_id(name)').order('created_at', { ascending: false }).limit(100);
     if (filter === 'pending') q = q.eq('is_approved', false);
