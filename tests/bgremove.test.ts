@@ -5,6 +5,7 @@ import {
   featherAlpha,
   flattenOnWhite,
   floodBackground,
+  maxFractionFor,
   removeBackgroundFromPixels,
 } from '../src/lib/bgremove';
 
@@ -101,6 +102,49 @@ describe('bg removal core', () => {
   it('bails when the subject fills the frame', () => {
     const d = make(40, 40, [200, 30, 30]);
     const r = removeBackgroundFromPixels(d, 40, 40);
+    expect(r.removed).toBe(false);
+    expect(r.reason).toMatch(/aggressive/);
+  });
+
+  it('scales the ceiling with border confidence', () => {
+    expect(maxFractionFor(4, true)).toBe(0.92);
+    expect(maxFractionFor(10, false)).toBe(0.8);
+    expect(maxFractionFor(15, true)).toBe(0.68);
+    expect(maxFractionFor(22, true)).toBe(0.55);
+  });
+
+  it('clears a clean studio shot even at high removal fractions', () => {
+    const w = 50;
+    const h = 50;
+    // 64% removal on pure white — the old fixed 0.55 ceiling refused this.
+    const d = make(w, h, [255, 255, 255], { x: 10, y: 10, w: 30, h: 30, c: [200, 30, 30] });
+    const r = removeBackgroundFromPixels(d, w, h);
+    expect(r.removed).toBe(true);
+    expect(r.removedFraction).toBeGreaterThan(0.55);
+  });
+
+  it('stays strict when the border itself is noisy', () => {
+    // border alternates two grays (~20 apart): confident enough to try,
+    // too noisy for the high ceiling — 64% removal still bails, where the
+    // same removal on clean white would pass.
+    const w = 50;
+    const h = 50;
+    const d = new Uint8ClampedArray(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const edge = x === 0 || y === 0 || x === w - 1 || y === h - 1;
+        const v = edge ? ((x + y) % 2 === 0 ? 255 : 215) : 255;
+        const i = (y * w + x) * 4;
+        const inside = x >= 10 && x < 40 && y >= 10 && y < 40;
+        d[i] = inside ? 200 : v;
+        d[i + 1] = inside ? 30 : v;
+        d[i + 2] = inside ? 30 : v;
+        d[i + 3] = 255;
+      }
+    }
+    const est = estimateBackground(d, w, h);
+    expect(est.confident).toBe(true);
+    const r = removeBackgroundFromPixels(d, w, h);
     expect(r.removed).toBe(false);
     expect(r.reason).toMatch(/aggressive/);
   });

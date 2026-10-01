@@ -7,11 +7,9 @@
  *
  * SELF-HEAL: Supabase ignores our `redirectTo` when the current domain is
  * missing from its dashboard allowlist and drops the user on the dashboard
- * Site URL instead (e.g. an old *.vercel.app domain). We remember where the
- * login started and bounce back automatically — see remember/consume below.
+ * Site URL instead (e.g. an old *.vercel.app domain). redirectTo below is
+ * hardcoded to production so the allowlist has exactly one URL to contain.
  */
-
-const LOGIN_ORIGIN_KEY = 'dropx-login-origin';
 
 /** Allowlisted in-app path. Anything else collapses to the fallback. */
 export function safeNextPath(next: unknown, fallback = '/account'): string {
@@ -37,6 +35,18 @@ export function oauthRedirectTo(origin: string, next?: unknown, fallback = '/acc
  */
 export const CANONICAL_HOST = 'dropxnepal.vercel.app';
 
+/** The single origin OAuth and recovery emails point at. Hardcoded on
+ * purpose: logins must always come home to production. Localhost keeps its
+ * own origin so development logins keep working offline. */
+export const PRODUCTION_ORIGIN = 'https://dropxnepal.vercel.app';
+
+export function appOrigin(): string {
+  if (typeof window === 'undefined') return PRODUCTION_ORIGIN;
+  const o = window.location.origin;
+  if (o.includes('localhost') || o.includes('127.0.0.1')) return o;
+  return PRODUCTION_ORIGIN;
+}
+
 /** Retired hosts that must land on CANONICAL_HOST. Exact matches only. */
 const LEGACY_HOSTS = ['dropx-ninjacoder26.vercel.app'];
 
@@ -44,24 +54,4 @@ const LEGACY_HOSTS = ['dropx-ninjacoder26.vercel.app'];
 export function canonicalRedirectFor(hostname: string): string | null {
   if (LEGACY_HOSTS.includes(hostname.trim().toLowerCase())) return CANONICAL_HOST;
   return null;
-}
-
-/** Stash where the login started (best-effort; storage may be blocked). */
-export function rememberLoginOrigin(): void {
-  try {
-    sessionStorage.setItem(LOGIN_ORIGIN_KEY, window.location.origin);
-  } catch {
-    /* private mode etc. — the dashboard allowlist is the real fix */
-  }
-}
-
-/** Read + clear the stashed origin. Null when absent or unreadable. */
-export function consumeLoginOrigin(): string | null {
-  try {
-    const v = sessionStorage.getItem(LOGIN_ORIGIN_KEY);
-    sessionStorage.removeItem(LOGIN_ORIGIN_KEY);
-    return v && v.startsWith('https://') ? v : null;
-  } catch {
-    return null;
-  }
 }

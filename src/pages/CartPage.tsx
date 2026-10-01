@@ -11,7 +11,7 @@ import { useSmartRecommendations } from '../lib/recommend';
 
 export default function CartPage() {
   const { lines, subtotal, setQty, remove, count } = useCart();
-  const { freeShippingThreshold } = useStoreSettings();
+  const { freeShippingThreshold, maxQtyPerItem } = useStoreSettings();
   usePageTitle('Your Bag');
   // Hook first (unconditional) — renders nothing when the bag is empty.
   const { items: pairings } = useSmartRecommendations({ kind: 'cart', lines }, 4);
@@ -71,7 +71,10 @@ export default function CartPage() {
                     <Trash2 size={15} />
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-ink/50">{formatNPR(l.unitPrice)} each</p>
+                <p className="mt-1 text-xs text-ink/50">
+                  {formatNPR(l.unitPrice)} each
+                  {l.quantity >= maxQtyPerItem && ` · max ${maxQtyPerItem} per order`}
+                </p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <div className="flex items-center rounded-full border border-ink/15">
                     <button onClick={() => void setQty(l.product.id, l.variant?.id ?? null, l.quantity - 1)} className="p-2.5 hover:text-ember" aria-label="Decrease quantity">

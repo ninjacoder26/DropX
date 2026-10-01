@@ -30,6 +30,8 @@ export function ImageManager({ productId, allowManage = true }: { productId: str
   const [bgRemove, setBgRemove] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
   const [review, setReview] = useState<PendingImage[] | null>(null);
+  const [whitening, setWhitening] = useState<{ done: number; total: number } | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const load = async () => {
     const [{ data }, { data: v }] = await Promise.all([
@@ -161,6 +163,58 @@ export function ImageManager({ productId, allowManage = true }: { productId: str
     }
   }
 
+  // Bulk replace: whiten every photo in place, with live progress. Images
+  // the engine can't clean safely stay exactly as they are.
+  async function whitenAll() {
+    if (!images.length || busy || whitening) return;
+    setError(null);
+    setInfo(null);
+    setWhitening({ done: 0, total: images.length });
+    const { data: session } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+    const token = session.session?.access_token;
+    let ok = 0;
+    const kept: string[] = [];
+    for (let i = 0; i < images.length; i++) {
+      const im = images[i];
+      try {
+        const res = await fetch(im.secure_url);
+        if (!res.ok) throw new Error('download failed');
+        const blob = await res.blob();
+        const file = new File([blob], 'photo', { type: blob.type || 'image/jpeg' });
+        const out = await processImageBackground(file);
+        if (!out.removed || !out.blob) {
+          kept.push(im.alt_text || `photo ${i + 1}`);
+        } else {
+          const clean = new File([out.blob], 'bgwhite.png', { type: 'image/png' });
+          const up = await uploadToCloudinary(clean, token ?? undefined);
+          const { error: dbErr } = await supabase
+            .from('product_images')
+            .update({
+              cloudinary_public_id: up.public_id,
+              secure_url: up.secure_url,
+              width: up.width,
+              height: up.height,
+              bytes: up.bytes,
+              format: up.format,
+            })
+            .eq('id', im.id);
+          if (dbErr) throw new Error(dbErr.message);
+          ok++;
+        }
+      } catch {
+        kept.push(im.alt_text || `photo ${i + 1}`);
+      }
+      setWhitening({ done: i + 1, total: images.length });
+    }
+    await load();
+    setWhitening(null);
+    setInfo(
+      kept.length === 0
+        ? `${ok} photo${ok === 1 ? '' : 's'} whitened.`
+        : `${ok} whitened, ${kept.length} kept original (${kept.slice(0, 3).join(', ')}${kept.length > 3 ? '…' : ''}).`
+    );
+  }
+
   async function move(id: string, dir: -1 | 1) {
     const idx = images.findIndex((i) => i.id === id);
     const j = idx + dir;
@@ -204,11 +258,41 @@ export function ImageManager({ productId, allowManage = true }: { productId: str
     <div className="rounded-2xl border border-ink/10 p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold">Images ({images.length})</p>
-        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-bold text-paper hover:bg-ink-soft">
-          <ImagePlus size={14} /> {busy ? 'Uploading…' : 'Upload'}
-          <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="hidden" onChange={(e) => void handleFiles(e.target.files)} disabled={busy || processing !== null || review !== null} />
-        </label>
+        <div className="flex items-center gap-1.5">
+          {allowManage && images.length > 0 && (
+            <button
+              type="button"
+              onClick={() => void whitenAll()}
+              disabled={busy || processing !== null || review !== null || whitening !== null}
+              className="inline-flex items-center gap-1.5 rounded-full bg-ember px-4 py-2 text-xs font-bold text-white transition hover:bg-ember-dark disabled:opacity-50"
+            >
+              {whitening ? 'Whitening…' : 'Whiten all backgrounds'}
+            </button>
+          )}
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-bold text-paper hover:bg-ink-soft">
+            <ImagePlus size={14} /> {busy ? 'Uploading…' : 'Upload'}
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="hidden" onChange={(e) => void handleFiles(e.target.files)} disabled={busy || processing !== null || review !== null || whitening !== null} />
+          </label>
+        </div>
       </div>
+      {whitening && (
+        <div className="mt-2 rounded-xl bg-ember/10 px-3 py-2.5" role="status" aria-live="polite">
+          <p className="text-xs font-bold">
+            Whitening {whitening.done} of {whitening.total}…
+          </p>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-valuemin={0} aria-valuemax={whitening.total} aria-valuenow={whitening.done}>
+            <div
+              className="h-full rounded-full bg-ember transition-all duration-200"
+              style={{ width: `${whitening.total === 0 ? 0 : (whitening.done / whitening.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {info && !whitening && (
+        <p className="mt-2 rounded-xl bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 ring-1 ring-green-200" role="status">
+          {info}
+        </p>
+      )}
       <label
         className="mt-2 flex cursor-pointer items-start gap-2 text-xs text-ink/70"
         title="Cuts a plain backdrop to white on your device before upload. Uncertain or busy backgrounds are left untouched."

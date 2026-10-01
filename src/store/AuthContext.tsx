@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { oauthRedirectTo, consumeLoginOrigin, rememberLoginOrigin, safeNextPath } from '../lib/oauth';
+import { oauthRedirectTo, appOrigin, safeNextPath } from '../lib/oauth';
 import { REFRESH_THROTTLE_MS, sessionNeedsRefresh } from '../lib/session';
 import { isStaffRole, isSubadmin } from '../lib/permissions';
 import { staffEmailForUsername, validateStaffPassword, validateStaffUsername } from '../lib/staff';
@@ -76,23 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     let live = true;
-    // Supabase may dump OAuth logins on its dashboard Site URL when the real
-    // domain is missing from its allowlist. If that happened, bounce back to
-    // where the login actually started (same path, right host).
-    const healOrigin = (s: Session | null) => {
-      if (!s?.user || typeof window === 'undefined') return;
-      const remembered = consumeLoginOrigin();
-      if (remembered && remembered !== window.location.origin) {
-        window.location.replace(remembered + window.location.pathname + window.location.search);
-      }
-    };
     (async () => {
       try {
         await ensureFreshSession();
         const { data } = await supabase.auth.getSession();
         if (!live) return;
         setSession(data.session);
-        healOrigin(data.session);
         if (data.session?.user) void fetchProfile(data.session.user.id);
         else setProfileReady(true);
       } finally {
@@ -102,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       if (!live) return;
       setSession(s);
-      healOrigin(s);
       if (s?.user) void fetchProfile(s.user.id);
       else {
         setProfile(null);
@@ -172,10 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithGoogle: async (next = '/account') => {
         if (!isSupabaseConfigured) return { error: 'Supabase is not configured yet.' };
         const safeNext = safeNextPath(next);
-        rememberLoginOrigin();
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: oauthRedirectTo(window.location.origin, safeNext) },
+          options: { redirectTo: oauthRedirectTo(appOrigin(), safeNext) },
         });
         return { error: error?.message ?? null };
       },
@@ -187,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword: async (email) => {
         if (!isSupabaseConfigured) return { error: 'Supabase is not configured yet.' };
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${appOrigin()}/reset-password`,
         });
         return { error: error?.message ?? null };
       },

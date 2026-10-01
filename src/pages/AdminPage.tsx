@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, NavLink, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   BarChart3, Bell, ClipboardList, Flame, Images, KeyRound, LayoutDashboard, Menu, Moon, Package,
   ScrollText, Settings as SettingsIcon, Star, Sun, Tags, Truck, Users, X, Zap,
@@ -8,7 +8,7 @@ import { clsx } from 'clsx';
 import { useAdminTheme } from '../lib/adminTheme';
 import { useAuth } from '../store/AuthContext';
 import { isRealtimeAvailable } from '../lib/realtime';
-import { logAdminAction as log } from '../lib/admin';
+import { logAdminAction as log, getAdminList, setAdminList } from '../lib/admin';
 import AdminDelivery from './AdminDelivery';
 import AdminDemand from './AdminDemand';
 import AdminImageRequests from './AdminImageRequests';
@@ -391,12 +391,12 @@ function Overview() {
 const EMPTY_PRODUCT = { name: '', slug: '', brand: '', brand_website: '', description: '', category_id: '', cost_price: '', base_override: '', compare_at_price: '', tags: [] as string[], is_active: true, is_featured: false, is_trending: false, is_new: true };
 
 function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }) {
+  const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [q, setQ] = useState('');
   const [catFilter, setCatFilter] = useState('');
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_PRODUCT);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -407,20 +407,55 @@ function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }
   const [csvBusy, setCsvBusy] = useState(false);
   const [margin, setMargin] = useState(20);
 
-  const load = async () => {
-    setLoading(true);
+  // The open editor lives in the URL (?edit=<id|new>) so a browser refresh
+  // restores the edit view instead of dropping back to the list.
+  const editing = params.get('edit');
+  const setEditParam = (id: string | null) => {
+    const next = new URLSearchParams(params);
+    if (id) next.set('edit', id);
+    else next.delete('edit');
+    setParams(next);
+  };
+
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     const [{ data: p }, { data: c }] = await Promise.all([
       supabase.from('products').select('*, category:categories(*), images:product_images(*), variants:product_variants(*)').order('created_at', { ascending: false }).limit(200),
       supabase.from('categories').select('*').order('sort_order'),
     ]);
     setItems((p ?? []) as unknown as Product[]);
     setCats((c ?? []) as Category[]);
+    setAdminList('products', { p: p ?? [], c: c ?? [] });
     setLoading(false);
     fetchSettings().then((s) => setMargin(s.profitMargin)).catch(() => undefined);
   };
   useEffect(() => {
-    void load();
+    const cached = getAdminList<{ p: Product[]; c: Category[] }>('products');
+    if (cached) {
+      setItems(cached.p);
+      setCats(cached.c);
+      setLoading(false);
+      void load(true);
+    } else {
+      void load();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reopen the editor after a refresh (form repopulates from the row).
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current || loading || items.length === 0) return;
+    const id = params.get('edit');
+    if (!id) return;
+    restored.current = true;
+    if (id === 'new') void startEdit(undefined);
+    else {
+      const p = items.find((x) => x.id === id);
+      if (p) void startEdit(p);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, items]);
 
   const filtered = useMemo(
     () => items.filter((p) =>
@@ -432,12 +467,12 @@ function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }
 
   const startEdit = async (p?: Product) => {
     if (!p) {
-      setEditing('new');
+      setEditParam('new');
       setForm(EMPTY_PRODUCT);
       setVariants([]);
       return;
     }
-    setEditing(p.id);
+    setEditParam(p.id);
     setForm({
       name: p.name, slug: p.slug, brand: p.brand ?? '', brand_website: p.brand_website ?? '', description: p.description,
       category_id: p.category_id ?? '',
@@ -486,7 +521,7 @@ function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }
       if (error) setMsg(error.message);
       else {
         log('product.create', 'products', (data as Product).id, { name: payload.name });
-        setEditing(null);
+        setEditParam(null);
         await load();
       }
     } else if (editing) {
@@ -494,7 +529,7 @@ function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }
       if (error) setMsg(error.message);
       else {
         log('product.update', 'products', editing, { name: payload.name });
-        setEditing(null);
+        setEditParam(null);
         await load();
       }
     }
@@ -757,7 +792,7 @@ function Products({ readOnly, isSuper }: { readOnly: boolean; isSuper: boolean }
           {msg && <p className="mt-3 text-xs text-red-700">{msg}</p>}
           <div className="mt-4 flex gap-2">
             {!readOnly && <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save product'}</Button>}
-            <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setEditParam(null)}>Cancel</Button>
           </div>
 
           {editing !== 'new' && (
@@ -917,9 +952,20 @@ function Categories({ readOnly }: { readOnly: boolean }) {
   const load = async () => {
     const { data } = await supabase.from('categories').select('*').order('sort_order');
     setItems((data ?? []) as Category[]);
+    setAdminList('categories', data ?? []);
   };
   useEffect(() => {
-    void load();
+    const cached = getAdminList<Category[]>('categories');
+    if (cached) {
+      setItems(cached);
+      supabase.from('categories').select('*').order('sort_order').then(({ data }) => {
+        setItems((data ?? []) as Category[]);
+        setAdminList('categories', data ?? []);
+      });
+    } else {
+      void load();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -1022,8 +1068,8 @@ function Orders({ readOnly }: { readOnly: boolean }) {
   const [orderErr, setOrderErr] = useState<string | null>(null);
   const nav = useNavigate();
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     setOrderErr(null);
     let q = supabase.from('orders').select('*, items:order_items(*)').order('placed_at', { ascending: false }).limit(100);
     if (filter && filter !== 'unpaid') q = q.eq('status', filter);
@@ -1031,10 +1077,18 @@ function Orders({ readOnly }: { readOnly: boolean }) {
     const { data, error } = await q;
     if (error) setOrderErr(error.message);
     setItems((data ?? []) as unknown as Order[]);
+    setAdminList(`orders:${filter}`, data ?? []);
     setLoading(false);
   };
   useEffect(() => {
-    void load();
+    const cached = getAdminList<Order[]>(`orders:${filter}`);
+    if (cached) {
+      setItems(cached);
+      setLoading(false);
+      void load(true);
+    } else {
+      void load();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
@@ -1570,33 +1624,68 @@ function Customers() {
 const EMPTY_DROP = { kind: 'monthly' as Drop['kind'], title: '', slug: '', description: '', artwork_url: '', theme_color: '#F06427', starts_at: '', ends_at: '', hero_label: '', is_published: false };
 
 function Drops({ readOnly }: { readOnly: boolean }) {
+  const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<Drop[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_DROP);
   const [links, setLinks] = useState<{ product_id: string; badge: string }[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const load = async () => {
+  const editing = params.get('edit');
+  const setEditParam = (id: string | null) => {
+    const next = new URLSearchParams(params);
+    if (id) next.set('edit', id);
+    else next.delete('edit');
+    setParams(next);
+  };
+
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     const [{ data: d }, { data: p }] = await Promise.all([
       supabase.from('drops').select('*').order('starts_at', { ascending: false }),
       supabase.from('products').select('id,name,slug').eq('is_active', true).order('name').limit(300),
     ]);
     setItems((d ?? []) as Drop[]);
     setProducts((p ?? []) as unknown as Product[]);
+    setAdminList('drops', { d: d ?? [], p: p ?? [] });
+    setLoading(false);
   };
   useEffect(() => {
-    void load();
+    const cached = getAdminList<{ d: Drop[]; p: Product[] }>('drops');
+    if (cached) {
+      setItems(cached.d);
+      setProducts(cached.p);
+      setLoading(false);
+      void load(true);
+    } else {
+      void load();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current || loading || items.length === 0) return;
+    const id = params.get('edit');
+    if (!id) return;
+    restored.current = true;
+    if (id === 'new') void startEdit(undefined);
+    else {
+      const d = items.find((x) => x.id === id);
+      if (d) void startEdit(d);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, items]);
 
   const startEdit = async (d?: Drop) => {
     if (!d) {
-      setEditing('new');
+      setEditParam('new');
       setForm({ ...EMPTY_DROP, starts_at: new Date().toISOString().slice(0, 16), ends_at: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 16) });
       setLinks([]);
       return;
     }
-    setEditing(d.id);
+    setEditParam(d.id);
     setForm({
       kind: d.kind, title: d.title, slug: d.slug, description: d.description,
       artwork_url: d.artwork_url ?? '', theme_color: d.theme_color,
@@ -1659,7 +1748,7 @@ function Drops({ readOnly }: { readOnly: boolean }) {
         );
       }
     }
-    setEditing(null);
+    setEditParam(null);
     setMsg(null);
     await load();
   };
@@ -1746,7 +1835,7 @@ function Drops({ readOnly }: { readOnly: boolean }) {
           {msg && <p className="mt-3 text-xs text-red-700">{msg}</p>}
           <div className="mt-4 flex gap-2">
             {!readOnly && <Button onClick={save}>Save drop</Button>}
-            <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setEditParam(null)}>Cancel</Button>
           </div>
         </Card>
       )}

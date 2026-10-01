@@ -16,6 +16,9 @@ import { EmptyState, ErrorState, Input, Skeleton } from '../components/ui';
 
 type Sort = 'new' | 'price-asc' | 'price-desc' | 'popular';
 
+/** Above the priciest catalog item, so no product is unfilterable. */
+const PRICE_CAP = 15000;
+
 export default function ShopPage() {
   const [params, setParams] = useSearchParams();
   const { user } = useAuth();
@@ -28,7 +31,7 @@ export default function ShopPage() {
   const q = params.get('q') ?? '';
   const tag = params.get('tag') ?? '';
   const sort = (params.get('sort') as Sort) || 'new';
-  const [maxPrice, setMaxPrice] = useState<number>(10000);
+  const [maxPrice, setMaxPrice] = useState<number>(PRICE_CAP);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [localQ, setLocalQ] = useState(q);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -99,13 +102,32 @@ export default function ShopPage() {
     setParams(next);
   };
 
+  const clearAll = () => {
+    setParams({});
+    setMaxPrice(PRICE_CAP);
+    setInStockOnly(false);
+  };
+
+  const hasFilters =
+    category !== '' || q.trim() !== '' || tag !== '' || inStockOnly || maxPrice < PRICE_CAP;
+
   return (
     <div className="dx-full py-8">
       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">Catalog</p>
       <h1 className="mt-1 font-display text-3xl font-black tracking-tight sm:text-4xl">
         {title}
       </h1>
-      <p className="mt-1 text-sm text-ink/60">{filtered.length} product{filtered.length === 1 ? '' : 's'}</p>
+      <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink/60">
+        <span>{filtered.length} product{filtered.length === 1 ? '' : 's'}</span>
+        {hasFilters && (
+          <button
+            onClick={clearAll}
+            className="rounded-full bg-ink px-3 py-1 text-[11px] font-bold text-paper transition hover:bg-ember"
+          >
+            Clear all ✕
+          </button>
+        )}
+      </p>
       {availableTags.length > 0 && (
         <div className="no-scrollbar -mx-4 mt-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Filter by tag">
           {tag && (
@@ -195,7 +217,7 @@ export default function ShopPage() {
               <input
                 type="range"
                 min={500}
-                max={10000}
+                max={PRICE_CAP}
                 step={100}
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
@@ -223,7 +245,7 @@ export default function ShopPage() {
               <EmptyState
                 title={q ? `Nothing found for “${q}”` : 'No products found'}
                 body="Try a different search, category, or price range."
-                action={<button onClick={() => { setParams({}); setMaxPrice(10000); setInStockOnly(false); }} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper">Clear filters</button>}
+                action={<button onClick={clearAll} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper">Clear filters</button>}
               />
               {q.trim() && <RequestProduct query={q} categorySlug={category || undefined} />}
             </div>

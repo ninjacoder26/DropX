@@ -1,201 +1,61 @@
-name,slug,description,category_slug,base_price,compare_at_price,is_active,is_featured,is_trending,is_new
-Deli Graphite Pencils 12-Pack,deli-graphite-pencils-12-pack,Smooth dark HB pencils for exams and sketching. Pack of 12.,stationery-study,179,199,true,false,false,true
-Apsara Platinum Pencils 10-Pack,apsara-platinum-pencils-10-pack,Extra-dark premium pencils with easy sharpening. Pack of 10.,stationery-study,155,169,true,false,false,true
-M&G Blue Ball Pens 5-Pack,mg-blue-ball-pens-5-pack,Smear-free blue ball pens for daily classwork. Pack of 5.,stationery-study,239,249,true,false,false,true
-Cello Butterflow Pen Set 10,cello-butterflow-pen-set-10,Feather-light pens with vibrant ink flow. Pack of 10.,stationery-study,299,329,true,false,false,true
-Deli Gel Pens 0.5mm 6-Pack,deli-gel-pens-05mm-6-pack,Crisp black gel pens for neat notes. Pack of 6.,stationery-study,275,299,true,false,true,true
-Faber-Castell Highlighters 4-Set,faber-castell-highlighters-4-set,Pastel and neon markers that never bleed. Set of 4.,stationery-study,419,449,true,false,true,true
-Deli Sticky Notes 4-Pad Set,deli-sticky-notes-4-pad-set,Bright memo pads that stick and restick. Set of 4.,stationery-study,239,269,true,false,false,true
-M&G Correction Tape 2-Pack,mg-correction-tape-2-pack,Clean white cover-up with smooth rewind. Pack of 2.,stationery-study,299,319,true,false,false,true
-Kangaro Stapler Plus Pins Combo,kangaro-stapler-plus-pins-combo,Heavy-duty stapler with 1000 pins included.,stationery-study,479,499,true,false,false,true
-Deli 2-Hole Paper Punch,deli-2-hole-paper-punch,Sharp all-metal punch for files and assignments.,stationery-study,539,549,true,false,false,true
-Kores Glue Sticks 3-Pack,kores-glue-sticks-3-pack,Washable non-toxic glue for crafts. Pack of 3.,stationery-study,215,229,true,false,false,true
-Deli Craft Scissors 17cm,deli-craft-scissors-17cm,Comfort-grip stainless scissors for paper and craft.,stationery-study,299,319,true,false,false,true
-Deli Steel Ruler 30cm,deli-steel-ruler-30cm,Rust-proof steel scale with clear markings.,stationery-study,179,199,true,false,false,true
-M&G Geometry Box 8-Piece,mg-geometry-box-8-piece,Complete metal instrument set in a sturdy case.,stationery-study,359,399,true,false,false,true
-Deli Spiral Notebook A5 200-Page,deli-spiral-notebook-a5-200-page,Thick ruled pages that survive backpack life.,stationery-study,299,329,true,false,true,true
-Deli Kraft Register A4 256-Page,deli-kraft-register-a4-256-page,Hard kraft cover register for long-term notes.,stationery-study,419,449,true,false,false,true
-M&G Dot-Grid Notebooks A5 Duo,mg-dot-grid-notebooks-a5-duo,Dotted pages for journals and planning. Pack of 2.,stationery-study,479,519,true,false,true,true
-Faber-Castell Drawing Book A4,faber-castell-drawing-book-a4,36 thick sheets made for pencils and paints.,stationery-study,239,259,true,false,false,true
-Camlin Colour Pencils 24-Set,camlin-colour-pencils-24-set,Rich break-resistant colours for art class.,stationery-study,539,599,true,false,false,true
-Deli Wax Crayons 24-Set,deli-wax-crayons-24-set,Smooth bright crayons safe for young artists.,stationery-study,227,249,true,false,false,true
-Doms Sketch Markers 12-Set,doms-sketch-markers-12-set,Dual-tip markers with vivid alcohol ink.,stationery-study,1079,1149,true,true,true,true
-Faber-Castell Watercolours 24,faber-castell-watercolours-24,Brilliant washable cakes with a free brush.,stationery-study,899,949,true,false,false,true
-Deli Acrylic Paint 12 Tubes,deli-acrylic-paint-12-tubes,Creamy fast-drying colours for canvas and craft.,stationery-study,1199,1299,true,false,false,true
-Deli Artist Brushes 10-Piece,deli-artist-brushes-10-piece,Round and flat brushes for every stroke.,stationery-study,479,519,true,false,false,true
-Casio MJ-12DA Desktop Calculator,casio-mj-12da-desktop-calculator,Big-button 12-digit calculator for shop and study.,stationery-study,1559,1599,true,false,false,true
-Deli Scientific Calculator 240-Function,deli-scientific-calculator-240-function,Exam-ready functions for SEE and Plus-Two maths.,stationery-study,1319,1399,true,false,true,true
-Exam Clipboard A4 with Cover,exam-clipboard-a4-with-cover,Hardboard pad with storage for answer sheets.,stationery-study,299,329,true,false,false,true
-Deli Expanding File 13-Pocket,deli-expanding-file-13-pocket,Rainbow dividers keep every subject sorted.,stationery-study,959,999,true,true,true,true
-M&G Button Folders A4 5-Pack,mg-button-folders-a4-5-pack,Transparent snap folders for assignments. Pack of 5.,stationery-study,419,449,true,false,false,true
-Deli Document Bag with Handle,deli-document-bag-with-handle,Water-resistant carrier for certificates.,stationery-study,599,649,true,false,false,true
-Deli Mesh Desk Organizer,deli-mesh-desk-organizer,Six slots for pens files and stationery.,stationery-study,839,899,true,false,false,true
-M&G Canvas Pencil Pouch,mg-canvas-pencil-pouch,Zip pouch that fits a full geometry set.,stationery-study,359,399,true,false,false,true
-Deli Multi-Pocket Pencil Case,deli-multi-pocket-pencil-case,Three-zip case for pens tools and cards.,stationery-study,539,579,true,false,false,true
-Kores Whiteboard Markers 4-Set,kores-whiteboard-markers-4-set,Low-odour markers that wipe clean. Set of 4.,stationery-study,395,429,true,false,false,true
-Deli Exam Board A3 with Clip,deli-exam-board-a3-with-clip,Sturdy clip board built for exam halls.,stationery-study,479,519,true,false,false,true
-Camlin Chart Papers 10-Sheet,camlin-chart-papers-10-sheet,Thick coloured sheets for projects. Pack of 10.,stationery-study,299,319,true,false,false,true
-Deli Page Flags 5-Colour Set,deli-page-flags-5-colour-set,Neon tabs for marking textbooks fast.,stationery-study,191,209,true,false,false,true
-M&G Binder Clips 25-Pack,mg-binder-clips-25-pack,Strong foldback clips for thick files. Pack of 25.,stationery-study,215,239,true,false,false,true
-Deli Tape Dispenser Plus 2 Rolls,deli-tape-dispenser-plus-2-rolls,Weighted holder with safe sharp cutter.,stationery-study,479,519,true,false,false,true
-Faber-Castell Eraser Sharpener Duo,faber-castell-eraser-sharpener-duo,Dust-free eraser plus double-hole sharpener.,stationery-study,119,139,true,false,false,true
-Ultima Boom 211 TWS Earbuds,ultima-boom-211-tws-earbuds,Deep-bass buds with long playtime for campus days.,tech-accessories,3359,3499,true,true,true,true
-Redmi Buds Basic 2,redmi-buds-basic-2,Lightweight Bluetooth buds with clear calls.,tech-accessories,2279,2499,true,false,true,true
-Anker Soundcore P20i Earbuds,anker-soundcore-p20i-earbuds,Punchy bass and 30-hour case battery.,tech-accessories,3599,3999,true,true,true,true
-Boat Airdopes 161 TWS,boat-airdopes-161-tws,Everyday buds with fast charging and low latency.,tech-accessories,1799,1999,true,false,false,true
-Oraimo SpaceBuds Neo TWS,oraimo-spacebuds-neo-tws,ENC calls and thumping 10mm drivers.,tech-accessories,2639,2799,true,false,true,true
-Hoco EQ34 Plus Earbuds,hoco-eq34-plus-earbuds,Budget Bluetooth 5.4 buds with app control.,tech-accessories,1559,1699,true,false,false,true
-Lenovo HE05 Neckband,lenovo-he05-neckband,Magnetic sweat-proof buds for workouts.,tech-accessories,1439,1599,true,false,false,true
-Remax Type-C Earphones,remax-type-c-earphones,Plug-and-play wired sound with deep bass.,tech-accessories,599,699,true,false,false,true
-Oraimo Conch Wired Earphones,oraimo-conch-wired-earphones,Tangle-free cable with crisp call mic.,tech-accessories,479,549,true,false,false,true
-Baseus 60W USB-C Cable 1m,baseus-60w-usb-c-cable-1m,Braided fast-charge cable with 6-month warranty.,tech-accessories,959,999,true,false,true,true
-Ugreen Braided USB-C Cable 2m,ugreen-braided-usb-c-cable-2m,Extra-long nylon cable for bed-to-desk charging.,tech-accessories,1199,1299,true,false,false,true
-Remax 3-in-1 Charging Cable,remax-3-in-1-charging-cable,One cable for Type-C Lightning and Micro USB.,tech-accessories,779,849,true,false,false,true
-Aukey 100W C-to-C Cable,aukey-100w-c-to-c-cable,Heavy-gauge cable for laptops and phones.,tech-accessories,1799,1899,true,false,false,true
-Anker 20W USB-C Charger,anker-20w-usb-c-charger,Pocket-size fast charger for phones and buds.,tech-accessories,2279,2499,true,false,false,true
-Aukey 30W Wall Charger,aukey-30w-wall-charger,Dual-port charger with 1-year warranty.,tech-accessories,2999,3249,true,false,false,true
-Baseus Mini Power Bank 10K,baseus-mini-power-bank-10k,Pocket power bank with digital display.,tech-accessories,3359,3499,true,true,true,true
-Oraimo 10K Power Bank 15W,oraimo-10k-power-bank-15w,Slim fast-charge bank for two full phone charges.,tech-accessories,2759,2899,true,false,false,true
-Mi 18W Charger Plus Cable Combo,mi-18w-charger-plus-cable-combo,Official fast-charge brick with Type-C cable.,tech-accessories,1919,1999,true,false,false,true
-Ugreen 4-Port USB Hub,ugreen-4-port-usb-hub,Turn one laptop port into four at hostel desks.,tech-accessories,1799,1899,true,false,false,true
-HP Wired Optical Mouse,hp-wired-optical-mouse,Precise silent-click mouse for study PCs.,tech-accessories,959,999,true,false,false,true
-Lenovo 2.4G Wireless Mouse,lenovo-24g-wireless-mouse,Lag-free wireless mouse with 12-month battery.,tech-accessories,1319,1399,true,false,false,true
-Foldable Laptop Stand Aluminium,foldable-laptop-stand-aluminium,Ergonomic riser that cools and straightens posture.,tech-accessories,1559,1699,true,false,false,true
-Baseus Adjustable Phone Stand,baseus-adjustable-phone-stand,Fold-flat stand for lectures and video calls.,tech-accessories,1079,1149,true,false,false,true
-Ugreen 14-inch Laptop Sleeve,ugreen-14-inch-laptop-sleeve,Padded splash-proof sleeve with front pocket.,tech-accessories,1799,1899,true,false,false,true
-Oraimo Grip Stand Duo,oraimo-grip-stand-duo,Ring grip plus fold stand for one-hand use.,tech-accessories,479,549,true,false,false,true
-SanDisk 64GB USB 3.0 Drive,sandisk-64gb-usb-30-drive,Fast thumb drive for notes movies and backups.,tech-accessories,1799,1899,true,false,false,true
-Samsung USB-C OTG Adapter,samsung-usb-c-otg-adapter,Plug pen drives into your phone in seconds.,tech-accessories,659,749,true,false,false,true
-Mi Rechargeable Desk Lamp,mi-rechargeable-desk-lamp,Eye-care light with three colour modes.,tech-accessories,2159,2299,true,false,false,true
-Ultima Nova Mini Speaker,ultima-nova-mini-speaker,Room-filling sound in a hostel-friendly size.,tech-accessories,2399,2599,true,false,true,true
-Boat 5W Stone Speaker,boat-5w-stone-speaker,Splash-proof speaker with 10-hour playtime.,tech-accessories,2999,3199,true,false,false,true
-Zebronics Thunder Headphones,zebronics-thunder-headphones,Over-ear comfort with deep bass for long sessions.,tech-accessories,2159,2299,true,false,false,true
-Hoco Y19 Smart Watch,hoco-y19-smart-watch,Big display with calling and health tracking.,tech-accessories,2999,3299,true,false,false,true
-Oraimo Watch 5 Lite,oraimo-watch-5-lite,2-inch display with wireless calling support.,tech-accessories,2399,2699,true,true,true,true
-Noise Twist Neckband,noise-twist-neckband,140-hour standby neckband for all-week use.,tech-accessories,1679,1799,true,false,false,true
-Baseus Encok Wired Earbuds,baseus-encok-wired-earbuds,Hi-fi wired buds with in-line controls.,tech-accessories,839,899,true,false,false,true
-Remax 20000mAh Power Bank,remax-20000mah-power-bank,Four phone charges for load-shedding days.,tech-accessories,3959,4199,true,false,false,true
-Anker Cable Organizer 3-Pack,anker-cable-organizer-3-pack,Silicone ties that end cable spaghetti.,tech-accessories,599,649,true,false,false,true
-Mi WiFi Extender N300,mi-wifi-extender-n300,Stretch hostel WiFi to every corner.,tech-accessories,2279,2399,true,false,false,true
-Hoco 360 Phone Holder,hoco-360-phone-holder,Stable desk mount for study timers and reels.,tech-accessories,419,499,true,false,false,true
-Baseus Screen Cleaner Kit,baseus-screen-cleaner-kit,Spray plus microfiber for phones and laptops.,tech-accessories,539,599,true,false,false,true
-Goldstar Classic White Sneakers,goldstar-classic-white-sneakers,Nepal's iconic canvas sneakers. Goes with everything.,fashion-accessories,1799,1899,true,true,true,true
-Goldstar Grey Running Shoes,goldstar-grey-running-shoes,Lightweight daily trainers with grippy soles.,fashion-accessories,2159,2299,true,false,true,true
-Air-Style White Sneakers,air-style-white-sneakers,Clean court look at a student price.,fashion-accessories,1439,1599,true,false,false,true
-Caliber Black Street Sneakers,caliber-black-street-sneakers,Bold street silhouette with cushioned insole.,fashion-accessories,2399,2599,true,false,false,true
-Cotton T-Shirts 3-Pack,cotton-t-shirts-3-pack,Breathable everyday tees in assorted colours.,fashion-accessories,1079,1199,true,false,true,true
-Oversized Graphic Tee Ember,oversized-graphic-tee-ember,Drop-shoulder statement tee with back print.,fashion-accessories,779,849,true,false,false,true
-Polo Collar Tee Navy,polo-collar-tee-navy,Smart casual polo for college and outings.,fashion-accessories,959,999,true,false,false,true
-Full-Sleeve Henley Tee,full-sleeve-henley-tee,Button-placket classic for cooler evenings.,fashion-accessories,899,949,true,false,false,true
-Antipilling Hoodie Charcoal,antipilling-hoodie-charcoal,Thick fleece hoodie that never pills.,fashion-accessories,1620,1750,true,true,true,true
-Half-Zip Hoodie Black,half-zip-hoodie-black,Sporty zip neck with kangaroo pocket.,fashion-accessories,1740,1850,true,false,false,true
-Fleece Sweatshirt Dirtywash,fleece-sweatshirt-dirtywash,Vintage wash crewneck for layering season.,fashion-accessories,1380,1499,true,false,false,true
-Classic Wash Denim Jacket,classic-wash-denim-jacket,Timeless trucker jacket that ages well.,fashion-accessories,2759,2899,true,false,false,true
-Slim Stretch Jeans Indigo,slim-stretch-jeans-indigo,All-day comfort denim with flex.,fashion-accessories,2279,2399,true,false,false,true
-Olive Cargo Joggers,olive-cargo-joggers,Six-pocket utility pants with tapered fit.,fashion-accessories,1679,1799,true,false,true,true
-Floral Cotton Kurti,floral-cotton-kurti,Breezy festive-ready kurti with pockets.,fashion-accessories,1559,1699,true,false,false,true
-Summer Midi Dress,summer-midi-dress,Twirl-approved dress for sunny days.,fashion-accessories,1799,1899,true,false,false,true
-Flannel Check Shirt,flannel-check-shirt,Soft brushed shirt for winter layering.,fashion-accessories,1319,1399,true,false,false,true
-White Oxford Casual Shirt,white-oxford-casual-shirt,Crisp shirt for presentations and events.,fashion-accessories,1199,1299,true,false,false,true
-Gym Shorts 2-Pack,gym-shorts-2-pack,Quick-dry shorts for sports and home. Pack of 2.,fashion-accessories,959,999,true,false,false,true
-Ankle Socks 5-Pair Set,ankle-socks-5-pair-set,Cushioned socks that stay up all day. Pack of 5.,fashion-accessories,479,549,true,false,false,true
-Everest Embroidered Cap,everest-embroidered-cap,Six-panel cap with mountain stitch.,fashion-accessories,659,749,true,false,false,true
-Woollen Winter Beanie,woollen-winter-beanie,Extra-warm knit for morning classes.,fashion-accessories,479,549,true,false,false,true
-Reversible Leather Belt,reversible-leather-belt,Black and brown in one smart buckle.,fashion-accessories,779,849,true,false,false,true
-Military Canvas Belt,military-canvas-belt,Tough webbing belt with metal buckle.,fashion-accessories,419,499,true,false,false,true
-Tan Bifold Wallet,tan-bifold-wallet,Six cards plus cash in slim leather.,fashion-accessories,959,1049,true,false,false,true
-Slim Card Holder,slim-card-holder,Front-pocket holder for cards and ID.,fashion-accessories,479,549,true,false,false,true
-Aviator Sunglasses UV400,aviator-sunglasses-uv400,Polarized lenses with hard case included.,fashion-accessories,839,949,true,false,true,true
-Retro Round Sunglasses,retro-round-sunglasses,Vintage frames with spring hinges.,fashion-accessories,659,749,true,false,false,true
-School Backpack 25L,school-backpack-25l,Padded straps plus laptop sleeve inside.,fashion-accessories,1799,1899,true,true,true,true
-USB Laptop Backpack 15-inch,usb-laptop-backpack-15-inch,Anti-theft zips with outside USB charging port.,fashion-accessories,2399,2599,true,false,false,true
-Drawstring Gym Bag,drawstring-gym-bag,Light carry for shoes and kits.,fashion-accessories,599,699,true,false,false,true
-Leather-Strap Analog Watch,leather-strap-analog-watch,Minimal dial with genuine strap.,fashion-accessories,2159,2299,true,false,false,true
-Digital Sports Watch,digital-sports-watch,Stopwatch alarm and 50m water resist.,fashion-accessories,1559,1699,true,false,false,true
-Bead Bracelets Set of 3,bead-bracelets-set-of-3,Stackable bands for daily wear.,fashion-accessories,359,429,true,false,false,true
-Silver Stud Earrings 6-Pair,silver-stud-earrings-6-pair,Hypoallergenic studs for sensitive ears.,fashion-accessories,419,499,true,false,false,true
-Anti-Skid Slides,anti-skid-slides,Cloud-soft sliders for home and hostel.,fashion-accessories,719,799,true,false,false,true
-Comfort Flip-Flops,comfort-flip-flops,Feather-light pair with arch support.,fashion-accessories,419,499,true,false,false,true
-Wool-Blend Winter Muffler,wool-blend-winter-muffler,Long warm wrap for foggy mornings.,fashion-accessories,539,599,true,false,false,true
-Winter Gloves Touchscreen Pair,winter-gloves-touchscreen-pair,Warm knit that still works on phones.,fashion-accessories,359,429,true,false,false,true
-Packable Rain Jacket,packable-rain-jacket,Folds into its own pocket for monsoon.,fashion-accessories,1919,1999,true,false,false,true
-Steel Vacuum Flask 1L,steel-vacuum-flask-1l,Hot 12 hours and cold 24 hours steel build.,lifestyle-fun,1559,1699,true,true,true,true
-Motivational Sip Bottle 750ml,motivational-sip-bottle-750ml,Time-marked bottle that reminds you to hydrate.,lifestyle-fun,779,849,true,false,false,true
-Ceramic Mugs 350ml Duo,ceramic-mugs-350ml-duo,Glossy chiya-ready mugs. Pack of 2.,lifestyle-fun,659,749,true,false,false,true
-Colour-Changing Magic Mug,colour-changing-magic-mug,Pour hot tea and watch the print appear.,lifestyle-fun,599,699,true,false,false,true
-Steel Lunch Box 3-Layer,steel-lunch-box-3-layer,Leak-proof tiffin that keeps dal bhat warm.,lifestyle-fun,1079,1149,true,false,false,true
-Tiffin Carrier 4-Tier Round,tiffin-carrier-4-tier-round,Classic stacked carrier for family lunches.,lifestyle-fun,1439,1499,true,false,false,true
-Natural Canvas Tote,natural-canvas-tote,16 oz carry-all for books and groceries.,lifestyle-fun,539,599,true,false,false,true
-Foldable Shopping Bag,foldable-shopping-bag,Pocket-size bag that holds 10 kg.,lifestyle-fun,299,349,true,false,false,true
-Windproof Auto Umbrella,windproof-auto-umbrella,One-press open built for monsoon gusts.,lifestyle-fun,1199,1299,true,false,true,true
-Mini Capsule Umbrella,mini-capsule-umbrella,Palm-size cover for sudden showers.,lifestyle-fun,899,949,true,false,false,true
-USB Fairy Lights 10m,usb-fairy-lights-10m,Warm glow for hostel rooms and Dashain.,lifestyle-fun,719,799,true,false,true,true
-RGB LED Strip 5m Remote,rgb-led-strip-5m-remote,Music-sync backlight for desks and beds.,lifestyle-fun,1199,1399,true,false,false,true
-Aroma Candle Set of 3,aroma-candle-set-of-3,Sandalwood vanilla and coffee soy candles.,lifestyle-fun,959,1049,true,false,false,true
-KTM Wall Posters Set of 6,ktm-wall-posters-set-of-6,Art prints of Boudha Patan and Thamel.,lifestyle-fun,839,949,true,false,false,true
-Vinyl Wall Stickers Pack,vinyl-wall-stickers-pack,Peel-and-stick decor with zero wall damage.,lifestyle-fun,479,549,true,false,false,true
-Speed Cube 3x3 Magnetic,speed-cube-3x3-magnetic,Buttery turns for cubing practice.,lifestyle-fun,539,599,true,false,false,true
-Family Ludo Board Game,family-ludo-board-game,Big foldable board with chunky tokens.,lifestyle-fun,659,749,true,false,false,true
-Magnetic Chess Set Foldable,magnetic-chess-set-foldable,Travel chess that survives bus rides.,lifestyle-fun,1079,1149,true,false,true,true
-Waterproof Playing Cards 2-Deck,waterproof-playing-cards-2-deck,Tear-proof cards for chiya breaks. Pack of 2.,lifestyle-fun,419,499,true,false,false,true
-Dart Board 15-inch Plus Darts,dart-board-15-inch-plus-darts,Bristle board with six steel darts.,lifestyle-fun,1559,1699,true,false,false,true
-Badminton Set 2 Rackets,badminton-set-2-rackets,Alloy rackets with shuttles and grip tape.,lifestyle-fun,1919,1999,true,true,true,true
-Pro Bearing Skipping Rope,pro-bearing-skipping-rope,Smooth ball-bearing spin for fast cardio.,lifestyle-fun,479,549,true,false,false,true
-Anti-Skid Yoga Mat 6mm,anti-skid-yoga-mat-6mm,Cushioned mat with carry strap.,lifestyle-fun,1559,1699,true,false,true,true
-Coated Dumbbell Pair 3kg,coated-dumbbell-pair-3kg,Rust-proof pair for hostel workouts.,lifestyle-fun,1799,1999,true,false,false,true
-Resistance Bands Set of 5,resistance-bands-set-of-5,Stackable bands from easy to beast mode.,lifestyle-fun,1079,1149,true,false,false,true
-Vault Piggy Bank with Lock,vault-piggy-bank-with-lock,Combination locker for Dashain dakshina.,lifestyle-fun,779,849,true,false,false,true
-LED Digital Alarm Clock,led-digital-alarm-clock,Mirror display with dual alarms for 6 am classes.,lifestyle-fun,959,1049,true,false,false,true
-Photo Frames 3-Pack,photo-frames-3-pack,6x8 frames for desk memories. Set of 3.,lifestyle-fun,539,599,true,false,false,true
-KTM Charm Keychains Set of 5,ktm-charm-keychains-set-of-5,Temple and mountain metal charms.,lifestyle-fun,359,429,true,false,false,true
-Mini Succulent Pots 3-Set,mini-succulent-pots-3-set,Live plants in ceramic pots for desks.,lifestyle-fun,719,799,true,false,false,true
-Incense Holder Plus 20 Sticks,incense-holder-plus-20-sticks,Brass holder with sandalwood sticks.,lifestyle-fun,419,499,true,false,false,true
-Steel Straws 4-Set with Brush,steel-straws-4-set-with-brush,Reusable sippers with cleaning brush.,lifestyle-fun,359,429,true,false,false,true
-Bamboo Toothbrushes 4-Pack,bamboo-toothbrushes-4-pack,Soft charcoal bristles. Pack of 4.,lifestyle-fun,299,349,true,false,false,true
-Cotton Handkerchiefs 6-Pack,cotton-handkerchiefs-6-pack,Soft everyday hankies. Pack of 6.,lifestyle-fun,359,429,true,false,false,true
-Travel Organizer Pouch Set,travel-organizer-pouch-set,Three sizes for cables and toiletries.,lifestyle-fun,839,949,true,false,false,true
-Foldable Laundry Bag Large,foldable-laundry-bag-large,Hostel laundry essential with drawstring.,lifestyle-fun,479,549,true,false,false,true
-Stackable Shoe Rack 4-Tier,stackable-shoe-rack-4-tier,Holds 12 pairs in hostel corners.,lifestyle-fun,1799,1899,true,false,false,true
-Mini Whiteboard 40cm Plus Markers,mini-whiteboard-40cm-plus-markers,Revision board with duster and 3 pens.,lifestyle-fun,959,1049,true,false,false,true
-Sport Frisbee 27cm,sport-frisbee-27cm,Park-ready disc with steady flight.,lifestyle-fun,539,599,true,false,false,true
-Tennis Cricket Balls 6-Pack,tennis-cricket-balls-6-pack,Heavy tennis balls for gully cricket. Pack of 6.,lifestyle-fun,599,699,true,false,false,true
-Zebra Mildliner Highlighters 5-Set,zebra-mildliner-highlighters-5-set,Soft-tone markers for aesthetic notes. Set of 5.,stationery-study,959,1049,true,false,true,true
-Tombow Dual Brush Pens 10-Set,tombow-dual-brush-pens-10-set,Brush plus fine tips for lettering art. Set of 10.,stationery-study,1799,1899,true,true,true,true
-Mini Thermal Photo Printer,mini-thermal-photo-printer,Pocket printer for stickers and study snaps. Ink-free.,stationery-study,2999,3199,true,true,true,true
-Washi Tape Rolls 12-Set,washi-tape-rolls-12-set,Twelve dreamy patterns for journals. Set of 12.,stationery-study,719,799,true,false,true,true
-Wax Seal Stamp Kit Vintage,wax-seal-stamp-kit-vintage,Brass stamp with wax sticks and envelopes.,stationery-study,1079,1149,true,false,false,true
-Acrylic Marker Pens 24-Set,acrylic-marker-pens-24-set,Paint-like markers for rock art and shoes. Set of 24.,stationery-study,1319,1399,true,false,false,true
-Muji-Style Gel Pens 9-Pack,muji-style-gel-pens-9-pack,Feather-touch 0.5mm pens in muted tones. Pack of 9.,stationery-study,659,729,true,false,false,true
-Kraft Sticky Memo Roll,kraft-sticky-memo-roll,Sticky kraft roll for lists and labels.,stationery-study,419,459,true,false,false,true
-Foldable Bamboo Book Stand,foldable-bamboo-book-stand,Ergonomic stand that folds flat for bags.,stationery-study,899,949,true,false,false,true
-Leather Desk Pad 60cm,leather-desk-pad-60cm,Waterproof mat that upgrades any desk.,stationery-study,1199,1299,true,false,false,true
-Sunset Projection Lamp,sunset-projection-lamp,Golden-hour glow for room selfies.,tech-accessories,1319,1399,true,true,true,true
-Galaxy Star Projector,galaxy-star-projector,Nebula night light with remote control.,tech-accessories,1799,1899,true,true,true,true
-USB Mini Humidifier 300ml,usb-mini-humidifier-300ml,Cool mist plus night light for desks.,tech-accessories,1079,1149,true,false,false,true
-Bluetooth Karaoke Mic,bluetooth-karaoke-mic,Echo mic with speaker for hostel parties.,tech-accessories,1559,1649,true,false,true,true
-Retro Mini Game Console 400-in-1,retro-mini-game-console-400-in-1,Classic 8-bit games on any TV.,tech-accessories,1919,1999,true,false,false,true
-Magsafe Card Wallet Leather,magsafe-card-wallet-leather,Snap-on holder for 3 cards.,tech-accessories,959,1049,true,false,true,true
-Crossbody Phone Lanyard Strap,crossbody-phone-lanyard-strap,Hands-free cord in woven nylon.,tech-accessories,539,599,true,false,false,true
-LED Digital Wall Clock,led-digital-wall-clock,Silent big-digit clock with temperature.,tech-accessories,1319,1399,true,false,false,true
-USB Portable Blender 450ml,usb-portable-blender-450ml,Charge-and-blend shakes anywhere.,tech-accessories,1439,1499,true,false,false,true
-Smart LED Bulb Colour E27,smart-led-bulb-colour-e27,App-controlled bulb with music sync.,tech-accessories,899,949,true,false,false,true
-Chunky Dad Sneakers White,chunky-dad-sneakers-white,Retro thick-sole sneakers for daily fits.,fashion-accessories,2639,2799,true,true,true,true
-Baggy Wide-Leg Jeans,baggy-wide-leg-jeans,Loose Y2K denim with stacked hem.,fashion-accessories,2519,2699,true,false,true,true
-Claw Clips Matte 12-Set,claw-clips-matte-12-set,No-crease clips in neutral shades. Set of 12.,fashion-accessories,479,529,true,false,true,true
-Silk Scrunchies 6-Set,silk-scrunchies-6-set,Frizz-free satin bands. Pack of 6.,fashion-accessories,419,459,true,false,false,true
-Reversible Bucket Hat,reversible-bucket-hat,Two prints in one summer hat.,fashion-accessories,659,729,true,false,false,true
-Baguette Shoulder Bag,baguette-shoulder-bag,90s mini bag with adjustable strap.,fashion-accessories,1559,1649,true,true,false,true
-Silver Chain Necklace,silver-chain-necklace,Tarnish-free everyday chain.,fashion-accessories,719,779,true,false,false,true
-Varsity Jacket Wool Blend,varsity-jacket-wool-blend,Chenille patches with snap buttons.,fashion-accessories,2879,2999,true,false,true,true
-Cargo Mini Skirt,cargo-mini-skirt,High-rise utility skirt with pockets.,fashion-accessories,1319,1399,true,false,false,true
-Knit Vest Sweater,knit-vest-sweater,Grandpa-core layer for autumn fits.,fashion-accessories,1439,1499,true,false,false,true
-Insulated Mega Tumbler 1200ml,insulated-mega-tumbler-1200ml,All-day ice mega cup with straw.,lifestyle-fun,1799,1899,true,true,true,true
-Matcha Ceremony Set 4-Piece,matcha-ceremony-set-4-piece,Bowl whisk and scoop for slow mornings.,lifestyle-fun,1559,1649,true,true,true,true
-Crochet Tulip Bouquet,crochet-tulip-bouquet,Forever flowers that never wilt.,lifestyle-fun,839,899,true,false,false,true
-Mushroom Silicone Lamp,mushroom-silicone-lamp,Squishy warm night light.,lifestyle-fun,959,1049,true,false,true,true
-Mini Desk Vacuum USB,mini-desk-vacuum-usb,Crumb-buster for keyboards and drawers.,lifestyle-fun,779,849,true,false,false,true
-Photo Grid Wall with Clips,photo-grid-wall-with-clips,20 fairy clips for memory walls.,lifestyle-fun,659,729,true,false,false,true
-DIY Boba Tea Kit,diy-boba-tea-kit,Tapioca pearls plus syrup for home cafes.,lifestyle-fun,1079,1149,true,false,true,true
-Overnight Oats Jars 2-Set,overnight-oats-jars-2-set,Meal-prep jars with lids and spoons. Set of 2.,lifestyle-fun,719,779,true,false,false,true
-Waterproof Picnic Mat,waterproof-picnic-mat,Sand-proof fold mat for yards and trips.,lifestyle-fun,1019,1099,true,false,false,true
-Waterfall Incense Burner,waterfall-incense-burner,Smoky cascade cone burner for calm corners.,lifestyle-fun,899,949,true,false,false,true
+name,slug,description,category_slug,base_price,compare_at_price,is_active,is_featured,is_trending,is_new,tags,cost_price,brand
+Faber-Castell Classic Colour Pencils 24,fc-classic-24,"Faber-Castell's classic hexagonal colour pencils in a sturdy tin of 24. Break-resistant SV-bonded leads lay down smooth, blendable colour for school projects and sketchbooks, and the FSC-certified cedar sharpens cleanly without splintering.",stationery-study,2250,2600,true,true,false,true,art|school,1650,Faber-Castell
+Faber-Castell Castell 9000 Graphite Set 6,fc-9000-6,"The legendary Castell 9000 graphite pencils in six drawing grades from 2B to 8B. Top-quality graphite gives deep blacks for sketching and precise greys for technical drawing, diagrams and shading practice.",stationery-study,950,,true,false,false,false,art|writing,700,Faber-Castell
+Faber-Castell Connector Pens 24,fc-connector-24,"Washable Connector felt-tip pens in 24 bright colours with caps that clip together for building. Medium tips suit colouring, charts and classroom posters, and the ink washes out of most fabrics.",stationery-study,1450,,true,false,false,false,art|school,1050,Faber-Castell
+Faber-Castell Grip Ball Pen 3-Pack,fc-grip-3,"Ergonomic triangular Grip ball pens, three per pack, shaped to hold the fingers correctly through long exam hours. Smooth 1.0 mm black-blue line with smudge-resistant, quick-drying ink.",stationery-study,650,,true,false,false,false,writing|school,480,Faber-Castell
+Camlin Scholar Geometry Box,camlin-geometry,"Camlin Scholar geometry box with compass, divider, set squares, protractor, scale, pencil, eraser and sharpener in a crush-resistant metal case. Everything the SEE maths syllabus needs in one box.",stationery-study,350,,true,false,false,false,school|desk,250,Kokuyo Camlin
+Camlin Watercolour Cakes 24 Shades,camlin-water-24,"Twenty-four vivid watercolour cakes with a brush tucked in the lid. Colours dissolve evenly with water for washes and posters, and the palette box doubles as a mixing tray.",stationery-study,550,,true,false,false,false,art|school,400,Kokuyo Camlin
+Camlin Mechanical Pencil 0.7,camlin-mech-07,"Comfort-grip 0.7 mm mechanical pencil with a steady line for writing and diagrams. Ships with spare leads and a twist eraser, so it is ready for class out of the pack.",stationery-study,450,,true,false,false,false,writing|school,320,Kokuyo Camlin
+Camlin Whiteboard Markers 4-Set,camlin-wb-4,"Four low-odour bullet-tip whiteboard markers in black, blue, red and green. Dense ink wipes clean off whiteboards and glass without ghosting.",stationery-study,480,,true,false,false,false,writing|school,350,Kokuyo Camlin
+Casio fx-991ES Plus Scientific Calculator,casio-fx991es,"The fx-991ES Plus scientific calculator with 417 functions and a natural textbook display that shows fractions and roots as written. Solar-assisted power with battery backup, approved for SEE and +2 board exams.",stationery-study,2850,3200,true,false,true,true,school|desk,2100,Casio
+Casio MJ-12D Desktop Calculator,casio-mj12d,"Full-size desktop calculator with a big tilted 12-digit display that reads clearly across a shop counter. Tax, discount and currency keys plus a sturdy build for daily billing.",stationery-study,1650,,true,false,false,false,desk|school,1200,Casio
+Deli 0.5 mm Gel Pens 6-Pack,deli-gel-6,Six quick-dry 0.5 mm black gel pens that glide without smudging — enough for a whole term of notes. Comfortable barrel and steady ink flow from first page to last.,stationery-study,420,,true,false,false,false,writing|school,300,Deli
+Deli A4 Spiral Notebook 200 Pages,deli-notebook-a4,A4 spiral notebook with 200 thick 80 gsm ruled pages that take gel ink without bleeding through. Sturdy covers and a lay-flat spiral survive a year in a school bag.,stationery-study,380,,true,false,false,false,paper|school,270,Deli
+Deli No.12 Metal Stapler Set,deli-stapler-12,"All-metal No.12 stapler with a box of pins and a remover for home-office paperwork. Pins up to 20 sheets cleanly with a soft, low-effort press.",stationery-study,650,,true,false,false,false,desk|school,470,Deli
+Deli Correction Tape 2-Pack,deli-correct-2,"Twin pack of one-line correction tape with instant, no-dry coverage over ballpoint and gel ink. Precise applicator tip reaches single characters.",stationery-study,300,,true,false,false,false,school|writing,210,Deli
+Deli 175 mm Craft Scissors,deli-scissors-175,"175 mm stainless craft scissors with soft-grip handles for paper, photos and classroom craft. Sharp, rust-resistant blades stay aligned use after use.",stationery-study,350,,true,false,false,false,desk|art,250,Deli
+Anker Soundcore R50i True Wireless Earbuds,anker-r50i,"Anker Soundcore R50i true-wireless earbuds with custom 10 mm drivers for deep BassUp sound. Bluetooth 5.3, AI clear calls, IPX5 sweat resistance and 30 hours of total playtime with the pocketable case.",tech-accessories,4499,5999,true,true,true,true,audio|mobile,3300,Anker
+Anker 511 Nano 30W USB-C Charger,anker-511-30w,"Anker 511 Nano 30W pocket charger that fast-charges phones, buds and tablets from a single USB-C port. GaN circuitry keeps it half the size of stock bricks while running cool and safe.",tech-accessories,2999,,true,false,false,false,charging|power,2200,Anker
+Anker PowerCore 10000 PD,anker-pc10000,Slim 10000 mAh Anker bank with high-speed USB-C output for phones on the move — roughly two full charges for most handsets. Airline-safe capacity with surge and short-circuit protection.,tech-accessories,7999,8999,true,false,false,false,power|mobile,5900,Anker
+Mi Power Bank 3i 20000 mAh,mi-pb3i-20000,"Xiaomi Power Bank 3i with a huge 20000 mAh cell, 18W fast charging and dual USB output for two devices at once. Twelve-layer circuit protection and a low-power mode for bands and buds.",tech-accessories,5499,6499,true,false,true,false,power|mobile,4000,Xiaomi
+Mi Smart Band 8,mi-band-8,"Mi Smart Band 8 with a bright 1.62-inch AMOLED display, 150+ sport modes and a 16-day typical battery. Tracks heart rate, SpO2, sleep and stress, and survives swims at 5 ATM.",tech-accessories,6999,,true,false,false,true,wearable|mobile,5200,Xiaomi
+Logitech M331 Silent Plus Mouse,logi-m331,"Logitech M331 Silent Plus wireless mouse with 90%-quieter clicks, 1000 DPI precision and a 24-month battery from one AA cell. Plug-and-forget nano receiver works up to 10 metres.",tech-accessories,3199,,true,false,false,false,laptop|accessories,2350,Logitech
+Logitech G102 Lightsync Gaming Mouse,logi-g102,"Logitech G102 Lightsync gaming mouse with an 8000 DPI gaming-grade sensor, customisable RGB and six programmable buttons. Nepal's favourite budget esports mouse — accurate, light and built to click for millions of presses.",tech-accessories,4299,4999,true,true,true,false,laptop,3150,Logitech
+Logitech K120 Wired Keyboard,logi-k120,"Full-size Logitech K120 wired keyboard with deep, quiet keys and a spill-resistant design that shrugs off tea accidents. Plug-and-play USB with zero setup on any computer.",tech-accessories,1999,,true,false,false,false,laptop,1450,Logitech
+JBL Go 3 Portable Speaker,jbl-go3,"Pocket-size JBL Go 3 with 4.2W of surprisingly big JBL Pro Sound, IP67 waterproofing and 5 hours of playtime. Bluetooth 5.1, fabric finish and a carry loop — built for bags, bikes and monsoon.",tech-accessories,6499,7499,true,false,true,false,audio,4800,JBL
+JBL Tune 510BT Headphones,jbl-tune510,"Foldable JBL Tune 510BT on-ears with 40 hours of battery, JBL Pure Bass and hands-free calls. Flat-folds into a backpack and quick-charges hours of playback in minutes.",tech-accessories,7999,,true,false,false,false,audio,5900,JBL
+boAt Airdopes 141 TWS,boat-141,"boAt Airdopes 141 true-wireless buds with 8 mm drivers, 42 hours of total backup and ENx clear-call mics. ASAP fast charging and instant pairing make them a daily-driver favourite.",tech-accessories,3499,4299,true,false,false,true,audio|mobile,2500,boAt
+Ugreen 100W USB-C Cable 2 m,ugreen-100w-2m,"Braided 2-metre Ugreen USB-C cable rated for 100W Power Delivery — fast-charges laptops, phones and power banks alike. Nylon jacket and reinforced necks survive bag abuse.",tech-accessories,1499,,true,false,false,false,charging|mobile,1050,Ugreen
+Ugreen Nexode 65W GaN Charger,ugreen-nexode-65,Ugreen Nexode 65W GaN charger with two USB-C ports plus USB-A — enough for a laptop and two phones from one wall socket. Gallium-nitride tech keeps it small and cool under load.,tech-accessories,6999,,true,false,false,false,charging|power,5100,Ugreen
+Baseus Bipow 20000 mAh 20W,baseus-bipow-20k,"Baseus Bipow 20000 mAh bank with 20W USB-C fast output and an LED percentage display, so the remaining charge is always visible. Triple output shares power across three devices.",tech-accessories,4999,5799,true,false,false,false,power|mobile,3600,Baseus
+Samsung 25W Travel Adapter,samsung-25w,Official Samsung 25W Super-Fast travel adapter with a USB-C cable in the box. Charges Galaxy phones at full Super-Fast speed and safely tops up any USB-C device.,tech-accessories,2799,,true,false,false,false,charging|mobile,2000,Samsung
+Casio F-91W Digital Watch,casio-f91w,"The indestructible Casio F-91W digital: alarm, stopwatch, calendar and a ~7-year battery in a feather-light resin case. An icon that outlives trends — and most other watches.",fashion-accessories,3299,,true,false,true,false,accessories,2400,Casio
+Casio A158WA Vintage Silver,casio-a158wa,"Retro Casio A158WA with a polished stainless case and band, daily alarm and stopwatch. Slim on the wrist and sharp with everything from kurtas to blazers.",fashion-accessories,4799,5499,true,false,false,true,accessories,3500,Casio
+Casio MTP-V002 Leather Analog,casio-mtpv002,"Slim Casio MTP-V002 analog with a clean dial, date window and genuine leather strap. Quietly formal — the office and wedding watch that never tries too hard.",fashion-accessories,5499,,true,false,false,false,accessories,4000,Casio
+Titan Analog Leather 1823SL01,titan-1823sl01,"Titan 1823SL01 with a deep-blue dial, date display and genuine leather strap. Quartz accuracy with Titan's finish and service backing, boxed for gifting.",fashion-accessories,6599,,true,true,false,false,accessories,4900,Titan
+Fastrack Analog Black Leather,fastrack-analog-blk,"Bold black-dial Fastrack analog on a leather strap — young, loud and built for daily wear. Quartz movement with splash resistance for everyday life.",fashion-accessories,4999,5799,true,false,false,false,accessories,3600,Fastrack
+Fastrack Reflex Vybe Band,fastrack-vybe,"Slim Fastrack Reflex Vybe fitness band tracking 10 sport modes plus heart rate, SpO2 and sleep, with a week-plus battery. Light on the wrist, loud on looks.",fashion-accessories,4499,,true,false,false,true,accessories|wearable,3300,Fastrack
+Wildcraft 45L Travel Rucksack,wildcraft-45l,"Wildcraft 45L travel rucksack with rain cover, padded laptop sleeve and load-balancing hip belt. Built for Annapurna circuits and semester-abroad moves alike.",fashion-accessories,7999,9499,true,true,true,false,bags|travel,5800,Wildcraft
+American Tourister Cabin Case 55 cm,at-cabin-55,American Tourister 55 cm hard-shell cabin case with smooth spinner wheels and a TSA lock. Scratch-tough shell sized for airline overhead bins.,fashion-accessories,11999,13999,true,false,false,false,bags|travel,8800,American Tourister
+Puma Baseball Cap,puma-cap,Classic Puma baseball cap in breathable cotton twill with an embroidered cat logo. Adjustable strap fits most heads; shields sun on rides and matches.,fashion-accessories,2499,,true,false,false,false,apparel|accessories,1800,Puma
+Adidas Adilette Comfort Slides,adidas-adilette,"Adidas Adilette Comfort slides with a Cloudfoam footbed that cushions every step. Single-bandage synthetic upper dries fast — home, hostel and post-match feet sorted.",fashion-accessories,5499,,true,false,false,false,footwear,4000,Adidas
+Nike Everyday Socks 3-Pack,nike-socks-3,Three pairs of Nike Everyday cushioned crew socks with arch support and Dri-FIT sweat control. Reinforced heels and toes survive daily wear and wash cycles.,fashion-accessories,1799,,true,false,false,false,apparel|footwear,1300,Nike
+Puma Everyday Backpack 21L,puma-backpack,"Puma everyday backpack with a padded 15-inch laptop sleeve, bottle pockets and cushioned straps for college commutes. Zips and fabric built for daily overloading.",fashion-accessories,4999,5999,true,false,false,false,bags|travel,3600,Puma
+Titan Aviator Sunglasses,titan-aviator,Titan metal aviators with full UV protection and spring hinges that flex instead of snapping. Timeless pilot shape that suits most Nepali face shapes.,fashion-accessories,4499,,true,false,false,true,accessories,3300,Titan
+Fastrack Wayfarer Sunglasses,fastrack-wayfarer,"Retro Fastrack wayfarers in acetate with shatter-resistant UV lenses. Light, bold and hard to lose — the everyday sunglasses that go with everything.",fashion-accessories,2999,,true,false,false,false,accessories,2200,Fastrack
+Puma Smash Leather Sneakers,puma-smash,"Puma Smash leather sneakers with a clean court profile, cushioned tongue and grippy rubber cupsole. Full-grain leather that ages well with daily rotation.",fashion-accessories,8999,10499,true,false,true,false,footwear,6600,Puma
+Rubik's 3x3 Speed Cube,rubiks-3x3,"The original Rubik's 3x3 speed cube with smoother, faster turning and durable stickerless tiles. Official 56 mm tournament size — the puzzle every desk deserves.",lifestyle-fun,1999,2499,true,false,true,false,games,1450,Rubik's
+LEGO Classic Creative Box,lego-classic,"LEGO Classic medium box with 484 bricks in 35 colours plus windows, doors and baseplate ideas for open-ended building. The perfect first big LEGO set for ages 4 and up.",lifestyle-fun,4999,,true,true,false,true,games,3700,LEGO
+UNO Card Game,uno-cards,"112 cards of reverses, skips, wilds and dreaded +4s — the family game-night fix that fits in a pocket. For 2 to 10 players; grudges guaranteed.",lifestyle-fun,899,,true,false,false,false,games,650,Mattel
+Monopoly Classic Board Game,monopoly-classic,"Monopoly Classic: buy streets, build houses, bankrupt the family the traditional way. Eight tokens, full board and paper money for 2 to 8 players, ages 8+.",lifestyle-fun,3499,,true,false,false,false,games,2600,Hasbro
+Fujifilm Instax Mini Film Twin Pack,instax-film-2x10,"Twin pack of Fujifilm Instax Mini film — 20 credit-card-size instant prints for any Instax Mini camera. Weddings, trips and room walls start here.",lifestyle-fun,2799,,true,false,false,false,travel,2050,Fujifilm
+Govee RGB LED Strip 5 m,govee-strip-5m,"Five metres of app-controlled Govee RGB strip light with a built-in mic that pulses to music. Timers, dimming and millions of colours for room glow-ups and Dashain decor.",lifestyle-fun,3999,4999,true,false,true,true,lighting|home,2900,Govee
+Milton Thermosteel Flask 1L,milton-thermo-1l,"Milton Thermosteel 1-litre flask in food-grade stainless that keeps chai hot (or water icy) for 24 hours. Leakproof, sweat-free exterior for bags and bike holders.",lifestyle-fun,3299,,true,false,false,false,kitchen|travel,2400,Milton
+Milton Insulated Lunch Set,milton-lunch-set,Three stainless Milton containers in one insulated carrier — the office tiffin that keeps lunch warm till 1 pm. Leakproof lids survive crowded micro rides.,lifestyle-fun,1999,,true,false,false,false,kitchen,1450,Milton
+Boldfit Yoga Mat 6 mm,boldfit-mat-6mm,"Boldfit 6 mm anti-skid yoga mat with dual-texture grip and a carry strap. Thick enough for knees on concrete floors, grippy enough for power flows.",lifestyle-fun,2499,2999,true,false,false,false,fitness,1800,Boldfit
+Boldfit Skipping Rope,boldfit-rope,"Adjustable Boldfit skipping rope with smooth ball bearings and foam grips for cardio anywhere — terrace, park or hostel corridor. Trims to your height in seconds.",lifestyle-fun,899,,true,false,false,false,fitness,650,Boldfit
+Boldfit Resistance Bands 5-Set,boldfit-bands-5,"Five stackable Boldfit latex bands from 10 to 50 lb for full-body training without a gym. Includes handles and door anchor for presses, rows and curls.",lifestyle-fun,1499,,true,false,false,false,fitness,1100,Boldfit
+Cello H2O Bottles 1L 2-Pack,cello-h2o-2,"Two leakproof 1-litre Cello H2O bottles for fridge, desk and gym bag. Food-grade plastic with flip caps you can open one-handed mid-ride.",lifestyle-fun,1299,,true,false,false,false,kitchen|travel,950,Cello
+Quechua NH100 20L Daypack,quechua-nh100-20,"Quechua NH100 20-litre daypack with padded back, straps and bottle holders — sized for Shivapuri day hikes and daily college carry alike.",lifestyle-fun,3999,,true,false,false,true,outdoor|travel,2900,Quechua
+Naturehike LED Camping Lantern,naturehike-lantern,Rechargeable Naturehike warm-light lantern with three brightness modes for load-shedding nights and campsites. USB-C charging plus a hook for tents and wires.,lifestyle-fun,2499,,true,false,false,false,outdoor|lighting,1800,Naturehike
+Philips 9W LED Bulbs 4-Pack,philips-led-4,"Four Philips 9W daylight LED bulbs that brighten whole rooms while sipping power and staying cool. Standard bayonet fitting, instant full brightness.",lifestyle-fun,1499,,true,false,false,false,lighting|home,1100,Philips

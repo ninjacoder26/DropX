@@ -28,7 +28,19 @@ const SPREAD_GATE = 26;
 const WHITE_TOLERANCE = 46;
 const COLOR_TOLERANCE = 30;
 const MIN_FRACTION = 0.03;
-const MAX_FRACTION = 0.55;
+
+/**
+ * How much of the frame we may clear scales with border confidence: a dead
+ * uniform studio backdrop is almost certainly background even when the
+ * product fills the frame; a noisier border keeps the strict ceiling so we
+ * never eat the subject to "find" background.
+ */
+export function maxFractionFor(spread: number, isWhite: boolean): number {
+  if (isWhite && spread <= 8) return 0.92;
+  if (spread <= 12) return 0.8;
+  if (spread <= 18) return 0.68;
+  return 0.55;
+}
 
 /** Median border color + spread. A calm border means a simple backdrop. */
 export function estimateBackground(data: Uint8ClampedArray, width: number, height: number): BgEstimate {
@@ -188,7 +200,8 @@ export function removeBackgroundFromPixels(
   for (let p = 0; p < mask.length; p++) bgCount += mask[p];
   const fraction = bgCount / mask.length;
   if (fraction < MIN_FRACTION) return fail('no background found', fraction);
-  if (fraction > MAX_FRACTION) return fail('too aggressive — kept original', fraction);
+  const ceiling = maxFractionFor(est.spread, est.isWhite);
+  if (fraction > ceiling) return fail('too aggressive — kept original', fraction);
   return {
     alpha: featherAlpha(mask, width, height),
     width,

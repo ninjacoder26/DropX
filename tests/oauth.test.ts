@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { canonicalRedirectFor, consumeLoginOrigin, oauthRedirectTo, rememberLoginOrigin, safeNextPath } from '../src/lib/oauth';
+import { appOrigin, canonicalRedirectFor, oauthRedirectTo, safeNextPath } from '../src/lib/oauth';
 
 describe('oauth redirect construction', () => {
   it('passes through legitimate in-app paths', () => {
@@ -42,45 +42,20 @@ describe('oauth redirect construction', () => {
   });
 });
 
-describe('login origin self-heal', () => {
-  beforeEach(() => {
-    const store = new Map<string, string>();
-    vi.stubGlobal('sessionStorage', {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => {
-        store.set(k, String(v));
-      },
-      removeItem: (k: string) => {
-        store.delete(k);
-      },
-    });
-    vi.stubGlobal('window', { location: { origin: 'https://dropxnepal.vercel.app' } });
-  });
-
+describe('hardcoded production origin', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it('remembers and consumes the origin exactly once', () => {
-    rememberLoginOrigin();
-    expect(consumeLoginOrigin()).toBe('https://dropxnepal.vercel.app');
-    expect(consumeLoginOrigin()).toBeNull();
-  });
-
-  it('never throws when storage is blocked', () => {
-    vi.stubGlobal('sessionStorage', {
-      getItem: () => {
-        throw new Error('blocked');
-      },
-      setItem: () => {
-        throw new Error('blocked');
-      },
-      removeItem: () => {
-        throw new Error('blocked');
-      },
-    });
-    expect(() => rememberLoginOrigin()).not.toThrow();
-    expect(consumeLoginOrigin()).toBeNull();
+  it('always points at production, except localhost dev', () => {
+    vi.stubGlobal('window', { location: { origin: 'https://dropx-ninjacoder26.vercel.app' } });
+    expect(appOrigin()).toBe('https://dropxnepal.vercel.app');
+    vi.stubGlobal('window', { location: { origin: 'https://dropxnepal.vercel.app' } });
+    expect(appOrigin()).toBe('https://dropxnepal.vercel.app');
+    vi.stubGlobal('window', { location: { origin: 'http://localhost:5173' } });
+    expect(appOrigin()).toBe('http://localhost:5173');
+    vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:4177' } });
+    expect(appOrigin()).toBe('http://127.0.0.1:4177');
   });
 });
 
