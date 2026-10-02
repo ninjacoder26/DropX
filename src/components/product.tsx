@@ -82,7 +82,10 @@ export function ProductCard({ product, reason, recSource }: { product: Product; 
   const pct = discountPct(minPrice(product), product.compare_at_price ? Number(product.compare_at_price) : null);
   const buyable = (product.variants ?? []).filter((v) => v.is_active && v.stock > 0);
   const out = buyable.length === 0 && (product.variants?.length ?? 0) > 0;
-  const quickVariant = buyable.length === 1 ? buyable[0] : null;
+  // One tap always works: single-variant products add it, multi-variant ones
+  // add the first in-stock option (full choice lives on the product page).
+  // The old `length === 1` check hid the button on every multi-variant card.
+  const quickVariant = buyable[0] ?? null;
   const raw = rawPrimary(product);
   const trackClick = () => {
     if (recSource) logRecClick(user?.id ?? null, product.id, recSource, product.category_id);

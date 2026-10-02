@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
+import { Loader2, WifiOff } from 'lucide-react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar, Footer, MobileNav } from './components/layout';
 import { InstallBanner } from './components/InstallBanner';
@@ -102,27 +103,38 @@ function SlowDataNotice() {
   if ((!loading || !slowBoot) && !slowFetch) return null;
   if (dismissed) return null;
   return (
-    <div
-      role="alert"
-      className="pop-in fixed bottom-20 left-1/2 z-[60] w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl bg-ink p-4 text-paper shadow-pop lg:bottom-6"
-    >
-      <p className="font-display text-sm font-extrabold">Taking longer than usual…</p>
-      <p className="mt-1 text-xs leading-relaxed text-paper/70">
-        DropX might be down, or your connection dropped. Your data is safe — give it a moment, then try again.
-      </p>
-      <div className="mt-3 flex gap-2">
-        <button
-          onClick={() => window.location.reload()}
-          className="rounded-full bg-ember px-4 py-2 text-xs font-bold text-white transition hover:bg-ember-dark"
-        >
-          Retry
-        </button>
-        <button
-          onClick={() => setDismissed(true)}
-          className="rounded-full px-4 py-2 text-xs font-bold text-paper/70 transition hover:text-paper"
-        >
-          Dismiss
-        </button>
+    <div className="pointer-events-none fixed inset-x-0 top-16 z-[60] mx-auto w-[min(92vw,26rem)] px-4 sm:top-20">
+      <div
+        role="alert"
+        className="pop-in pointer-events-auto flex items-start gap-3 rounded-2xl bg-white p-4 shadow-pop ring-1 ring-ink/10"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ember/10">
+          {loading || slowFetch ? (
+            <Loader2 size={18} className="animate-spin text-ember" />
+          ) : (
+            <WifiOff size={18} className="text-ember" />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-sm font-extrabold">Taking longer than usual…</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink/60">
+            DropX might be down, or your connection dropped. Your data is safe — give it a moment, then try again.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-full bg-ember px-4 py-2 text-xs font-bold text-white transition hover:bg-ember-dark"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => setDismissed(true)}
+              className="rounded-full px-4 py-2 text-xs font-bold text-ink/60 transition hover:bg-ink/5 hover:text-ink"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
