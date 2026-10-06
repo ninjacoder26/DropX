@@ -52,8 +52,8 @@ export function PausePage() {
         </p>
         <p className="reveal reveal-2 mx-auto mt-5 max-w-2xl text-center text-[15px] leading-relaxed text-paper/70 sm:text-base">
           DropX is currently <strong className="text-paper">unable to take orders or accept
-          payments</strong>. Commercial operations are paused until the required e-commerce
-          registration and compliance process in Nepal is complete.
+          payments</strong>. We are <strong className="text-paper">unable to resume</strong> due to
+          required e-commerce registration and compliance process in Nepal, for now.
         </p>
         <p className="reveal reveal-2 mt-3 text-center text-sm font-bold text-paper/60">
           The drops are taking a breather.
@@ -141,7 +141,7 @@ export function PausePage() {
           >
             Electronic Commerce (E-Commerce) Act, 2081
           </a>
-          . DropX will resume commercial operations once the required requirements have been
+          . DropX remains unable to resume until registration and compliance requirements have been
           completed — until further notice, the shelves stay visible but the till stays shut.
         </p>
       </div>

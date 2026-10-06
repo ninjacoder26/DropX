@@ -176,7 +176,7 @@ export default function CheckoutPage() {
   async function placeOrder() {
     setError(null);
     if (paused) {
-      setError('DropX is paused — ordering resumes once registration is complete.');
+      setError('DropX is paused — we are unable to resume for now.');
       return;
     }
     if (!agreed) {
@@ -312,8 +312,7 @@ export default function CheckoutPage() {
         </p>
         <h1 className="mt-4 font-display text-3xl font-black">Checkout is taking a breather</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-ink/60">
-          Your bag is saved exactly as it is. Ordering (and payments) resume once our e-commerce
-          registration is complete — nothing to do but wait.
+          Your bag is saved exactly as it is. We are unable to resume for now — nothing to do but wait.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link to="/cart"><Button variant="dark">Back to bag</Button></Link>
