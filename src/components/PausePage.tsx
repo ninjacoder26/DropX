@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Eye, Mail, Package, Pause, ShoppingBag, Wallet, X } from 'lucide-react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { ChevronDown, Eye, Mail, Package, Pause, ShoppingBag, Wallet, X } from 'lucide-react';
 import { useStoreSettings } from '../lib/settings';
 import { isCommercePaused } from '../lib/commerce';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -14,6 +14,26 @@ const STATUS_ROWS = [
   { icon: Wallet, label: 'Payments', state: 'Disabled for now', open: false },
 ];
 
+const FAQ = [
+  {
+    q: 'Can I still look around?',
+    a: 'Yes — product pages, drops and collections stay visible. Only checkout, ordering and payments are paused.',
+  },
+  {
+    q: 'What happens to my bag and wishlist?',
+    a: 'Saved exactly as they are. When checkout reopens, everything is where you left it.',
+  },
+  {
+    q: 'Is my account and data safe?',
+    a: 'Yes. Nothing is deleted early, and cancelled or delivered orders auto-delete after 7 days as always.',
+    link: { to: '/privacy', label: 'Read the Privacy Policy' },
+  },
+  {
+    q: 'When will DropX reopen?',
+    a: 'There is no fixed date — this page stays up until further notice, and checkout returns on its own once registration and compliance allow it.',
+  },
+];
+
 /**
  * DropX Commerce Pause — a deliberate system state, not a crash page.
  * DropX is currently unable to trade while its e-commerce registration and
@@ -22,8 +42,30 @@ const STATUS_ROWS = [
  */
 export function PausePage() {
   usePageTitle('Paused — back soon');
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const glowRef = useRef<HTMLDivElement>(null);
+  const finePointer = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(pointer: fine)').matches,
+    []
+  );
   return (
-    <div className="texture-ink relative flex min-h-screen flex-col overflow-hidden bg-ink text-paper">
+    <div
+      className="texture-ink relative flex min-h-screen flex-col overflow-hidden bg-ink text-paper"
+      onMouseMove={(e) => {
+        const el = glowRef.current;
+        if (!el) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        el.style.transform = `translate(${e.clientX - r.left}px, ${e.clientY - r.top}px)`;
+      }}
+    >
+      {finePointer && (
+        <div ref={glowRef} aria-hidden className="pointer-events-none absolute left-0 top-0 z-[1] h-0 w-0">
+          <div className="-translate-x-1/2 -translate-y-1/2 rounded-full bg-ember/10 blur-3xl" style={{ width: 480, height: 480 }} />
+        </div>
+      )}
       <div className="relative z-[2] overflow-hidden border-b border-paper/10 py-2" aria-hidden>
         <div className="marquee flex gap-8 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.3em] text-paper/40">
           {Array.from({ length: 10 }).map((_, i) => (
@@ -67,9 +109,9 @@ export function PausePage() {
         </p>
 
         <div className="reveal reveal-2 mt-8 grid w-full gap-3 text-left sm:grid-cols-2">
-          <div className="rounded-2xl border border-paper/10 bg-paper/5 p-5 sm:p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
-              Why is ordering restricted?
+          <div className="rounded-2xl border border-paper/10 bg-paper/5 p-5 transition-colors hover:border-paper/25 sm:p-6">
+            <p className="flex items-baseline gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+              <span aria-hidden className="font-display text-sm">01</span> Why is ordering restricted?
             </p>
             <p className="mt-2 text-sm leading-relaxed text-paper/75">
               Nepal&apos;s{' '}
@@ -87,9 +129,9 @@ export function PausePage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-paper/10 bg-paper/5 p-5 sm:p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
-              When do we reopen?
+          <div className="rounded-2xl border border-paper/10 bg-paper/5 p-5 transition-colors hover:border-paper/25 sm:p-6">
+            <p className="flex items-baseline gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+              <span aria-hidden className="font-display text-sm">02</span> When do we reopen?
             </p>
             <p className="mt-2 text-sm leading-relaxed text-paper/75">
               There is no fixed date — this page stays up{' '}
@@ -112,7 +154,7 @@ export function PausePage() {
           {STATUS_ROWS.map((r) => (
             <div
               key={r.label}
-              className="flex items-center gap-3 rounded-2xl border border-paper/10 bg-paper/5 px-4 py-3.5"
+              className="flex items-center gap-3 rounded-2xl border border-paper/10 bg-paper/5 px-4 py-3.5 transition-all hover:-translate-y-0.5 hover:border-paper/25"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-paper/10 text-paper/50">
                 <r.icon size={17} />
@@ -131,13 +173,55 @@ export function PausePage() {
         <div className="reveal reveal-3 mt-8 flex flex-col items-center gap-3 sm:flex-row">
           <a
             href="mailto:dropx.nepal@gmail.com"
-            className="inline-flex items-center gap-2 rounded-full bg-ember px-7 py-3 text-sm font-bold text-white transition hover:bg-ember-dark"
+            className="inline-flex items-center gap-2 rounded-full bg-ember px-7 py-3 text-sm font-bold text-white transition hover:bg-ember-dark active:scale-[0.98]"
           >
             <Mail size={15} /> Talk to us
           </a>
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-paper/40">
             Check back soon
           </span>
+        </div>
+
+        <div className="reveal reveal-3 mt-10 w-full max-w-2xl text-left">
+          <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-paper/40">
+            Quick answers
+          </p>
+          <ul className="mt-4 space-y-2">
+            {FAQ.map((f, i) => {
+              const open = openFaq === i;
+              return (
+                <li key={f.q} className="overflow-hidden rounded-2xl border border-paper/10 bg-paper/5 transition-colors hover:border-paper/25">
+                  <button
+                    onClick={() => setOpenFaq(open ? null : i)}
+                    aria-expanded={open}
+                    className="flex w-full items-center gap-3 px-5 py-4 text-left"
+                  >
+                    <span className="min-w-0 flex-1 text-sm font-bold">{f.q}</span>
+                    <ChevronDown
+                      size={16}
+                      className={`shrink-0 text-ember transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  <div
+                    className={`grid transition-all duration-300 ease-out ${
+                      open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="px-5 pb-4 text-sm leading-relaxed text-paper/65">
+                        {f.a}{' '}
+                        {f.link && (
+                          <Link to={f.link.to} className="font-bold text-paper underline decoration-ember decoration-2 underline-offset-2 hover:text-ember">
+                            {f.link.label}
+                          </Link>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
 
         <p className="mx-auto mt-8 max-w-3xl text-center text-[11px] leading-relaxed text-paper/40">

@@ -47,8 +47,10 @@ describe('commerce pause page', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Not gone. Just on hold.', { exact: false })).toBeInTheDocument();
     expect(screen.getAllByText(/Electronic Commerce \(E-Commerce\) Act, 2081/).length).toBeGreaterThan(0);
-    // No timers, no privileged escape hatches for anyone.
-    expect(screen.queryByRole('button')).toBeNull();
+    // No timers, no privileged escape hatches — the only buttons are FAQ toggles.
+    for (const b of screen.getAllByRole('button')) {
+      expect(b.textContent ?? '').toMatch(/Can I|What happens|Is my|When will/i);
+    }
   });
 
   it('shows what runs and what rests, plus a way to reach out', () => {
@@ -59,6 +61,13 @@ describe('commerce pause page', () => {
     expect(screen.getByRole('link', { name: /talk to us/i })).toHaveAttribute('href', 'mailto:dropx.nepal@gmail.com');
     expect(screen.getByText(/why is ordering restricted/i)).toBeInTheDocument();
     expect(screen.getByText(/when do we reopen/i)).toBeInTheDocument();
+  });
+
+  it('answers common questions in place', () => {
+    renderPage();
+    expect(screen.getByText('Can I still look around?')).toBeInTheDocument();
+    expect(screen.getByText('Is my account and data safe?')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /read the privacy policy/i })).toHaveAttribute('href', '/privacy');
   });
 });
 
