@@ -75,8 +75,8 @@ export function PausePage() {
                 Electronic Commerce (E-Commerce) Act, 2081
               </a>{' '}
               requires online sellers to complete e-commerce registration and related compliance
-              first. Until that is done, <strong className="text-paper">no orders, no payments, no
-              shortcuts</strong> — the restriction applies to everyone, no exceptions.
+              first. We are <strong className="text-paper">unable to take orders or payments for
+              now</strong> — no shortcuts, no exceptions.
             </p>
           </div>
 
@@ -86,9 +86,10 @@ export function PausePage() {
             </p>
             <p className="mt-2 text-sm leading-relaxed text-paper/75">
               There is no fixed date — this page stays up{' '}
-              <strong className="text-paper">until further notice</strong>. The moment registration
-              and compliance are complete, checkout reopens on its own. Nothing you need to do
-              except check back. Questions?{' '}
+              <strong className="text-paper">until further notice</strong>. We are{' '}
+              <strong className="text-paper">unable to reopen</strong> until registration and
+              compliance allow it — when that happens, checkout returns on its own.
+              Nothing you need to do except check back. Questions?{' '}
               <a
                 href="mailto:dropx.nepal@gmail.com"
                 className="font-bold text-paper underline decoration-ember decoration-2 underline-offset-2 hover:text-ember"
