@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../src/config', () => ({
@@ -9,105 +9,72 @@ vi.mock('../src/config', () => ({
     supabaseAnonKey: '',
     cloudinaryCloudName: '',
     cloudinaryUploadPreset: '',
-    maintenanceMode: true,
+    COMMERCE_STATUS: 'PAUSED',
   },
   isSupabaseConfigured: false,
   isCloudinaryConfigured: false,
 }));
 
-import { MaintenanceGate, MaintenancePage } from '../src/components/MaintenancePage';
-import { AuthProvider } from '../src/store/AuthContext';
-import { clearMaintenanceBypass, setMaintenanceBypass } from '../src/lib/maintenance';
+import { CommerceGate, PausePage } from '../src/components/PausePage';
 
-function renderPage(onContinue = () => undefined) {
+function renderPage() {
   return render(
     <MemoryRouter>
-      <AuthProvider>
-        <MaintenancePage onContinue={onContinue} />
-      </AuthProvider>
+      <PausePage />
     </MemoryRouter>
   );
 }
 
-beforeEach(() => {
-  clearMaintenanceBypass();
-  vi.useFakeTimers();
-});
+function renderGate(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <CommerceGate>
+        <p>shop content</p>
+      </CommerceGate>
+    </MemoryRouter>
+  );
+}
 
-afterEach(() => {
-  vi.useRealTimers();
-});
-
-describe('maintenance page', () => {
-  it('shows one locked countdown-button with remaining seconds', () => {
+describe('commerce pause page', () => {
+  it('states the pause plainly with no countdown and no bypass buttons', () => {
     renderPage();
-    expect(screen.getByText(/tuning/)).toBeInTheDocument();
-    const btn = screen.getByRole('button', { name: /continue anyway, available in 6 seconds/i });
-    expect(btn).toBeDisabled();
-    // Admin bypass stays invisible to regular visitors.
-    expect(screen.queryByRole('button', { name: /enter site as admin/i })).toBeNull();
-    act(() => {
-      vi.advanceTimersByTime(3_000);
-    });
-    expect(screen.getByRole('button', { name: /continue anyway, available in 3 seconds/i })).toBeDisabled();
+    expect(screen.getByText('DROPX / COMMERCE STATUS', { exact: false })).toBeInTheDocument();
+    expect(screen.getAllByText(/paused — until further notice/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        (_, el) => el?.tagName === 'H1' && (el.textContent ?? '').includes('PAUSED')
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText('Not gone. Just on hold.', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText(/Electronic Commerce \(E-Commerce\) Act, 2081/)).toBeInTheDocument();
+    // No timers, no privileged escape hatches for anyone.
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('counts down 6s, then unlocks one control and remembers the choice', () => {
-    let continued = false;
-    renderPage(() => {
-      continued = true;
-    });
-    act(() => {
-      vi.advanceTimersByTime(6_000);
-    });
-    const btn = screen.getByRole('button', { name: /^continue anyway$/i });
-    expect(btn).toBeEnabled();
-    fireEvent.click(btn);
-    expect(continued).toBe(true);
+  it('shows what runs and what rests, plus a way back to browsing', () => {
+    renderPage();
+    expect(screen.getByText('Browsing')).toBeInTheDocument();
+    expect(screen.getByText('Checkout')).toBeInTheDocument();
+    expect(screen.getByText('Payments')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /keep browsing/i })).toHaveAttribute('href', '/');
   });
 });
 
-describe('maintenance gate', () => {
-  function renderGate(path: string) {
-    return render(
-      <MemoryRouter initialEntries={[path]}>
-        <AuthProvider>
-          <MaintenanceGate>
-            <p>shop content</p>
-          </MaintenanceGate>
-        </AuthProvider>
-      </MemoryRouter>
-    );
-  }
-
-  it('blocks customer routes but never admin routes', () => {
-    const { unmount } = renderGate('/shop');
-    expect(screen.queryByText('shop content')).toBeNull();
-    expect(screen.getByText(/tuning/)).toBeInTheDocument();
-    unmount();
-    renderGate('/admin/orders');
-    expect(screen.getByText('shop content')).toBeInTheDocument();
-  });
-
-  it('lets opted-in sessions straight through', () => {
-    setMaintenanceBypass();
+describe('commerce gate', () => {
+  it('warns on storefront routes but never blocks browsing', () => {
     renderGate('/shop');
     expect(screen.getByText('shop content')).toBeInTheDocument();
-    expect(screen.queryByText(/tuning/)).toBeNull();
+    expect(screen.getByText(/service paused/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /why/i })).toHaveAttribute('href', '/pause');
   });
 
-  it('honors custom copy and a zero-second timer', () => {
-    render(
-      <MemoryRouter>
-        <AuthProvider>
-          <MaintenancePage
-            onContinue={() => undefined}
-            overrides={{ maintenanceTitle: 'Back in a flash', maintenanceCountdown: 0 }}
-          />
-        </AuthProvider>
-      </MemoryRouter>
-    );
-    expect(screen.getByText('Back in a flash')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^continue anyway$/i })).toBeEnabled();
+  it('stays quiet on admin and staff shells', () => {
+    const { unmount } = renderGate('/admin/orders');
+    expect(screen.getByText('shop content')).toBeInTheDocument();
+    expect(screen.queryByText(/service paused/i)).toBeNull();
+    unmount();
+    renderGate('/staff');
+    expect(screen.getByText('shop content')).toBeInTheDocument();
+    expect(screen.queryByText(/service paused/i)).toBeNull();
   });
 });

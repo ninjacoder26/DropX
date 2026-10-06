@@ -5,8 +5,7 @@ import { Navbar, Footer, MobileNav } from './components/layout';
 import { InstallBanner } from './components/InstallBanner';
 import { ScrollToTop } from './components/ScrollToTop';
 import { Skeleton } from './components/ui';
-import { MaintenanceGate, MaintenancePage } from './components/MaintenancePage';
-import { isMaintenanceMode } from './lib/maintenance';
+import { CommerceGate, PausePage } from './components/PausePage';
 import { canonicalRedirectFor } from './lib/oauth';
 import { onSlowData } from './lib/cache';
 import { useAuth } from './store/AuthContext';
@@ -70,15 +69,8 @@ function RequireStaff({ children }: { children: ReactNode }) {
 }
 
 function MaintenanceRoute() {
-  const nav = useNavigate();
-  if (!isMaintenanceMode()) return <Navigate to="/" replace />;
-  return (
-    <MaintenancePage
-      onContinue={() => {
-        nav('/', { replace: true });
-      }}
-    />
-  );
+  // Old /maintenance links land on the pause experience.
+  return <Navigate to="/pause" replace />;
 }
 
 /**
@@ -160,7 +152,7 @@ export default function App() {
       <ScrollToTop />
       <InstallBanner />
       <SlowDataNotice />
-      <MaintenanceGate>
+      <CommerceGate>
         {!isAdminRoute && !isStaffRoute && <Navbar />}
         <main className="flex-1">
           <div className="page-enter">
@@ -185,6 +177,7 @@ export default function App() {
             <Route path="/collections" element={<CollectionsPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/pause" element={<PausePage />} />
             <Route path="/maintenance" element={<MaintenanceRoute />} />
             <Route path="/admin/*" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
             <Route path="/staff/login" element={<StaffLoginPage />} />
@@ -197,7 +190,7 @@ export default function App() {
       </main>
       {!isAdminRoute && !isStaffRoute && <Footer />}
       {!isAdminRoute && !isStaffRoute && <MobileNav />}
-      </MaintenanceGate>
+      </CommerceGate>
     </div>
   );
 }

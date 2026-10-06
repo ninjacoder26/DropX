@@ -29,11 +29,13 @@ export const APP_CONFIG = {
   cloudinaryCloudName: 'vis22j9d',
   cloudinaryUploadPreset: 'dropx',
 
-  // ── Maintenance mode ───────────────────────────────────────
-  // Flip to true to take the storefront offline behind a branded
-  // maintenance page (Admin stays fully accessible). Flip back to false
-  // to reopen. Redeploy after changing (Vercel auto-deploys on push).
-  maintenanceMode: false,
+  // ── Commerce status ──────────────────────────────────────────
+  // Global legal/compliance state, NOT a technical flag. 'PAUSED' disables
+  // checkout, order submission and payments everywhere (server too) while
+  // the store stays browsable. Flip to 'OPEN' to resume commerce.
+  // The Admin → Settings value overrides this when present; redeploy after
+  // changing code here (Vercel auto-deploys on push).
+  COMMERCE_STATUS: 'PAUSED' as 'PAUSED' | 'OPEN',
 } as const;
 
 /** False until the two Supabase values above are filled in. */

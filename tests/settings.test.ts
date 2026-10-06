@@ -55,31 +55,10 @@ describe('store settings', () => {
     expect(costFromSelling(1200, 20)).toBe(1000);
   });
 
-  it('maps maintenance controls with safe defaults', () => {
-    const d = mapSettings([]);
-    expect(d).toMatchObject({
-      maintenanceEnabled: false,
-      maintenanceFrequency: 'once',
-      maintenanceCountdown: 6,
-      maintenanceParticles: true,
-      maintenanceContact: true,
-    });
-    const on = mapSettings([
-      { key: 'maintenance_enabled', value: '1' },
-      { key: 'maintenance_frequency', value: 'always' },
-      { key: 'maintenance_countdown', value: '10' },
-      { key: 'maintenance_title', value: 'Back soon' },
-      { key: 'maintenance_particles', value: '0' },
-    ]);
-    expect(on).toMatchObject({
-      maintenanceEnabled: true,
-      maintenanceFrequency: 'always',
-      maintenanceCountdown: 10,
-      maintenanceTitle: 'Back soon',
-      maintenanceParticles: false,
-      maintenanceContact: true,
-    });
-    expect(mapSettings([{ key: 'maintenance_countdown', value: '999' }]).maintenanceCountdown).toBe(60);
-    expect(mapSettings([{ key: 'maintenance_frequency', value: 'sometimes' }]).maintenanceFrequency).toBe('once');
+  it('maps the commerce switch, defaulting to paused', () => {
+    expect(mapSettings([]).commerceStatus).toBe('paused');
+    expect(mapSettings([{ key: 'commerce_status', value: 'open' }]).commerceStatus).toBe('open');
+    expect(mapSettings([{ key: 'commerce_status', value: 'paused' }]).commerceStatus).toBe('paused');
+    expect(mapSettings([{ key: 'commerce_status', value: 'sometimes' }]).commerceStatus).toBe('paused');
   });
 });

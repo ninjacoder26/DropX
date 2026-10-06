@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEES } from './shop';
+import { APP_CONFIG } from '../config';
 import { createTTLCache, registerCache } from './cache';
 
 /** Store-wide customizable copy + commerce rules (Admin → Settings). */
@@ -17,16 +18,8 @@ export interface StoreSettings {
   /** Rs per km from Imadol. Defaults: standard 10, express 20. */
   deliveryRateStandard: number;
   deliveryRateExpress: number;
-  /** Maintenance page (Admin → Settings). Brand/theme stay fixed. */
-  maintenanceEnabled: boolean;
-  /** 'once' = bypass remembered for the session; 'always' = re-block on reload. */
-  maintenanceFrequency: 'always' | 'once';
-  maintenanceCountdown: number;
-  maintenanceTitle: string;
-  maintenanceMessage: string;
-  maintenanceButton: string;
-  maintenanceParticles: boolean;
-  maintenanceContact: boolean;
+  /** Global commerce state. 'paused' disables checkout/orders/payments. */
+  commerceStatus: 'paused' | 'open';
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
@@ -39,14 +32,8 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   maxQtyPerItem: 3,
   deliveryRateStandard: 10,
   deliveryRateExpress: 20,
-  maintenanceEnabled: false,
-  maintenanceFrequency: 'once',
-  maintenanceCountdown: 6,
-  maintenanceTitle: '',
-  maintenanceMessage: '',
-  maintenanceButton: '',
-  maintenanceParticles: true,
-  maintenanceContact: true,
+  // Code-level default; the Admin → Settings row wins whenever present.
+  commerceStatus: APP_CONFIG.COMMERCE_STATUS === 'OPEN' ? 'open' : 'paused',
 };
 
 const num = (v: string | undefined, fallback: number): number => {
@@ -55,9 +42,6 @@ const num = (v: string | undefined, fallback: number): number => {
 };
 
 const clampMargin = (m: number): number => Math.min(100, Math.max(0, m));
-
-const truthy = (v: string | undefined): boolean =>
-  v !== undefined && ['1', 'true', 'yes', 'on'].includes(v.trim().toLowerCase());
 
 /** Storefront selling price from a real cost + margin %. Whole rupees. */
 export function sellingFromCost(cost: number, marginPct: number): number {
@@ -82,14 +66,7 @@ export function mapSettings(rows: { key: string; value: string }[]): StoreSettin
     maxQtyPerItem: Math.min(99, Math.max(1, Math.round(num(get('max_qty_per_item'), DEFAULT_SETTINGS.maxQtyPerItem)))),
     deliveryRateStandard: num(get('delivery_rate_standard'), DEFAULT_SETTINGS.deliveryRateStandard),
     deliveryRateExpress: num(get('delivery_rate_express'), DEFAULT_SETTINGS.deliveryRateExpress),
-    maintenanceEnabled: truthy(get('maintenance_enabled')),
-    maintenanceFrequency: get('maintenance_frequency') === 'always' ? 'always' : 'once',
-    maintenanceCountdown: Math.min(60, Math.max(0, Math.round(num(get('maintenance_countdown'), DEFAULT_SETTINGS.maintenanceCountdown)))),
-    maintenanceTitle: get('maintenance_title')?.trim() ?? '',
-    maintenanceMessage: get('maintenance_message')?.trim() ?? '',
-    maintenanceButton: get('maintenance_button')?.trim() ?? '',
-    maintenanceParticles: get('maintenance_particles') == null ? true : truthy(get('maintenance_particles')),
-    maintenanceContact: get('maintenance_contact') == null ? true : truthy(get('maintenance_contact')),
+    commerceStatus: get('commerce_status') === 'open' ? 'open' : DEFAULT_SETTINGS.commerceStatus,
   };
 }
 

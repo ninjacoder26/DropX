@@ -15,6 +15,7 @@ import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
 import { Badge, Button, EmptyState, ErrorState, Notice, Skeleton } from '../components/ui';
 import { ReportProduct } from '../components/ReportProduct';
 import { useStoreSettings } from '../lib/settings';
+import { useCommercePaused } from '../lib/commerce';
 import { ProductGrid, primaryImage, specLabel, srcSetFor } from '../components/product';
 
 export default function ProductPage() {
@@ -57,6 +58,7 @@ export default function ProductPage() {
   const { has, toggle } = useWishlist();
   const { push } = useRecentlyViewed();
   const { profitMargin, maxQtyPerItem } = useStoreSettings();
+  const paused = useCommercePaused();
 
   useEffect(() => {
     (async () => {
@@ -350,7 +352,7 @@ export default function ProductPage() {
               <p className="w-full text-xs text-ink/50">Max {maxQtyPerItem} per order for this item.</p>
             )}
             <Button
-              disabled={!variant || out}
+              disabled={!variant || out || paused}
               onClick={() => {
                 if (!variant) return;
                 setAddError(null);
@@ -363,7 +365,7 @@ export default function ProductPage() {
               }}
               className="flex-1 sm:flex-none sm:px-8"
             >
-              <ShoppingBag size={16} /> {added ? 'Added to bag!' : out ? 'Sold out' : 'Add to bag'}
+              <ShoppingBag size={16} /> {paused ? 'Paused' : added ? 'Added to bag!' : out ? 'Sold out' : 'Add to bag'}
             </Button>
             <button
               onClick={() => void toggle(product.id, product.category_id ?? null)}
@@ -503,7 +505,7 @@ export default function ProductPage() {
             <p className="font-display text-base font-black">{formatNPR(unit)}</p>
           </div>
           <Button
-            disabled={!variant || out}
+            disabled={!variant || out || paused}
             onClick={() => {
               if (!variant) return;
               void add(product, variant, qty).then(() => {
@@ -515,7 +517,7 @@ export default function ProductPage() {
             }}
             className="!px-6 !py-2.5"
           >
-            <ShoppingBag size={15} /> {added ? 'Added!' : out ? 'Sold out' : 'Add to bag'}
+            <ShoppingBag size={15} /> {paused ? 'Paused' : added ? 'Added!' : out ? 'Sold out' : 'Add to bag'}
           </Button>
         </div>
       </div>

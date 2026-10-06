@@ -7,6 +7,7 @@ import { cloudinaryThumb, discountPct, formatNPR } from '../lib/shop';
 import { useWishlist } from '../hooks/useShop';
 import { useAuth } from '../store/AuthContext';
 import { useCart } from '../store/CartContext';
+import { useCommercePaused } from '../lib/commerce';
 import { logRecClick } from '../lib/analytics';
 import { Badge } from './ui';
 
@@ -77,6 +78,7 @@ export function ProductCard({ product, reason, recSource }: { product: Product; 
   const { has, toggle } = useWishlist();
   const { user } = useAuth();
   const { add } = useCart();
+  const paused = useCommercePaused();
   const [added, setAdded] = useState(false);
   const wished = has(product.id);
   const pct = discountPct(minPrice(product), product.compare_at_price ? Number(product.compare_at_price) : null);
@@ -152,21 +154,27 @@ export function ProductCard({ product, reason, recSource }: { product: Product; 
               <span className="ml-1.5 text-[13px] text-ink/40 line-through">{formatNPR(product.compare_at_price)}</span>
             )}
           </p>
-          {quickVariant && !out && (
-            <button
-              onClick={() => {
-                void add(product, quickVariant, 1).then(() => {
-                  setAdded(true);
-                  setTimeout(() => setAdded(false), 1600);
-                });
-              }}
-              aria-label={added ? 'Added to bag' : `Quick add ${product.name}`}
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${
-                added ? 'bg-ember text-white' : 'bg-ink text-paper hover:bg-ember'
-              }`}
-            >
-              {added ? <Check size={16} /> : <Plus size={16} />}
-            </button>
+          {paused ? (
+            <span className="flex h-9 shrink-0 items-center rounded-full bg-ink/5 px-3 text-[11px] font-bold uppercase tracking-wider text-ink/50">
+              Paused
+            </span>
+          ) : (
+            quickVariant && !out && (
+              <button
+                onClick={() => {
+                  void add(product, quickVariant, 1).then(() => {
+                    setAdded(true);
+                    setTimeout(() => setAdded(false), 1600);
+                  });
+                }}
+                aria-label={added ? 'Added to bag' : `Quick add ${product.name}`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${
+                  added ? 'bg-ember text-white' : 'bg-ink text-paper hover:bg-ember'
+                }`}
+              >
+                {added ? <Check size={16} /> : <Plus size={16} />}
+              </button>
+            )
           )}
         </div>
       </div>

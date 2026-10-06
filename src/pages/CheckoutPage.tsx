@@ -7,6 +7,7 @@ import { formatNPR } from '../lib/shop';
 import { districtOfArea, isGuidedComplete } from '../lib/address';
 import { resolveCheckoutPrefill } from '../lib/checkoutProfile';
 import { HUB_NAME, planAppliesToCart, quoteWithPlan, useDeliveryPlans } from '../lib/delivery';
+import { useCommercePaused } from '../lib/commerce';
 import { AddressForm } from '../components/AddressForm';
 import type { Address } from '../types';
 import { useStoreSettings } from '../lib/settings';
@@ -132,6 +133,7 @@ export default function CheckoutPage() {
 
   const settings = useStoreSettings();
   const plans = useDeliveryPlans();
+  const paused = useCommercePaused();
   const cartIds = useMemo(() => lines.map((l) => l.product.id), [lines]);
   // A plan serves the bag only if it is live AND covers every item in it.
   const applicable = useMemo(
@@ -173,6 +175,10 @@ export default function CheckoutPage() {
 
   async function placeOrder() {
     setError(null);
+    if (paused) {
+      setError('DropX is paused — ordering resumes once registration is complete.');
+      return;
+    }
     if (!agreed) {
       setError('Please accept the Terms of Service and Privacy Policy to order.');
       return;
@@ -295,6 +301,26 @@ export default function CheckoutPage() {
     } finally {
       setPlacing(false);
     }
+  }
+
+  if (paused) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-14 text-center">
+        <p className="inline-flex items-center gap-2 rounded-full border border-ember/50 bg-ember/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em]">
+          <span className="pause-dot" aria-hidden />
+          Paused — until further notice
+        </p>
+        <h1 className="mt-4 font-display text-3xl font-black">Checkout is taking a breather</h1>
+        <p className="mx-auto mt-2 max-w-md text-sm text-ink/60">
+          Your bag is saved exactly as it is. Ordering (and payments) resume once our e-commerce
+          registration is complete — nothing to do but wait.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link to="/cart"><Button variant="dark">Back to bag</Button></Link>
+          <Link to="/pause"><Button variant="outline">Why paused?</Button></Link>
+        </div>
+      </div>
+    );
   }
 
   return (

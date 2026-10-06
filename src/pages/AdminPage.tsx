@@ -2026,16 +2026,9 @@ function Settings({ readOnly }: { readOnly: boolean }) {
     free_shipping_threshold: '',
     max_qty_per_item: '',
     profit_margin: '',
+    commerce_status: '',
     delivery_rate_standard: '',
     delivery_rate_express: '',
-    maintenance_enabled: '',
-    maintenance_frequency: '',
-    maintenance_countdown: '',
-    maintenance_title: '',
-    maintenance_message: '',
-    maintenance_button: '',
-    maintenance_particles: '',
-    maintenance_contact: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2052,16 +2045,9 @@ function Settings({ readOnly }: { readOnly: boolean }) {
         free_shipping_threshold: get('free_shipping_threshold'),
         max_qty_per_item: get('max_qty_per_item'),
         profit_margin: get('profit_margin'),
+        commerce_status: get('commerce_status'),
         delivery_rate_standard: get('delivery_rate_standard'),
         delivery_rate_express: get('delivery_rate_express'),
-        maintenance_enabled: get('maintenance_enabled'),
-        maintenance_frequency: get('maintenance_frequency'),
-        maintenance_countdown: get('maintenance_countdown'),
-        maintenance_title: get('maintenance_title'),
-        maintenance_message: get('maintenance_message'),
-        maintenance_button: get('maintenance_button'),
-        maintenance_particles: get('maintenance_particles') || '1',
-        maintenance_contact: get('maintenance_contact') || '1',
       });
       setLoading(false);
     });
@@ -2100,15 +2086,8 @@ function Settings({ readOnly }: { readOnly: boolean }) {
         return;
       }
     }
-    if (form.maintenance_countdown.trim() !== '') {
-      const c = Number(form.maintenance_countdown);
-      if (Number.isNaN(c) || c < 0 || c > 60) {
-        setMsg('Countdown must be 0–60 seconds (0 = button active immediately).');
-        return;
-      }
-    }
-    if (form.maintenance_frequency.trim() !== '' && !['always', 'once'].includes(form.maintenance_frequency.trim())) {
-      setMsg('Frequency must be “always” or “once”.');
+    if (form.commerce_status.trim() !== '' && !['paused', 'open'].includes(form.commerce_status.trim())) {
+      setMsg('Commerce status must be paused or open.');
       return;
     }
     if (!form.support_email.includes('@')) {
@@ -2116,14 +2095,9 @@ function Settings({ readOnly }: { readOnly: boolean }) {
       return;
     }
     setSaving(true);
-    const BOOLEANS = ['maintenance_enabled', 'maintenance_particles', 'maintenance_contact'];
     const entries = Object.entries(form)
-      .filter(([k, v]) => !BOOLEANS.includes(k) && v.trim() !== '')
+      .filter(([, v]) => v.trim() !== '')
       .map(([key, value]) => ({ key, value: value.trim() }));
-    // Toggles always persist explicitly ('1'/'0') so unchecking sticks.
-    for (const k of BOOLEANS) {
-      entries.push({ key: k, value: form[k as keyof typeof form].trim() === '1' ? '1' : '0' });
-    }
     const { error } = await supabase
       .from('store_settings')
       .upsert(entries, { onConflict: 'key' });
@@ -2285,72 +2259,34 @@ function Settings({ readOnly }: { readOnly: boolean }) {
             )}
           </div>
 
-          <div className="rounded-2xl border border-ink/10 bg-paper p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="font-display font-extrabold">Maintenance page</h3>
-              <button
-                onClick={() => setForm({ ...form, maintenance_enabled: form.maintenance_enabled === '1' ? '0' : '1' })}
-                aria-pressed={form.maintenance_enabled === '1'}
-                aria-label="Toggle maintenance mode"
-                className={`relative h-7 w-12 shrink-0 rounded-full transition ${form.maintenance_enabled === '1' ? 'bg-ember' : 'bg-ink/15'}`}
-              >
-                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${form.maintenance_enabled === '1' ? 'left-6' : 'left-1'}`} />
-              </button>
-            </div>
+          <div className="rounded-2xl border border-ember/30 bg-ember/5 p-4">
+            <h3 className="font-display font-extrabold">Commerce status</h3>
             <p className="mt-1 text-xs text-ink/60">
-              Brand and theme stay fixed — everything below is editable. Takes effect on save (no code changes).
+              Legal/compliance switch, not a design toggle. <strong>Paused</strong> disables checkout, orders
+              and payments everywhere (the server refuses too) while browsing stays open. <strong>Open</strong>{' '}
+              restores commerce instantly — no redeploy.
             </p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Field label="Show to visitors">
-                <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Maintenance frequency">
-                  {(['once', 'always'] as const).map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      role="radio"
-                      aria-checked={(form.maintenance_frequency || 'once') === f}
-                      onClick={() => setForm({ ...form, maintenance_frequency: f })}
-                      title={f === 'once' ? 'Remember Continue for the browser session' : 'Block again on every fresh page load'}
-                      className={`rounded-xl border px-3 py-2 text-xs font-bold capitalize transition ${
-                        (form.maintenance_frequency || 'once') === f ? 'border-ink bg-ink text-paper' : 'border-ink/15 bg-white hover:border-ink/40'
-                      }`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </Field>
-              <Field label="Button timer (seconds, 0–60)">
-                <Input type="number" min={0} max={60} value={form.maintenance_countdown} onChange={(e) => setForm({ ...form, maintenance_countdown: e.target.value })} placeholder="6" />
-              </Field>
+            <div className="mt-3 grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Commerce status">
+              {(['paused', 'open'] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="radio"
+                  aria-checked={(form.commerce_status || 'paused') === s}
+                  onClick={() => setForm({ ...form, commerce_status: s })}
+                  className={`rounded-xl border px-3 py-2.5 text-xs font-bold capitalize transition ${
+                    (form.commerce_status || 'paused') === s
+                      ? s === 'paused'
+                        ? 'border-ember bg-ember text-white'
+                        : 'border-ink bg-ink text-paper'
+                      : 'border-ink/15 bg-white hover:border-ink/40'
+                  }`}
+                >
+                  {s === 'paused' ? '⏸ Paused' : '▶ Open'}
+                </button>
+              ))}
             </div>
-            <div className="mt-3 space-y-3">
-              <Field label="Headline (blank = default)">
-                <Input value={form.maintenance_title} onChange={(e) => setForm({ ...form, maintenance_title: e.target.value })} placeholder="We're tuning the Drop." />
-              </Field>
-              <Field label="Message (blank = default)">
-                <textarea value={form.maintenance_message} onChange={(e) => setForm({ ...form, maintenance_message: e.target.value })} rows={2} placeholder="DropX is getting a quick tune-up…" className="w-full rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-sm" />
-              </Field>
-              <Field label="Button label (blank = Continue Anyway)">
-                <Input value={form.maintenance_button} onChange={(e) => setForm({ ...form, maintenance_button: e.target.value })} placeholder="Continue Anyway" />
-              </Field>
-              <div className="flex flex-wrap gap-4 text-sm">
-                {([
-                  ['maintenance_particles', 'Animated particles'],
-                  ['maintenance_contact', 'Support email line'],
-                ] as const).map(([k, label]) => (
-                  <label key={k} className="flex items-center gap-2 font-medium">
-                    <input
-                      type="checkbox"
-                      checked={form[k] === '' ? true : form[k] === '1'}
-                      onChange={(e) => setForm({ ...form, [k]: e.target.checked ? '1' : '0' })}
-                      className="h-4 w-4 accent-[#F06427]"
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </div>
+            <p className="mt-2 text-[11px] text-ink/50">Takes effect on save.</p>
           </div>
           </fieldset>
         </div>
