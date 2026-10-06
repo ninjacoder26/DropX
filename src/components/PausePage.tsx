@@ -56,7 +56,7 @@ export function PausePage() {
           required e-commerce registration and compliance process in Nepal, for now.
         </p>
         <p className="reveal reveal-2 mt-3 text-center text-sm font-bold text-paper/60">
-          The drops are taking a breather.
+          The drops are taking a breather — and we&apos;re sorry to keep you waiting.
         </p>
 
         <div className="reveal reveal-2 mt-8 grid w-full gap-3 text-left sm:grid-cols-2">
@@ -89,7 +89,8 @@ export function PausePage() {
               <strong className="text-paper">until further notice</strong>. We are{' '}
               <strong className="text-paper">unable to reopen</strong> until registration and
               compliance allow it — when that happens, checkout returns on its own.
-              Nothing you need to do except check back. Questions?{' '}
+              Thank you for sticking with us. Nothing you need to do
+              except check back. Questions?{' '}
               <a
                 href="mailto:dropx.nepal@gmail.com"
                 className="font-bold text-paper underline decoration-ember decoration-2 underline-offset-2 hover:text-ember"
