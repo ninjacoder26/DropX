@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Expand, Heart, Minus, Plus, Share2, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -33,6 +33,21 @@ export default function ProductPage() {
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  // Gallery zoom: hover magnifier on desktop, swipe on touch, full zoom+pan
+  // inside the lightbox. All pointer math, no new dependencies.
+  const [lens, setLens] = useState(false);
+  const [lensOrigin, setLensOrigin] = useState('50% 50%');
+  const [lbZoom, setLbZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const swipeRef = useRef<{ x: number; swiped: boolean } | null>(null);
+  const canHover = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(hover: hover)').matches,
+    []
+  );
   const [added, setAdded] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
@@ -96,6 +111,8 @@ export default function ProductPage() {
 
   useEffect(() => {
     if (lightbox === null) return;
+    setLbZoom(1);
+    setPan({ x: 0, y: 0 });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setLightbox(null);
       if (e.key === 'ArrowRight') setLightbox((v) => (v === null ? v : (v + 1) % Math.max(images.length, 1)));
@@ -151,12 +168,49 @@ export default function ProductPage() {
       </nav>
 
       <div className="mt-4 grid gap-8 md:grid-cols-2">
-        {/* Gallery */}
+        {/* Gallery — hover magnifies on desktop, swipe flips on touch */}
         <div>
-          <div className="relative overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5">
+          <div
+            className="relative overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5"
+            onTouchStart={(e) => {
+              swipeRef.current = { x: e.touches[0].clientX, swiped: false };
+            }}
+            onTouchEnd={(e) => {
+              const s = swipeRef.current;
+              swipeRef.current = null;
+              if (!s || images.length < 2) return;
+              const dx = e.changedTouches[0].clientX - s.x;
+              if (dx > 40) {
+                s.swiped = true;
+                swipeRef.current = s;
+                setImgIdx((imgIdx - 1 + images.length) % images.length);
+              } else if (dx < -40) {
+                s.swiped = true;
+                swipeRef.current = s;
+                setImgIdx((imgIdx + 1) % images.length);
+              }
+            }}
+          >
             <button
-              onClick={() => images.length > 0 && setLightbox(imgIdx)}
-              className="block w-full cursor-zoom-in"
+              onClick={() => {
+                if (swipeRef.current?.swiped) {
+                  swipeRef.current = null;
+                  return;
+                }
+                images.length > 0 && setLightbox(imgIdx);
+              }}
+              onMouseEnter={() => {
+                if (canHover && images.length > 0) setLens(true);
+              }}
+              onMouseLeave={() => setLens(false)}
+              onMouseMove={(e) => {
+                if (!canHover) return;
+                const r = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - r.left) / r.width) * 100;
+                const y = ((e.clientY - r.top) / r.height) * 100;
+                setLensOrigin(`${x.toFixed(1)}% ${y.toFixed(1)}%`);
+              }}
+              className={`block w-full ${lens ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
               aria-label="Enlarge product image"
             >
               <img
@@ -164,12 +218,14 @@ export default function ProductPage() {
                 srcSet={images[imgIdx] ? srcSetFor(images[imgIdx].secure_url, [600, 1000, 1400]) : undefined}
                 sizes="(max-width: 768px) 100vw, 50vw"
                 alt={images[imgIdx]?.alt_text || product.name}
-                className="aspect-square w-full object-cover"
+                draggable={false}
+                className="aspect-square w-full object-cover transition-transform duration-200"
+                style={lens ? { transform: 'scale(1.8)', transformOrigin: lensOrigin } : undefined}
               />
             </button>
             {images.length > 0 && (
               <span className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-ink/60 px-2.5 py-1 text-[11px] font-bold text-paper backdrop-blur">
-                <Expand size={12} /> Tap to zoom
+                <Expand size={12} /> {canHover ? 'Hover to magnify · tap to expand' : 'Swipe or tap to zoom'}
               </span>
             )}
           </div>
@@ -501,14 +557,49 @@ export default function ProductPage() {
           <img
             src={cloudinaryThumb(images[lightbox].secure_url, 1400, 'good')}
             alt={images[lightbox].alt_text || product.name}
-            className="max-h-[85vh] max-w-full rounded-2xl object-contain"
-            onClick={(e) => e.stopPropagation()}
+            draggable={false}
+            className="max-h-[85vh] max-w-full select-none rounded-2xl object-contain"
+            style={{
+              transform: `scale(${lbZoom})`,
+              translate: `${pan.x}px ${pan.y}px`,
+              cursor: lbZoom > 1 ? 'grab' : 'zoom-in',
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              const next = lbZoom >= 2 ? 1 : 2;
+              setLbZoom(next);
+              if (next === 1) setPan({ x: 0, y: 0 });
+            }}
+            onWheel={(e) => {
+              const next = Math.min(3, Math.max(1, lbZoom + (e.deltaY < 0 ? 0.25 : -0.25)));
+              setLbZoom(next);
+              if (next === 1) setPan({ x: 0, y: 0 });
+            }}
+            onPointerDown={(e) => {
+              if (lbZoom <= 1) return;
+              (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+              dragRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
+            }}
+            onPointerMove={(e) => {
+              const d = dragRef.current;
+              if (!d) return;
+              const spread = 120 * lbZoom;
+              setPan({
+                x: Math.max(-spread, Math.min(spread, d.px + (e.clientX - d.x))),
+                y: Math.max(-spread, Math.min(spread, d.py + (e.clientY - d.y))),
+              });
+            }}
+            onPointerUp={() => {
+              dragRef.current = null;
+            }}
+            onPointerCancel={() => {
+              dragRef.current = null;
+            }}
           />
-          {images.length > 1 && (
-            <p className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-ink/60 px-3 py-1 text-xs font-bold text-paper">
-              {lightbox + 1} / {images.length}
-            </p>
-          )}
+          <p className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-ink/60 px-3 py-1 text-xs font-bold text-paper">
+            {images.length > 1 && <span>{lightbox + 1} / {images.length}</span>}
+            <span className="text-paper/70">{lbZoom > 1 ? 'drag to pan · tap to reset' : 'tap to zoom · scroll for more'}</span>
+          </p>
         </div>
       )}
     </div>
