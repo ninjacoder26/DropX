@@ -46,35 +46,36 @@ describe('commerce pause page', () => {
       )
     ).toBeInTheDocument();
     expect(screen.getByText('Not gone. Just on hold.', { exact: false })).toBeInTheDocument();
-    expect(screen.getByText(/Electronic Commerce \(E-Commerce\) Act, 2081/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Electronic Commerce \(E-Commerce\) Act, 2081/).length).toBeGreaterThan(0);
     // No timers, no privileged escape hatches for anyone.
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('shows what runs and what rests, plus a way back to browsing', () => {
+  it('shows what runs and what rests, plus a way to reach out', () => {
     renderPage();
     expect(screen.getByText('Browsing')).toBeInTheDocument();
     expect(screen.getByText('Checkout')).toBeInTheDocument();
     expect(screen.getByText('Payments')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /keep browsing/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /talk to us/i })).toHaveAttribute('href', 'mailto:dropx.nepal@gmail.com');
+    expect(screen.getByText(/why is ordering restricted/i)).toBeInTheDocument();
+    expect(screen.getByText(/when do we reopen/i)).toBeInTheDocument();
   });
 });
 
 describe('commerce gate', () => {
-  it('warns on storefront routes but never blocks browsing', () => {
+  it('replaces storefront routes with the pause page — no chrome, no browsing', () => {
     renderGate('/shop');
-    expect(screen.getByText('shop content')).toBeInTheDocument();
-    expect(screen.getByText(/service paused/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /why/i })).toHaveAttribute('href', '/pause');
+    expect(screen.queryByText('shop content')).toBeNull();
+    expect(screen.getAllByText(/until further notice/i).length).toBeGreaterThan(0);
   });
 
   it('stays quiet on admin and staff shells', () => {
     const { unmount } = renderGate('/admin/orders');
     expect(screen.getByText('shop content')).toBeInTheDocument();
-    expect(screen.queryByText(/service paused/i)).toBeNull();
+    expect(screen.queryByText(/until further notice/i)).toBeNull();
     unmount();
     renderGate('/staff');
     expect(screen.getByText('shop content')).toBeInTheDocument();
-    expect(screen.queryByText(/service paused/i)).toBeNull();
+    expect(screen.queryByText(/until further notice/i)).toBeNull();
   });
 });

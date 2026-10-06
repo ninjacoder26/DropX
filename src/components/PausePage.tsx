@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Check, Eye, Package, Pause, ShoppingBag, Wallet, X } from 'lucide-react';
 import { useStoreSettings } from '../lib/settings';
 import { isCommercePaused } from '../lib/commerce';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const STATUS_ROWS = [
-  { icon: Eye, label: 'Browsing', state: 'Open — look around freely', open: true },
+  { icon: Eye, label: 'Browsing', state: 'Back when we reopen', open: false },
   { icon: ShoppingBag, label: 'Checkout', state: 'Disabled for now', open: false },
   { icon: Package, label: 'Orders', state: 'Paused — nothing new goes out', open: false },
   { icon: Wallet, label: 'Payments', state: 'Disabled for now', open: false },
@@ -59,6 +59,28 @@ export function PausePage() {
           The drops are taking a breather.
         </p>
 
+        <div className="reveal reveal-2 mt-8 w-full max-w-md rounded-2xl border border-paper/10 bg-paper/5 p-5 text-left sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+            Why is ordering restricted?
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-paper/75">
+            Nepal&apos;s Electronic Commerce (E-Commerce) Act, 2081 requires online sellers to complete
+            e-commerce registration and related compliance first. We paused sales ourselves to finish
+            that process properly — no orders, no payments, no shortcuts until it is done.
+          </p>
+        </div>
+
+        <div className="reveal reveal-3 mt-3 w-full max-w-md rounded-2xl border border-paper/10 bg-paper/5 p-5 text-left sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+            When do we reopen?
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-paper/75">
+            There is no fixed date — this page stays up <strong className="text-paper">until further
+            notice</strong>. The moment registration and compliance are complete, checkout reopens on
+            its own. Nothing you need to do except check back.
+          </p>
+        </div>
+
         <dl className="reveal reveal-3 mt-8 grid w-full max-w-md grid-cols-1 gap-2 text-left sm:grid-cols-2">
           {STATUS_ROWS.map((r) => (
             <div
@@ -84,18 +106,15 @@ export function PausePage() {
         </dl>
 
         <div className="reveal reveal-3 mt-8 flex flex-col items-center gap-3 sm:flex-row">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-full bg-ember px-7 py-3 text-sm font-bold text-white transition hover:bg-ember-dark"
-          >
-            <Eye size={15} /> Keep browsing
-          </Link>
           <a
             href="mailto:dropx.nepal@gmail.com"
-            className="inline-flex items-center gap-2 rounded-full border border-paper/25 px-7 py-3 text-sm font-bold text-paper/80 transition hover:border-paper/60 hover:text-paper"
+            className="inline-flex items-center gap-2 rounded-full bg-ember px-7 py-3 text-sm font-bold text-white transition hover:bg-ember-dark"
           >
             Talk to us
           </a>
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-paper/40">
+            Check back soon
+          </span>
         </div>
 
         <p className="mt-8 max-w-md text-[11px] leading-relaxed text-paper/40">
@@ -112,22 +131,10 @@ export function PausePage() {
   );
 }
 
-/** Slim warning above the storefront while paused: view, don't buy. */
-function PauseBanner() {
-  return (
-    <div className="bg-ember px-4 py-1.5 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-      Service paused — browse freely, ordering resumes soon.{' '}
-      <Link to="/pause" className="underline underline-offset-2">
-        Why?
-      </Link>
-    </div>
-  );
-}
-
 /**
- * Commerce gate: browsing always passes; a slim banner warns that service
- * is closed. No roles, no bypasses, no countdowns — team and visitors see
- * the same storefront. Admin/staff shells skip the banner.
+ * Commerce gate: while paused, every storefront route IS the pause page —
+ * full-bleed, no navbar, no footer, no exceptions for anyone. Admin/staff
+ * shells keep working so the shop can be run and reopened.
  */
 export function CommerceGate({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
@@ -135,10 +142,8 @@ export function CommerceGate({ children }: { children: ReactNode }) {
   if (pathname.startsWith('/admin') || pathname.startsWith('/staff')) {
     return <>{children}</>;
   }
-  return (
-    <>
-      {isCommercePaused(settings) && <PauseBanner />}
-      {children}
-    </>
-  );
+  if (isCommercePaused(settings)) {
+    return <PausePage />;
+  }
+  return <>{children}</>;
 }

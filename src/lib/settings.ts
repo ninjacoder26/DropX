@@ -33,7 +33,9 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   deliveryRateStandard: 10,
   deliveryRateExpress: 20,
   // Code-level default; the Admin → Settings row wins whenever present.
-  commerceStatus: APP_CONFIG.COMMERCE_STATUS === 'OPEN' ? 'open' : 'paused',
+  // A missing flag means open (same convention the old maintenance flag used,
+  // so unconfigured/test builds browse normally).
+  commerceStatus: APP_CONFIG.COMMERCE_STATUS === 'PAUSED' ? 'paused' : 'open',
 };
 
 const num = (v: string | undefined, fallback: number): number => {
@@ -66,7 +68,12 @@ export function mapSettings(rows: { key: string; value: string }[]): StoreSettin
     maxQtyPerItem: Math.min(99, Math.max(1, Math.round(num(get('max_qty_per_item'), DEFAULT_SETTINGS.maxQtyPerItem)))),
     deliveryRateStandard: num(get('delivery_rate_standard'), DEFAULT_SETTINGS.deliveryRateStandard),
     deliveryRateExpress: num(get('delivery_rate_express'), DEFAULT_SETTINGS.deliveryRateExpress),
-    commerceStatus: get('commerce_status') === 'open' ? 'open' : DEFAULT_SETTINGS.commerceStatus,
+    commerceStatus: (() => {
+      const v = get('commerce_status');
+      if (v === 'open') return 'open';
+      if (v == null) return DEFAULT_SETTINGS.commerceStatus;
+      return 'paused';
+    })(),
   };
 }
 
