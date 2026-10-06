@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Check, Eye, Package, Pause, ShoppingBag, Wallet, X } from 'lucide-react';
+import { Eye, Mail, Package, Pause, ShoppingBag, Wallet, X } from 'lucide-react';
 import { useStoreSettings } from '../lib/settings';
 import { isCommercePaused } from '../lib/commerce';
 import { usePageTitle } from '../hooks/usePageTitle';
+
+const ACT_URL = 'https://lawcommission.gov.np/content/13517/electricity-trade--e-workers--act--2081';
 
 const STATUS_ROWS = [
   { icon: Eye, label: 'Browsing', state: 'Back when we reopen', open: false },
@@ -14,9 +16,9 @@ const STATUS_ROWS = [
 
 /**
  * DropX Commerce Pause — a deliberate system state, not a crash page.
- * DropX has intentionally paused commercial operations while its e-commerce
- * registration and compliance requirements are completed. Browsing stays
- * open; buying waits until further notice.
+ * DropX is currently unable to trade while its e-commerce registration and
+ * compliance requirements are completed. Browsing returns with reopening;
+ * until then the pause page is the whole storefront.
  */
 export function PausePage() {
   usePageTitle('Paused — back soon');
@@ -33,7 +35,7 @@ export function PausePage() {
         </div>
       </div>
 
-      <div className="relative z-[2] mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center px-4 py-14 text-center sm:px-6">
+      <div className="relative z-[2] mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-5 py-12 sm:px-10 sm:py-16">
         <p className="reveal text-[11px] font-bold uppercase tracking-[0.25em] text-paper/50">
           DropX / Commerce status
         </p>
@@ -42,62 +44,74 @@ export function PausePage() {
           Paused — until further notice
         </p>
 
-        <h1 className="reveal reveal-1 mt-6 font-display text-5xl font-black leading-[1.0] tracking-tight sm:text-7xl">
-          DROPX
-          <br />
-          IS <span className="text-ember">PAUSED.</span>
+        <h1 className="reveal reveal-1 mt-6 text-center font-display text-5xl font-black leading-[1.0] tracking-tight sm:text-7xl lg:text-8xl">
+          DROPX IS <span className="text-ember">PAUSED.</span>
         </h1>
-        <p className="reveal reveal-2 mt-3 font-accent text-2xl text-paper/85 sm:text-3xl">
+        <p className="reveal reveal-2 mt-3 text-center font-accent text-2xl text-paper/85 sm:text-3xl">
           Not gone. Just on hold.
         </p>
-        <p className="reveal reveal-2 mt-5 max-w-md text-[15px] leading-relaxed text-paper/70">
-          We have temporarily paused DropX&apos;s commercial operations while we complete the required
-          e-commerce registration and compliance process in Nepal. Until that is complete, orders and
-          payments are taking a little break.
+        <p className="reveal reveal-2 mx-auto mt-5 max-w-2xl text-center text-[15px] leading-relaxed text-paper/70 sm:text-base">
+          DropX is currently <strong className="text-paper">unable to take orders or accept
+          payments</strong>. Commercial operations are paused until the required e-commerce
+          registration and compliance process in Nepal is complete.
         </p>
-        <p className="reveal reveal-2 mt-3 text-sm font-bold text-paper/60">
+        <p className="reveal reveal-2 mt-3 text-center text-sm font-bold text-paper/60">
           The drops are taking a breather.
         </p>
 
-        <div className="reveal reveal-2 mt-8 w-full max-w-md rounded-2xl border border-paper/10 bg-paper/5 p-5 text-left sm:p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
-            Why is ordering restricted?
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-paper/75">
-            Nepal&apos;s Electronic Commerce (E-Commerce) Act, 2081 requires online sellers to complete
-            e-commerce registration and related compliance first. We paused sales ourselves to finish
-            that process properly — no orders, no payments, no shortcuts until it is done.
-          </p>
+        <div className="reveal reveal-2 mt-8 grid w-full gap-3 text-left sm:grid-cols-2">
+          <div className="rounded-2xl border border-paper/10 bg-paper/5 p-5 sm:p-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+              Why is ordering restricted?
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-paper/75">
+              Nepal&apos;s{' '}
+              <a
+                href={ACT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-paper underline decoration-ember decoration-2 underline-offset-2 hover:text-ember"
+              >
+                Electronic Commerce (E-Commerce) Act, 2081
+              </a>{' '}
+              requires online sellers to complete e-commerce registration and related compliance
+              first. Until that is done, <strong className="text-paper">no orders, no payments, no
+              shortcuts</strong> — the restriction applies to everyone, no exceptions.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-paper/10 bg-paper/5 p-5 sm:p-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
+              When do we reopen?
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-paper/75">
+              There is no fixed date — this page stays up{' '}
+              <strong className="text-paper">until further notice</strong>. The moment registration
+              and compliance are complete, checkout reopens on its own. Nothing you need to do
+              except check back. Questions?{' '}
+              <a
+                href="mailto:dropx.nepal@gmail.com"
+                className="font-bold text-paper underline decoration-ember decoration-2 underline-offset-2 hover:text-ember"
+              >
+                dropx.nepal@gmail.com
+              </a>
+            </p>
+          </div>
         </div>
 
-        <div className="reveal reveal-3 mt-3 w-full max-w-md rounded-2xl border border-paper/10 bg-paper/5 p-5 text-left sm:p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ember">
-            When do we reopen?
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-paper/75">
-            There is no fixed date — this page stays up <strong className="text-paper">until further
-            notice</strong>. The moment registration and compliance are complete, checkout reopens on
-            its own. Nothing you need to do except check back.
-          </p>
-        </div>
-
-        <dl className="reveal reveal-3 mt-8 grid w-full max-w-md grid-cols-1 gap-2 text-left sm:grid-cols-2">
+        <dl className="reveal reveal-3 mt-3 grid w-full gap-3 text-left sm:grid-cols-2 lg:grid-cols-4">
           {STATUS_ROWS.map((r) => (
             <div
               key={r.label}
-              className="flex items-center gap-3 rounded-2xl border border-paper/10 bg-paper/5 px-4 py-3"
+              className="flex items-center gap-3 rounded-2xl border border-paper/10 bg-paper/5 px-4 py-3.5"
             >
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                  r.open ? 'bg-ember text-white' : 'bg-paper/10 text-paper/50'
-                }`}
-              >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-paper/10 text-paper/50">
                 <r.icon size={17} />
               </span>
               <span className="min-w-0">
                 <dt className="text-sm font-bold">{r.label}</dt>
                 <dd className="flex items-center gap-1 text-xs text-paper/60">
-                  {r.open ? <Check size={11} className="text-ember" /> : <X size={11} />}
+                  <X size={11} />
                   {r.state}
                 </dd>
               </span>
@@ -110,16 +124,24 @@ export function PausePage() {
             href="mailto:dropx.nepal@gmail.com"
             className="inline-flex items-center gap-2 rounded-full bg-ember px-7 py-3 text-sm font-bold text-white transition hover:bg-ember-dark"
           >
-            Talk to us
+            <Mail size={15} /> Talk to us
           </a>
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-paper/40">
             Check back soon
           </span>
         </div>
 
-        <p className="mt-8 max-w-md text-[11px] leading-relaxed text-paper/40">
-          Operating under the compliance requirements of Nepal&apos;s Electronic Commerce (E-Commerce)
-          Act, 2081. DropX will resume commercial operations once the required requirements have been
+        <p className="mx-auto mt-8 max-w-3xl text-center text-[11px] leading-relaxed text-paper/40">
+          Operating under the compliance requirements of Nepal&apos;s{' '}
+          <a
+            href={ACT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-paper/70"
+          >
+            Electronic Commerce (E-Commerce) Act, 2081
+          </a>
+          . DropX will resume commercial operations once the required requirements have been
           completed — until further notice, the shelves stay visible but the till stays shut.
         </p>
       </div>
