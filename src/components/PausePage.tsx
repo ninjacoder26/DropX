@@ -43,8 +43,11 @@ export function PausePage() {
           <span className="pause-dot" aria-hidden />
           Paused — until further notice
         </p>
+        <p className="reveal reveal-1 mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-paper/35">
+          Status last reviewed October 2026
+        </p>
 
-        <h1 className="reveal reveal-1 mt-6 text-center font-display text-5xl font-black leading-[1.0] tracking-tight sm:text-7xl lg:text-8xl">
+        <h1 className="reveal reveal-1 mt-6 text-center font-display font-black leading-[1.0] tracking-tight text-[clamp(2.75rem,12vw,6rem)] sm:text-7xl lg:text-8xl">
           DROPX IS <span className="text-ember">PAUSED.</span>
         </h1>
         <p className="reveal reveal-2 mt-3 text-center font-accent text-2xl text-paper/85 sm:text-3xl">
@@ -56,7 +59,11 @@ export function PausePage() {
           required e-commerce registration and compliance process in Nepal, for now.
         </p>
         <p className="reveal reveal-2 mt-3 text-center text-sm font-bold text-paper/60">
-          The drops are taking a breather — and we&apos;re sorry to keep you waiting.
+          The drops are taking a breather.
+        </p>
+        <p className="reveal reveal-2 mx-auto mt-2 max-w-xl text-center text-[13px] leading-relaxed text-paper/55">
+          We sincerely apologize for this interruption and any inconvenience it causes you.
+          Thank you for your patience and understanding.
         </p>
 
         <div className="reveal reveal-2 mt-8 grid w-full gap-3 text-left sm:grid-cols-2">
@@ -89,7 +96,7 @@ export function PausePage() {
               <strong className="text-paper">until further notice</strong>. We are{' '}
               <strong className="text-paper">unable to reopen</strong> until registration and
               compliance allow it — when that happens, checkout returns on its own.
-              Thank you for sticking with us. Nothing you need to do
+              We sincerely appreciate your patience. Nothing you need to do
               except check back. Questions?{' '}
               <a
                 href="mailto:dropx.nepal@gmail.com"
